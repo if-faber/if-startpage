@@ -28,6 +28,7 @@ ENV APP_BASE_DIR=/app \
     WWW_DIR=/app/www \
     HELPER_DIR=/app/www-helper \
     BACKUP_DIR=/app/backups \
+    ICONS_DIR=/app/icons \
     PORT=3010
 
 EXPOSE 3010

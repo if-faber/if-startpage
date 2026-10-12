@@ -84,6 +84,7 @@ W komendach i w `compose.yaml` poniżej:
    ```bash
    mkdir -p /home/{user}/docker/app-data/if-startpage/config
    mkdir -p /home/{user}/docker/app-data/if-startpage/backups
+   mkdir -p /home/{user}/docker/app-data/if-startpage/icons
    ```
 
 2. W Dockge utwórz nowy stos `if-startpage` i wklej zawartość pliku
@@ -119,6 +120,18 @@ przeglądarka.
 Zaplecze używa tego samego trybu (przełącznik ☀️/🌙 jest też w menu Zaplecza). Jego wygląd
 ustawia się w Zaplecze → Wygląd Zaplecza, osobno dla dnia i nocy — zapis trafia do
 `config/admin-theme.json`. Kiosk ma jeden wygląd.
+
+## Ikony aplikacji na kafelkach
+
+W oknie linku w polu „Ikona” wpisujesz nazwę pliku, np. `immich.png`, `jellyfin.png`.
+
+- Obraz zawiera ok. 100 najpopularniejszych ikon (Immich, Jellyfin, Home Assistant, Nextcloud,
+  Dockge, Pi-hole, Vaultwarden i inne) — działają od razu po instalacji.
+- Własne ikony kopiujesz do folderu `/home/{user}/docker/app-data/if-startpage/icons`
+  (PNG, SVG albo WebP). Ikona o tej samej nazwie co wbudowana — zastępuje ją.
+- Pełny pakiet ponad 2500 ikon: [dashboard-icons](https://github.com/homarr-labs/dashboard-icons).
+
+W polu „Ikona” można też wpisać jedną literę albo adres obrazka z internetu.
 
 ## Progi alarmów
 

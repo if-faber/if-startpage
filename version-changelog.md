@@ -4,6 +4,16 @@ Nowe wpisy dopisujemy na górze.
 
 ---
 
+## v0.1.6.6 — 2026-10-12
+
+Ikony aplikacji w osobnym folderze.
+
+- **Wolumen `icons`** (`/home/{user}/docker/app-data/if-startpage/icons` → `/app/icons`) na własne ikony aplikacji do kafelków. W oknie linku (Strona Główna i Zaplecze) w polu „Ikona” wpisujesz nazwę pliku, np. `immich.png`. Ikony w tym folderze są w backupie i przeżywają aktualizację obrazu.
+- **Obraz zawiera ok. 100 najpopularniejszych ikon** zamiast całego pakietu (2546) — obraz mniejszy o ok. 85 MB. Ikona z folderu `icons` o tej samej nazwie zastępuje wbudowaną.
+- Pełny pakiet ikon: [dashboard-icons](https://github.com/homarr-labs/dashboard-icons) — pojedyncze pliki można skopiować do folderu `icons`.
+
+---
+
 ## v0.1.6.5 — 2026-10-12
 
 Porządki w menu, progi alarmów, ikony Lucide i tryb dzień / noc w Zapleczu.

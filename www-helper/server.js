@@ -49,6 +49,9 @@ const KIOSK_FILE = process.env.KIOSK_FILE || path.join(CONFIG_DIR, "kiosk.json")
 // kontenera — inaczej znikałyby po każdej aktualizacji obrazu.
 const UPLOAD_DIR = process.env.UPLOAD_DIR || path.join(CONFIG_DIR, "uploads");
 const BACKUP_DIR = process.env.BACKUP_DIR || path.join(HELPER_DIR, "backups");
+// Ikony aplikacji do kafelków: najpierw własne z wolumenu (ICONS_DIR), potem ok. 100
+// najpopularniejszych wbudowanych w obraz (www/icons). Własna o tej samej nazwie wygrywa.
+const ICONS_DIR = process.env.ICONS_DIR || path.join(APP_BASE_DIR, "icons");
 // PIN domyślny, gdy nie ustawiono DASHBOARD_PIN ani nie zmieniono go w UI.
 // Taki sam jak w przykładzie compose.yaml — trzeba go zmienić po instalacji.
 const DEFAULT_PIN = "1234";
@@ -63,6 +66,11 @@ const HOST_APPS_DIR = process.env.HOST_APPS_DIR || "/host-apps";
 app.disable("x-powered-by");
 app.use(express.json({ limit: "20mb" }));
 app.use("/uploads", express.static(UPLOAD_DIR, {
+  setHeaders: (res) => {
+    res.setHeader("Cache-Control", "no-cache");
+  }
+}));
+app.use("/icons", express.static(ICONS_DIR, {
   setHeaders: (res) => {
     res.setHeader("Cache-Control", "no-cache");
   }

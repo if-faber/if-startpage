@@ -24,6 +24,9 @@ services:
     volumes:
       - /home/{user}/docker/app-data/if-startpage/config:/app/config
       - /home/{user}/docker/app-data/if-startpage/backups:/app/backups
+      # Twoje ikony aplikacji do kafelków. W oknie linku wpisujesz nazwę pliku
+      # (np. immich.png). Ok. 100 popularnych jest już w obrazie.
+      - /home/{user}/docker/app-data/if-startpage/icons:/app/icons
       # Zakładka Aktualizacje: odczyt i zapis tagów wersji w compose.yaml
       # innych stosów — dlatego cały katalog docker/app/, nie tylko ten stos.
       - /home/{user}/docker/app:/host-apps

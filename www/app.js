@@ -220,7 +220,7 @@ function appShell() {
           <label>Nazwa<input id="linkName" required></label>
           <label style="grid-column: 1 / -1;">URL<input id="linkUrl" type="url" required placeholder="https://..."></label>
           <label style="grid-column: 1 / -1;">Opis<input id="linkDescription"></label>
-          <label>Ikona<input id="linkIcon" placeholder="Litera lub URL obrazu"></label>
+          <label>Ikona<input id="linkIcon" placeholder="Nazwa pliku z folderu icons (np. immich.png), litera albo URL obrazu"></label>
           <label>Otwieranie<select id="linkOpenMode"><option value="new-tab">Nowa karta</option><option value="iframe">W dashboardzie</option></select></label>
         </div>
         <menu><button type="button" data-close>Anuluj</button><button class="primary">Zapisz link</button></menu>
