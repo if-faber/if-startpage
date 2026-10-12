@@ -4,6 +4,13 @@ Nowe wpisy dopisujemy na górze.
 
 ---
 
+## v0.1.6.4 — 2026-10-12
+
+- **Zaplecze → Homepage zna strony:** na górze wybór strony; sekcje i linki tej strony, ich kolejność strzałkami, dodawanie sekcji na wybraną stronę.
+- **„Przenieś na stronę…”** przy każdej sekcji — przenosi sekcję z linkami na inną stronę (na jej koniec).
+
+---
+
 ## v0.1.6.3 — 2026-10-12
 
 Strony w menu i ikony zamiast emoji.

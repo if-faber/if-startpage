@@ -1,6 +1,8 @@
 // tab-homepage.js — Moduł Zakładki „Homepage” (Zarządzanie Sekcjami i Linkami Strony Głównej)
 
 let cachedAdminSections = [];
+let cachedAdminPages = [];
+let adminPageId = (() => { try { return localStorage.getItem("ifs.adminPage") || "home"; } catch { return "home"; } })();
 let editingAdminLink = null;
 let collapsedAdminSections = {};
 
@@ -12,7 +14,7 @@ function renderHomepageTab() {
           <h2 style="margin: 0;">🏠 Zarządzanie Sekcjami i Linkami Strony Głównej</h2>
           <a href="../../" class="button primary" target="_blank" style="padding: 6px 16px; font-size: 13px; font-weight: bold; text-decoration: none;">Otwórz Stronę Główną ↗</a>
         </div>
-        <p class="settings-note">Tworzenie sekcji, zmiana kolejności sekcji, dodawanie, sortowanie strzałkami oraz zwijanie wpisów dla Strony Głównej.</p>
+        <p class="settings-note">Wybierz stronę, a potem twórz sekcje, ustawiaj ich kolejność, dodawaj i sortuj linki strzałkami. Sekcję można przenieść na inną stronę.</p>
 
         <div id="adminSectionsManager" style="margin-top: 16px;">
           <div class="empty">Ładowanie sekcji i linków...</div>
@@ -34,9 +36,21 @@ async function loadAdminSections() {
 
   try {
     const data = await request("/api/services");
-    cachedAdminSections = data.sections || [];
+    cachedAdminPages = data.pages && data.pages.length ? data.pages : [{ id: "home", name: "Home" }];
+    if (!cachedAdminPages.some((page) => page.id === adminPageId)) adminPageId = "home";
+    const allSections = data.sections || [];
+    cachedAdminSections = allSections.filter((sec) => (sec.pageId || "home") === adminPageId);
+    const pageOptions = (selectedId) => cachedAdminPages
+      .map((page) => `<option value="${escapeHtml(page.id)}"${page.id === selectedId ? " selected" : ""}>${escapeHtml(page.name)}</option>`)
+      .join("");
 
     let html = `
+      <label class="admin-page-picker" style="display: grid; gap: 6px; margin-bottom: 18px; font-size: 11px; font-weight: 800; text-transform: uppercase; color: var(--muted);">
+        Strona
+        <select id="adminPageSelect" onchange="selectAdminPage(this.value)" style="font-size: 15px; font-weight: 700; text-transform: none; color: var(--text);">${pageOptions(adminPageId)}</select>
+      </label>
+    `;
+    html += `
       <form id="adminAddSectionForm" onsubmit="addSectionAdmin(event)" style="display: flex; gap: 12px; margin-bottom: 20px; align-items: center;">
         <input id="newSectionNameInput" placeholder="Nazwa nowej sekcji (np. Usługi Serwera)" style="flex: 1; padding: 10px 14px; border-radius: var(--card-radius, 10px); border: 1px solid var(--modal-panel-border, var(--line)); background: var(--input-bg, rgba(0,0,0,0.3)); color: var(--input-text-color, var(--text)); font-size: 14px;">
         <button type="submit" class="button primary" style="padding: 10px 18px; font-weight: bold;">+ Dodaj Sekcję</button>
@@ -62,6 +76,7 @@ async function loadAdminSections() {
                   ${isCollapsed ? '🔽 Rozwiń wpisy' : '🔼 Zwiń wpisy'}
                 </button>
                 <button type="button" class="button" onclick="renameSectionAdmin('${sec.id}', '${escapeHtml(sec.name)}')" style="font-size: 12px; padding: 6px 12px;">✏️ Zmień nazwę</button>
+                ${cachedAdminPages.length > 1 ? `<select onchange="moveSectionToPageAdmin('${sec.id}', this.value)" title="Przenieś sekcję na inną stronę" style="font-size: 12px; min-height: 32px; padding: 4px 8px;"><option value="">Przenieś na stronę…</option>${cachedAdminPages.filter((page) => page.id !== adminPageId).map((page) => `<option value="${escapeHtml(page.id)}">${escapeHtml(page.name)}</option>`).join("")}</select>` : ""}
                 ${idx > 0 ? `<button type="button" class="button" onclick="moveSectionAdmin('${sec.id}', 'up')" style="font-size: 12px; padding: 6px 10px;" title="Przesuń sekcję w górę">▲</button>` : ""}
                 ${idx < cachedAdminSections.length - 1 ? `<button type="button" class="button" onclick="moveSectionAdmin('${sec.id}', 'down')" style="font-size: 12px; padding: 6px 10px;" title="Przesuń sekcję w dół">▼</button>` : ""}
                 <button type="button" class="button primary" onclick="openAddLinkAdmin('${sec.id}')" style="font-size: 12px; padding: 6px 12px;">+ Dodaj link</button>
@@ -101,6 +116,30 @@ async function loadAdminSections() {
   }
 }
 
+function selectAdminPage(pageId) {
+  adminPageId = pageId || "home";
+  try { localStorage.setItem("ifs.adminPage", adminPageId); } catch {}
+  loadAdminSections();
+}
+
+async function moveSectionToPageAdmin(sectionId, pageId) {
+  if (!pageId) return;
+  const section = cachedAdminSections.find((sec) => sec.id === sectionId);
+  const page = cachedAdminPages.find((item) => item.id === pageId);
+  if (!section || !page) return;
+  try {
+    await request(`/api/services/section/${sectionId}`, {
+      method: "PUT",
+      body: JSON.stringify({ name: section.name, pageId })
+    });
+    showToast(`Sekcja „${section.name}” przeniesiona na stronę „${page.name}”.`);
+    notifyServicesUpdated();
+    loadAdminSections();
+  } catch (error) {
+    showToast(error.message);
+  }
+}
+
 function toggleCollapseAdminSection(sectionId) {
   collapsedAdminSections[sectionId] = !collapsedAdminSections[sectionId];
   loadAdminSections();
@@ -125,7 +164,7 @@ async function addSectionAdmin(e) {
   const name = input?.value.trim();
   if (!name) return showToast("Wpisz nazwę nowej sekcji.");
   try {
-    await request("/api/services/section", { method: "POST", body: JSON.stringify({ name }) });
+    await request("/api/services/section", { method: "POST", body: JSON.stringify({ name, pageId: adminPageId }) });
     showToast("Sekcja dodana.");
     if (input) input.value = "";
     notifyServicesUpdated();

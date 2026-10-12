@@ -1459,6 +1459,12 @@ app.put("/api/services/section/:id", requirePin, (req, res) => {
   }
 
   section.name = name;
+  // Opcjonalnie: przeniesienie sekcji na inną stronę (na koniec tej strony).
+  const pageId = normalizeText(req.body.pageId);
+  if (pageId && pageId !== section.pageId && data.pages.some((page) => page.id === pageId)) {
+    section.pageId = pageId;
+    data.sections = data.sections.filter((item) => item !== section).concat(section);
+  }
   saveServices(data);
 
   res.json({ success: true, section });
