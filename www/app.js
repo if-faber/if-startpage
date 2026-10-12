@@ -523,7 +523,7 @@ function activeSection() {
 function renderLinks() {
   stopStatusTopDiagnostics();
   const section = activeSection();
-  document.querySelector("#viewTitle").textContent = section?.name || "Brak sekcji";
+  document.querySelector("#viewTitle").textContent = section?.name || "Witaj!";
   document.querySelector("#toolbarActions").innerHTML = `
     <input id="search" type="search" value="${escapeHtml(state.query)}" placeholder="Szukaj linku...">
   `;
@@ -543,7 +543,7 @@ function renderLinkCards() {
   const section = activeSection();
   const grid = document.querySelector("#linkGrid");
   if (!section) {
-    grid.innerHTML = '<div class="empty">Dodaj pierwszą sekcję.</div>';
+    grid.innerHTML = '<div class="empty"><p style="margin:0">Nie ma jeszcze żadnych kafelków.<br>Wejdź do Zaplecza (🛠️ na dole paska bocznego), zakładka <strong>Homepage</strong>, i dodaj pierwszą sekcję.</p></div>';
     return;
   }
   const query = state.query.trim().toLowerCase();

@@ -4,6 +4,23 @@ Nowe wpisy dopisujemy na górze.
 
 ---
 
+## v0.1.6 — 2026-10-12
+
+Wygląd startowy i naprawiony edytor wyglądu Zaplecza.
+
+- **Naprawione:** dotknięcie dowolnej kontrolki w edytorze „Wygląd Zaplecza” zmieniało wygląd całego Zaplecza (np. panele robiły się białe). Formularz czyta teraz aktualne wartości z CSS, a zapisuje tylko to, co zmieniono.
+- **Naprawione:** ustawienia przycisków (kolory, najechanie, ramka, poświata) działały tylko na podglądzie — teraz zmieniają prawdziwe przyciski Zaplecza.
+- **Naprawione:** „Przywróć domyślne” nie cofało zmian do czasu przeładowania strony; kolor ramki przycisków był zawsze czarny; nie dało się ustawić wartości 0 (np. bez zaokrąglenia, bez poświaty).
+- **Naprawione:** przy każdym zapisie wygląd z wgraną tapetą zapisywał cały obraz w pliku ustawień.
+- **Naprawione:** wgrane logo i tapety znikały po aktualizacji obrazu kontenera — teraz trafiają do wolumenu z konfiguracją (`config/uploads`).
+- Nowy przycisk **„Cofnij zmiany”** w edytorze wyglądu Zaplecza.
+- **Wygląd startowy Zaplecza:** ciemne panele, spokojne przyciski menu (aktywny bez jaskrawego wypełnienia), wyraźny przycisk główny, czytelny przycisk ostrzegawczy, bez pustego pasa pod tytułem.
+- **Wygląd startowy strony:** lżejszy pasek boczny, wyraźny przycisk główny, podpowiedź na pustej stronie, jak dodać pierwsze kafelki.
+- Zakładka Helper na świeżej instalacji podpowiada nazwę serwera, adres API i host zamiast pustych pól.
+- Serwer sprawdza ustawienia wyglądu Zaplecza przed zapisem (tylko znane pola, bez znaków spoza wartości CSS).
+
+---
+
 ## v0.1.5 — 2026-10-12
 
 Porządki i bezpieczeństwo po audycie.

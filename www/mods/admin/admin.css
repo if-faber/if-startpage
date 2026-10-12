@@ -3,6 +3,45 @@
    Glassmorphism Admin Dashboard Theme & Components
    ========================================================================== */
 
+/* --------------------------------------------------------------------------
+   WYGLĄD STARTOWY ZAPLECZA — jedyne źródło wartości domyślnych.
+   Edytor „Wygląd Zaplecza” czyta te wartości do formularza, więc dotknięcie
+   kontrolki nie zmienia niczego poza tą jedną właściwością.
+   -------------------------------------------------------------------------- */
+body.admin-body {
+  --admin-panel-rgb: 18 30 36;
+  --admin-panel-alpha: 0.72;
+  --admin-sidebar-rgb: 11 19 23;
+  --admin-sidebar-alpha: 0.88;
+  --admin-sidebar-width: 270px;
+  --admin-menu-text-color: #cbd5e1;
+  --admin-menu-btn-bg: #0b1317;
+  --admin-menu-btn-text: #cbd5e1;
+  --admin-menu-btn-hover-bg: #16262c;
+  --admin-menu-btn-hover-text: #54ffb2;
+  --admin-menu-btn-active-bg: #133b2f;
+  --admin-menu-btn-active-text: #54ffb2;
+  --card-radius: 16px;
+  --card-gap: 20px;
+  --btn-radius: 10px;
+  --btn-glow: 12px;
+  --btn-glow-color: #54ffb2;
+  --btn-border-width: 1px;
+  --btn-border-color: #2a3b42;
+  --btn-normal-bg: #54ffb2;
+  --btn-normal-text: #052016;
+  --btn-normal-hover-bg: #7dffc6;
+  --btn-normal-hover-text: #052016;
+  --btn-danger-bg: #3a1518;
+  --btn-danger-text: #fca5a5;
+  --btn-danger-hover-bg: #5a1d22;
+  --btn-danger-hover-text: #ffffff;
+  --btn-danger-glow-color: #ef4444;
+}
+
+/* Pasek tytułu Zaplecza nie potrzebuje wysokości paska strony głównej */
+.admin-main .toolbar { min-height: 0; }
+
 /* Zapobieganie brzydkiemu żółtemu tłu autofill przeglądarek */
 input:-webkit-autofill,
 input:-webkit-autofill:hover, 
@@ -83,7 +122,10 @@ select:-webkit-autofill {
   backdrop-filter: blur(var(--glass-blur, 12px)) saturate(var(--glass-saturation, 100%));
   -webkit-backdrop-filter: blur(var(--glass-blur, 12px)) saturate(var(--glass-saturation, 100%));
   box-shadow: var(--tile-shadow);
+  color: var(--admin-menu-text-color, var(--text));
 }
+
+.admin-sidebar .brand p { color: color-mix(in srgb, var(--admin-menu-text-color, var(--muted)) 70%, transparent) !important; }
 
 .admin-nav {
   display: grid;
@@ -102,7 +144,7 @@ select:-webkit-autofill {
   cursor: pointer;
   border: 1px solid var(--line);
   border-radius: var(--btn-radius, 12px);
-  background: var(--admin-menu-btn-bg, transparent) !important;
+  background: color-mix(in srgb, var(--admin-menu-btn-bg) 55%, transparent) !important;
   color: var(--admin-menu-btn-text, var(--admin-menu-text-color, var(--text))) !important;
   padding: 10px 14px;
   font-family: var(--font-menu, Inter);
@@ -120,10 +162,10 @@ select:-webkit-autofill {
 
 .admin-sidebar .nav-button.active, 
 .admin-sidebar .nav-button[data-active="true"] {
-  border-color: color-mix(in srgb, var(--accent) 34%, transparent) !important;
-  background: var(--admin-menu-btn-active-bg, var(--accent)) !important;
-  color: var(--admin-menu-btn-active-text, #ffffff) !important;
-  box-shadow: 0 4px var(--btn-glow, 10px) var(--btn-glow-color, color-mix(in srgb, var(--accent) 40%, transparent)) !important;
+  border-color: color-mix(in srgb, var(--admin-menu-btn-active-text) 45%, transparent) !important;
+  background: var(--admin-menu-btn-active-bg) !important;
+  color: var(--admin-menu-btn-active-text) !important;
+  box-shadow: 0 2px var(--btn-glow) color-mix(in srgb, var(--btn-glow-color) 22%, transparent) !important;
 }
 
 /* Przycisk akcji wylogowania w menu bocznym */
@@ -208,6 +250,12 @@ select:-webkit-autofill {
   padding: 0;
 }
 
+.admin-section-card p,
+.admin-section-card .settings-note,
+.admin-section-card small {
+  font-family: var(--font-description, inherit);
+}
+
 .admin-form-panel .settings-note {
   margin: 0;
   color: var(--muted);
@@ -217,10 +265,11 @@ select:-webkit-autofill {
 .admin-tab-container {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: var(--card-gap, 20px);
 }
 
 .admin-section-card {
+  font-family: var(--font-card, inherit);
   padding: 24px;
   border: 1px solid var(--line);
   border-radius: var(--card-radius, 16px);
@@ -250,8 +299,8 @@ select:-webkit-autofill {
   box-shadow: 0 0 10px color-mix(in srgb, var(--accent) 25%, transparent);
 }
 
-/* Przyciski w Zapleczu — Identyczne jak na Stronie Głównej */
-.button, 
+/* Przyciski w Zapleczu — kolory z edytora „Wygląd Zaplecza” (zmienne --btn-*) */
+.button,
 button {
   display: inline-flex;
   align-items: center;
@@ -259,55 +308,57 @@ button {
   gap: 6px;
   min-height: 40px;
   padding: 0 16px;
-  border-radius: var(--btn-radius, 12px);
-  border: 1px solid var(--line);
-  background: rgba(255, 255, 255, 0.075);
+  border-radius: var(--btn-radius, 10px);
+  border: var(--btn-border-width, 1px) solid var(--btn-border-color, var(--line));
+  background: rgba(255, 255, 255, 0.06);
   color: var(--text);
   font-size: 13px;
   font-weight: 700;
   cursor: pointer;
   text-decoration: none;
-  transition: all 0.16s ease;
+  transition: background 0.16s ease, color 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease, transform 0.16s ease;
   box-shadow: none;
 }
 
-.button:hover, 
+.button:hover,
 button:hover {
-  border-color: color-mix(in srgb, var(--accent) 40%, transparent);
-  background: rgba(255, 255, 255, 0.12);
+  border-color: color-mix(in srgb, var(--accent) 45%, transparent);
+  background: rgba(255, 255, 255, 0.11);
   color: var(--text);
   transform: translateY(-1px);
 }
 
-.button.primary, 
-button.primary, 
+.button.primary,
+button.primary,
 input[type="submit"].primary {
-  border-color: color-mix(in srgb, var(--accent) 42%, transparent) !important;
-  background: var(--accent-soft, color-mix(in srgb, var(--accent) 16%, transparent)) !important;
-  color: var(--accent) !important;
+  border-color: var(--btn-normal-bg) !important;
+  background: var(--btn-normal-bg) !important;
+  color: var(--btn-normal-text) !important;
   font-weight: 800 !important;
-  box-shadow: 0 4px var(--btn-glow, 10px) var(--btn-glow-color, color-mix(in srgb, var(--accent) 30%, transparent)) !important;
+  box-shadow: 0 4px var(--btn-glow) color-mix(in srgb, var(--btn-glow-color) 30%, transparent) !important;
 }
 
-.button.primary:hover, 
-button.primary:hover, 
+.button.primary:hover,
+button.primary:hover,
 input[type="submit"].primary:hover {
-  background: color-mix(in srgb, var(--accent) 26%, transparent) !important;
-  color: var(--accent) !important;
+  border-color: var(--btn-normal-hover-bg) !important;
+  background: var(--btn-normal-hover-bg) !important;
+  color: var(--btn-normal-hover-text) !important;
   transform: translateY(-1px);
 }
 
-.button.danger, 
+.button.danger,
 button.danger {
-  border-color: rgba(239, 68, 68, 0.4) !important;
-  background: rgba(239, 68, 68, 0.15) !important;
-  color: #f87171 !important;
+  border-color: color-mix(in srgb, var(--btn-danger-glow-color) 45%, transparent) !important;
+  background: var(--btn-danger-bg) !important;
+  color: var(--btn-danger-text) !important;
 }
 
-.button.danger:hover, 
+.button.danger:hover,
 button.danger:hover {
-  background: rgba(239, 68, 68, 0.25) !important;
-  color: #ff6b6b !important;
+  background: var(--btn-danger-hover-bg) !important;
+  color: var(--btn-danger-hover-text) !important;
+  box-shadow: 0 4px var(--btn-glow) color-mix(in srgb, var(--btn-danger-glow-color) 30%, transparent) !important;
   transform: translateY(-1px);
 }
 
@@ -459,4 +510,11 @@ dialog menu {
   margin-bottom: 16px;
   font-size: 13px;
   text-decoration: none;
+}
+
+/* Suwaki i pola wyboru w kolorze akcentu Zaplecza */
+.admin-body input[type="range"],
+.admin-body input[type="checkbox"],
+.admin-body input[type="radio"] {
+  accent-color: var(--accent);
 }

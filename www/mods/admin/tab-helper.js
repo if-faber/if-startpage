@@ -1,7 +1,14 @@
 // tab-helper.js — Moduł Zakładki „Helper & System” (mods/admin)
 
 function renderHelperTab() {
-  const config = state.settings || {};
+  const saved = state.settings || {};
+  // Na świeżej instalacji pola nie mogą być puste — podpowiadamy wartości startowe.
+  const config = {
+    title: saved.title || "Serwer domowy",
+    subtitle: saved.subtitle || "Usługi, narzędzia i administracja serwera",
+    apiUrl: saved.apiUrl || window.location.origin,
+    defaultHost: saved.defaultHost || window.location.hostname
+  };
   return `
     <div class="admin-tab-container">
       <section class="admin-section-card">

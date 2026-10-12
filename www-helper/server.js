@@ -45,9 +45,9 @@ const DASHBOARD_FILE = process.env.DASHBOARD_FILE || path.join(CONFIG_DIR, "dash
 const THEME_FILE = process.env.THEME_FILE || path.join(CONFIG_DIR, "theme.json");
 const ADMIN_THEME_FILE = process.env.ADMIN_THEME_FILE || path.join(CONFIG_DIR, "admin-theme.json");
 const KIOSK_FILE = process.env.KIOSK_FILE || path.join(CONFIG_DIR, "kiosk.json");
-const DASHBOARD_LOGO_FILE = process.env.DASHBOARD_LOGO_FILE || path.join(WWW_DIR, "images", "dashboard-logo.png");
-const DASHBOARD_BACKGROUND_FILE = process.env.DASHBOARD_BACKGROUND_FILE || path.join(WWW_DIR, "images", "background-custom.jpg");
-const ADMIN_BACKGROUND_FILE = process.env.ADMIN_BACKGROUND_FILE || path.join(WWW_DIR, "images", "background-admin-custom.jpg");
+// Pliki wgrane w UI (logo, tapety) trzymamy w wolumenie z konfiguracją, a nie w obrazie
+// kontenera — inaczej znikałyby po każdej aktualizacji obrazu.
+const UPLOAD_DIR = process.env.UPLOAD_DIR || path.join(CONFIG_DIR, "uploads");
 const BACKUP_DIR = process.env.BACKUP_DIR || path.join(HELPER_DIR, "backups");
 // PIN domyślny, gdy nie ustawiono DASHBOARD_PIN ani nie zmieniono go w UI.
 // Taki sam jak w przykładzie compose.yaml — trzeba go zmienić po instalacji.
@@ -62,6 +62,11 @@ const HOST_APPS_DIR = process.env.HOST_APPS_DIR || "/host-apps";
 // więc obce strony otwarte w przeglądarce nie mogą wywoływać tego API.
 app.disable("x-powered-by");
 app.use(express.json({ limit: "20mb" }));
+app.use("/uploads", express.static(UPLOAD_DIR, {
+  setHeaders: (res) => {
+    res.setHeader("Cache-Control", "no-cache");
+  }
+}));
 app.use(express.static(WWW_DIR, {
   setHeaders: (res) => {
     res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
@@ -216,46 +221,34 @@ function saveThemeSettings(theme) {
   fs.writeFileSync(THEME_FILE, JSON.stringify(sanitizeThemeSettings(theme), null, 2), "utf8");
 }
 
-function saveDashboardLogo(dataUrl) {
+// Zapisuje obraz z formularza (data URL) do UPLOAD_DIR i zwraca jego adres /uploads/...
+function saveUploadedImage(dataUrl, baseName, errorMessage) {
   const match = String(dataUrl || "").match(/^data:image\/(png|jpeg|jpg|webp);base64,(.+)$/i);
   if (!match) {
-    throw new Error("Niepoprawny format logo.");
+    throw new Error(errorMessage);
   }
-
   const extension = match[1].toLowerCase() === "jpeg" ? "jpg" : match[1].toLowerCase();
-  const targetFile = DASHBOARD_LOGO_FILE.replace(/\.[^.]+$/, `.${extension}`);
-  ensureConfigDir(targetFile);
+  if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+  // Usuń poprzednią wersję w innym formacie, żeby nie zostawały śmieci.
+  for (const ext of ["png", "jpg", "webp"]) {
+    const old = path.join(UPLOAD_DIR, `${baseName}.${ext}`);
+    if (ext !== extension && fs.existsSync(old)) fs.unlinkSync(old);
+  }
+  const targetFile = path.join(UPLOAD_DIR, `${baseName}.${extension}`);
   fs.writeFileSync(targetFile, Buffer.from(match[2], "base64"));
+  return `/uploads/${baseName}.${extension}?v=${Date.now()}`;
+}
 
-  return `./images/${path.basename(targetFile)}?v=${Date.now()}`;
+function saveDashboardLogo(dataUrl) {
+  return saveUploadedImage(dataUrl, "dashboard-logo", "Niepoprawny format logo.");
 }
 
 function saveDashboardBackground(dataUrl) {
-  const match = String(dataUrl || "").match(/^data:image\/(png|jpeg|jpg|webp);base64,(.+)$/i);
-  if (!match) {
-    throw new Error("Niepoprawny format obrazu tła.");
-  }
-
-  const extension = match[1].toLowerCase() === "jpeg" ? "jpg" : match[1].toLowerCase();
-  const targetFile = DASHBOARD_BACKGROUND_FILE.replace(/\.[^.]+$/, `.${extension}`);
-  ensureConfigDir(targetFile);
-  fs.writeFileSync(targetFile, Buffer.from(match[2], "base64"));
-
-  return `./images/${path.basename(targetFile)}?v=${Date.now()}`;
+  return saveUploadedImage(dataUrl, "background-custom", "Niepoprawny format obrazu tła.");
 }
 
 function saveAdminBackground(dataUrl) {
-  const match = String(dataUrl || "").match(/^data:image\/(png|jpeg|jpg|webp);base64,(.+)$/i);
-  if (!match) {
-    throw new Error("Niepoprawny format obrazu tła.");
-  }
-
-  const extension = match[1].toLowerCase() === "jpeg" ? "jpg" : match[1].toLowerCase();
-  const targetFile = ADMIN_BACKGROUND_FILE.replace(/\.[^.]+$/, `.${extension}`);
-  ensureConfigDir(targetFile);
-  fs.writeFileSync(targetFile, Buffer.from(match[2], "base64"));
-
-  return `/images/${path.basename(targetFile)}?v=${Date.now()}`;
+  return saveUploadedImage(dataUrl, "background-admin", "Niepoprawny format obrazu tła.");
 }
 
 function getDashboardPin() {
@@ -1019,47 +1012,75 @@ app.put("/api/dashboard/theme", (req, res) => {
   res.json({ success: true, theme });
 });
 
+// Klucze motywu Zaplecza, które przyjmujemy (zgodne z tab-admin-theme.js).
+const ADMIN_THEME_KEYS = [
+  "accent", "accentAlt", "surfaceColor", "bg", "fontMenu", "fontCard", "fontDescription",
+  "cardRadius", "cardGap", "panelColor", "panelAlpha", "glassBlur",
+  "sidebarColor", "sidebarAlpha", "menuTextColor", "sidebarWidth",
+  "menuBtnBg", "menuBtnText", "menuBtnActiveBg", "menuBtnActiveText", "menuBtnHoverBg", "menuBtnHoverText",
+  "btnRadius", "btnBorderWidth", "btnBorderColor", "btnGlow", "btnGlowColor", "btnDangerGlowColor",
+  "btnNormalBg", "btnNormalText", "btnNormalHoverBg", "btnNormalHoverText",
+  "btnDangerBg", "btnDangerText", "btnDangerHoverBg", "btnDangerHoverText",
+  "backgroundImage", "backgroundDim", "backgroundBlur", "backgroundOpacity", "backgroundUrl"
+];
+
+function sanitizeAdminTheme(input) {
+  let source = input && typeof input === "object" ? input : {};
+  if (source.themeSettings && typeof source.themeSettings === "object") source = source.themeSettings;
+  if (source.theme && typeof source.theme === "object") source = source.theme;
+
+  const output = {};
+  for (const key of ADMIN_THEME_KEYS) {
+    const value = normalizeText(source[key]);
+    if (!value || value.length > 300) continue;
+    // Do CSS nie wpuszczamy znaków, które pozwalałyby wyjść poza wartość.
+    if (/[;{}<>"]/.test(value)) continue;
+    if (key === "backgroundUrl" && !/^\/(uploads|images)\/[\w.-]+(\?v=\d+)?$/.test(value)) continue;
+    output[key] = value;
+  }
+  return output;
+}
+
 function loadAdminTheme() {
   ensureConfigDir(ADMIN_THEME_FILE);
-  if (!fs.existsSync(ADMIN_THEME_FILE)) return { theme: {}, mode: "night" };
+  if (!fs.existsSync(ADMIN_THEME_FILE)) return {};
   try {
-    return JSON.parse(fs.readFileSync(ADMIN_THEME_FILE, "utf8"));
+    return sanitizeAdminTheme(JSON.parse(fs.readFileSync(ADMIN_THEME_FILE, "utf8")));
   } catch (error) {
-    return { theme: {}, mode: "night" };
+    return {};
   }
 }
 
-function saveAdminTheme(data) {
+function saveAdminTheme(theme) {
   ensureConfigDir(ADMIN_THEME_FILE);
-  fs.writeFileSync(ADMIN_THEME_FILE, JSON.stringify(data, null, 2), "utf8");
+  fs.writeFileSync(ADMIN_THEME_FILE, JSON.stringify({ theme }, null, 2), "utf8");
 }
 
 app.get("/api/admin/theme", (req, res) => {
-  res.json(loadAdminTheme());
+  res.json({ theme: loadAdminTheme() });
 });
 
 app.put("/api/admin/theme", (req, res) => {
   if (!hasValidPin(req)) {
     return res.status(403).json({ error: "Niepoprawny PIN" });
   }
-  const theme = req.body?.reset ? {} : (req.body?.themeSettings || req.body?.theme || req.body || {});
-  const backgroundData = normalizeText(req.body?.backgroundData);
-  if (!req.body?.reset && backgroundData) {
-    theme.backgroundImage = "custom";
-    theme.backgroundUrl = saveAdminBackground(backgroundData);
+  if (req.body?.reset) {
+    saveAdminTheme({});
+    return res.json({ success: true, theme: {} });
   }
-  saveAdminTheme({ theme });
+
+  const theme = sanitizeAdminTheme(req.body?.themeSettings || req.body?.theme || {});
+  const backgroundData = normalizeText(req.body?.backgroundData);
+  try {
+    if (backgroundData) {
+      theme.backgroundImage = "custom";
+      theme.backgroundUrl = saveAdminBackground(backgroundData);
+    }
+  } catch (error) {
+    return res.status(400).json({ error: error.message });
+  }
+  saveAdminTheme(theme);
   res.json({ success: true, theme });
-});
-
-app.get("/api/admin/theme-data", (req, res) => {
-  res.json(loadAdminTheme());
-});
-
-app.post("/api/admin/theme-data", (req, res) => {
-  if (!hasValidPin(req)) return res.status(403).json({ error: "Brak autoryzacji" });
-  saveAdminTheme(req.body || {});
-  res.json({ success: true });
 });
 
 // --- Ustawienia Kiosku (www/kiosk/) — podstawowe ustawienia, motyw i przyciski menu ---

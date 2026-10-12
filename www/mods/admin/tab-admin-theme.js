@@ -1,174 +1,266 @@
-// tab-admin-theme.js — Moduł Zakładki „Wygląd Zaplecza” (Edytor CSS Zaplecza z obsługą tła i natychmiastowym Live Preview)
+// tab-admin-theme.js — Zakładka „Wygląd Zaplecza”: edytor kolorów, czcionek, tła i przycisków
+// z podglądem na żywo.
+//
+// Zasada działania (ważne przy zmianach):
+// - Wartości startowe są zdefiniowane TYLKO w admin.css (blok body.admin-body) i styles.css.
+// - Formularz czyta aktualne wartości z CSS (albo z zapisanego motywu), więc dotknięcie
+//   kontrolki zmienia wyłącznie tę jedną właściwość.
+// - Zapisywane są tylko pola zmienione przez użytkownika (oraz wcześniej zapisane).
+//   Dzięki temu nowa wersja wyglądu startowego dociera do osób, które jej nie zmieniały.
 
-const ADMIN_CSS_MAP = {
-  adminThemeAccent: "--accent",
-  adminThemeAccentAlt: "--accent-alt",
-  adminThemeSurfaceColor: "--surface-color",
-  adminThemeBg: "--page-bg",
-  adminThemeCardRadius: "--card-radius",
-  adminThemeCardGap: "--card-gap",
-  adminThemePanelColor: "--admin-panel-rgb",
-  adminThemePanelAlpha: "--admin-panel-alpha",
-  adminThemeGlassBlur: "--glass-blur",
+// kind: color — kolor wprost; rgb — kolor zapisany jako kanały "R G B";
+//       alpha — suwak 0–100 → 0–1; px — suwak w pikselach; font — czcionka.
+const ADMIN_THEME_FIELDS = [
+  // 1. Ogólne
+  { key: "accent", id: "adminThemeAccent", cssVar: "--accent", kind: "color" },
+  { key: "accentAlt", id: "adminThemeAccentAlt", cssVar: "--accent-alt", kind: "color" },
+  { key: "surfaceColor", id: "adminThemeSurfaceColor", cssVar: "--surface-base-rgb", kind: "rgb" },
+  { key: "bg", id: "adminThemeBg", cssVar: "--page-bg", kind: "color" },
+  { key: "fontMenu", id: "adminThemeFontMenu", cssVar: "--font-menu", kind: "font" },
+  { key: "fontCard", id: "adminThemeFontCard", cssVar: "--font-card", kind: "font" },
+  { key: "fontDescription", id: "adminThemeFontDescription", cssVar: "--font-description", kind: "font" },
+  { key: "cardRadius", id: "adminThemeCardRadius", cssVar: "--card-radius", kind: "px" },
+  { key: "cardGap", id: "adminThemeCardGap", cssVar: "--card-gap", kind: "px" },
+  { key: "panelColor", id: "adminThemePanelColor", cssVar: "--admin-panel-rgb", kind: "rgb" },
+  { key: "panelAlpha", id: "adminThemePanelAlpha", cssVar: "--admin-panel-alpha", kind: "alpha" },
+  { key: "glassBlur", id: "adminThemeGlassBlur", cssVar: "--glass-blur", kind: "px" },
+  // 2. Pasek boczny
+  { key: "sidebarColor", id: "adminSidebarColor", cssVar: "--admin-sidebar-rgb", kind: "rgb" },
+  { key: "sidebarAlpha", id: "adminSidebarAlpha", cssVar: "--admin-sidebar-alpha", kind: "alpha" },
+  { key: "menuTextColor", id: "adminMenuTextColor", cssVar: "--admin-menu-text-color", kind: "color" },
+  { key: "sidebarWidth", id: "adminSidebarWidth", cssVar: "--admin-sidebar-width", kind: "px" },
+  { key: "menuBtnBg", id: "adminMenuBtnBg", cssVar: "--admin-menu-btn-bg", kind: "color" },
+  { key: "menuBtnText", id: "adminMenuBtnText", cssVar: "--admin-menu-btn-text", kind: "color" },
+  { key: "menuBtnActiveBg", id: "adminMenuBtnActiveBg", cssVar: "--admin-menu-btn-active-bg", kind: "color" },
+  { key: "menuBtnActiveText", id: "adminMenuBtnActiveText", cssVar: "--admin-menu-btn-active-text", kind: "color" },
+  { key: "menuBtnHoverBg", id: "adminMenuBtnHoverBg", cssVar: "--admin-menu-btn-hover-bg", kind: "color" },
+  { key: "menuBtnHoverText", id: "adminMenuBtnHoverText", cssVar: "--admin-menu-btn-hover-text", kind: "color" },
+  // 3. Przyciski akcji
+  { key: "btnRadius", id: "adminBtnRadius", cssVar: "--btn-radius", kind: "px" },
+  { key: "btnBorderWidth", id: "adminBtnBorderWidth", cssVar: "--btn-border-width", kind: "px" },
+  { key: "btnBorderColor", id: "adminBtnBorderColor", cssVar: "--btn-border-color", kind: "color" },
+  { key: "btnGlow", id: "adminBtnGlow", cssVar: "--btn-glow", kind: "px" },
+  { key: "btnGlowColor", id: "adminBtnGlowColor", cssVar: "--btn-glow-color", kind: "color" },
+  { key: "btnDangerGlowColor", id: "adminBtnDangerGlowColor", cssVar: "--btn-danger-glow-color", kind: "color" },
+  { key: "btnNormalBg", id: "adminBtnNormalBg", cssVar: "--btn-normal-bg", kind: "color" },
+  { key: "btnNormalText", id: "adminBtnNormalText", cssVar: "--btn-normal-text", kind: "color" },
+  { key: "btnNormalHoverBg", id: "adminBtnNormalHoverBg", cssVar: "--btn-normal-hover-bg", kind: "color" },
+  { key: "btnNormalHoverText", id: "adminBtnNormalHoverText", cssVar: "--btn-normal-hover-text", kind: "color" },
+  { key: "btnDangerBg", id: "adminBtnDangerBg", cssVar: "--btn-danger-bg", kind: "color" },
+  { key: "btnDangerText", id: "adminBtnDangerText", cssVar: "--btn-danger-text", kind: "color" },
+  { key: "btnDangerHoverBg", id: "adminBtnDangerHoverBg", cssVar: "--btn-danger-hover-bg", kind: "color" },
+  { key: "btnDangerHoverText", id: "adminBtnDangerHoverText", cssVar: "--btn-danger-hover-text", kind: "color" }
+];
 
-  // Tło obrazowe
-  adminThemeBackgroundImage: "--background-image",
-  adminThemeBackgroundDim: "--background-image-dim",
-  adminThemeBackgroundBlur: "--background-image-blur",
-  adminThemeBackgroundOpacity: "--background-image-opacity",
+// Tapeta: pola obsługiwane osobno, bo zależą od siebie nawzajem.
+const ADMIN_BACKGROUND_DEFAULTS = { backgroundDim: 34, backgroundBlur: 10, backgroundOpacity: 55 };
 
-  // Ustawienia Menu Bocznego Admina
-  adminSidebarColor: "--admin-sidebar-rgb",
-  adminSidebarAlpha: "--admin-sidebar-alpha",
-  adminSidebarWidth: "--admin-sidebar-width",
-  adminMenuTextColor: "--admin-menu-text-color",
-  adminMenuBtnBg: "--admin-menu-btn-bg",
-  adminMenuBtnText: "--admin-menu-btn-text",
-  adminMenuBtnActiveBg: "--admin-menu-btn-active-bg",
-  adminMenuBtnActiveText: "--admin-menu-btn-active-text",
-  adminMenuBtnHoverBg: "--admin-menu-btn-hover-bg",
-  adminMenuBtnHoverText: "--admin-menu-btn-hover-text",
+// Zmienne ustawiane dodatkowo (pochodne) — potrzebne do pełnego czyszczenia przy resecie.
+const ADMIN_DERIVED_VARS = [
+  "--accent-soft", "--glow-start", "--glow-end", "--tile-panel-rgb",
+  "--background-image", "--background-image-opacity", "--background-image-blur", "--background-image-dim",
+  "--modal-bg-rgb", "--modal-alpha", "--modal-glass-blur", "--modal-backdrop-blur", "--modal-backdrop-alpha", "--modal-radius"
+];
 
-  // Przyciski akcji
-  adminBtnRadius: "--btn-radius",
-  adminBtnGlow: "--btn-glow",
-  adminBtnGlowColor: "--btn-glow-color",
-  adminBtnBorderWidth: "--btn-border-width",
-  adminBtnBorderColor: "--btn-border-color",
-  adminBtnNormalBg: "--btn-normal-bg",
-  adminBtnNormalText: "--btn-normal-text",
-  adminBtnNormalHoverBg: "--btn-normal-hover-bg",
-  adminBtnNormalHoverText: "--btn-normal-hover-text",
-  adminBtnDangerBg: "--btn-danger-bg",
-  adminBtnDangerText: "--btn-danger-text",
-  adminBtnDangerHoverBg: "--btn-danger-hover-bg",
-  adminBtnDangerHoverText: "--btn-danger-hover-text",
-  adminBtnDangerGlowColor: "--btn-danger-glow-color"
-};
+// Pola zmienione w tej sesji edytora (klucze motywu) i nowy plik tła, jeśli wybrany.
+let adminThemeDirty = new Set();
+let adminPendingBackground = null;
+
+// ─── Konwersje wartości ─────────────────────────────────────────────────────
+
+function adminThemeRoot() {
+  return document.body || document.documentElement;
+}
+
+function readCssVar(name) {
+  return getComputedStyle(adminThemeRoot()).getPropertyValue(name).trim();
+}
+
+function channelsToHex(channels) {
+  const parts = String(channels).match(/\d+/g);
+  if (!parts || parts.length < 3) return "#000000";
+  return "#" + parts.slice(0, 3).map((n) => Math.max(0, Math.min(255, Number(n))).toString(16).padStart(2, "0")).join("");
+}
+
+function anyColorToHex(value) {
+  const v = String(value || "").trim();
+  if (/^#[0-9a-f]{6}$/i.test(v)) return v.toLowerCase();
+  if (/^#[0-9a-f]{3}$/i.test(v)) return "#" + v.slice(1).split("").map((c) => c + c).join("").toLowerCase();
+  if (/^rgba?\(/i.test(v)) return channelsToHex(v);
+  return null;
+}
+
+function fontKeyFromStack(stack) {
+  const first = String(stack || "").split(",")[0].replace(/["']/g, "").trim();
+  const known = (typeof fontOptions !== "undefined" ? fontOptions : []).map(([value]) => value);
+  if (known.includes(first)) return first;
+  return known.includes("system") ? "system" : first || "Inter";
+}
+
+// Wartość z motywu (zapisana) → wartość pola formularza.
+function themeValueToInput(field, value) {
+  switch (field.kind) {
+    case "color": return anyColorToHex(value) || "#000000";
+    case "rgb": return value && String(value).startsWith("#") ? anyColorToHex(value) : channelsToHex(value);
+    case "alpha": return Math.round(Number(value) * 100);
+    case "px": return parseInt(value, 10) || 0;
+    case "font": return value || "system";
+    default: return value;
+  }
+}
+
+// Aktualna wartość z CSS → wartość pola formularza.
+function cssValueToInput(field) {
+  const raw = readCssVar(field.cssVar);
+  switch (field.kind) {
+    case "color": return anyColorToHex(raw) || "#000000";
+    case "rgb": return channelsToHex(raw);
+    case "alpha": return Math.round((Number(raw) || 0) * 100);
+    case "px": return parseInt(raw, 10) || 0;
+    case "font": return fontKeyFromStack(raw);
+    default: return raw;
+  }
+}
+
+// Wartość pola formularza → wartość zapisywana w motywie.
+function inputToThemeValue(field, inputValue) {
+  switch (field.kind) {
+    case "alpha": return String(Number(inputValue) / 100);
+    case "px": return `${Number(inputValue) || 0}px`;
+    default: return String(inputValue);
+  }
+}
+
+// Wartość z motywu → wartość zmiennej CSS.
+function themeValueToCss(field, value) {
+  switch (field.kind) {
+    case "rgb": return hexToRgbChannels(anyColorToHex(value) || "#000000");
+    case "font": return fontStack(value);
+    case "px": return String(value).endsWith("px") ? String(value) : `${parseInt(value, 10) || 0}px`;
+    default: return String(value);
+  }
+}
+
+function normalizeAdminTheme(theme) {
+  let t = theme && typeof theme === "object" ? theme : {};
+  if (t.saveTheme?.themeSettings) t = t.saveTheme.themeSettings;
+  if (t.themeSettings) t = t.themeSettings;
+  if (t.theme && typeof t.theme === "object") t = t.theme;
+  return t;
+}
+
+// ─── Widok ───────────────────────────────────────────────────────────────────
 
 function renderAdminThemeTab() {
+  const box = 'class="preset-manager-box" style="margin-top: 10px; padding: 18px; border: 1px solid var(--line); border-radius: 14px; background: rgba(255, 255, 255, 0.02);"';
   return `
     <div class="admin-tab-container">
       <section class="admin-section-card">
-        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 8px;">
-          <h2 style="margin: 0;">⚙️ Edytor Wyglądu Zaplecza (CSS)</h2>
-        </div>
-        <p class="settings-note">Niezależne ustawienia wyglądu, tapety tła, kolorów i efektów Glassmorphism dla panelu administracyjnego z natychmiastowym podglądem na żywo.</p>
+        <h2 style="margin: 0 0 8px;">⚙️ Wygląd Zaplecza</h2>
+        <p class="settings-note">Zmiany widać od razu. Zapisz, żeby zostały na stałe. „Cofnij zmiany” wraca do ostatnio zapisanego wyglądu, a „Wygląd startowy” — do wyglądu po instalacji.</p>
 
         <form id="adminAppearanceForm" class="admin-form-panel">
-          
-          <!-- 1. Stylistyka Ogólna i Karty Zaplecza -->
-          <div class="preset-manager-box" style="margin-top: 14px; padding: 18px; border: 1px solid var(--line); border-radius: 14px; background: rgba(255, 255, 255, 0.02);">
-            <h4 style="margin-top: 0; margin-bottom: 6px; color: var(--accent);">🎨 1. Stylistyka Ogólna, Tło i Karty Zaplecza</h4>
-            <p style="margin: 0 0 14px 0; font-size: 12px; color: var(--muted);">Akcenty, kolorystyka tła, czcionki, tapeta obrazowa oraz parametry szkła paneli i kart.</p>
 
+          <div ${box}>
+            <h4 style="margin-top: 0; margin-bottom: 6px; color: var(--accent);">🎨 1. Kolory, czcionki i panele</h4>
             <div class="admin-form-grid three-cols">
-              <label>Akcent główny Zaplecza<input id="adminThemeAccent" type="color"></label>
+              <label>Akcent główny<input id="adminThemeAccent" type="color"></label>
               <label>Akcent pomocniczy<input id="adminThemeAccentAlt" type="color"></label>
-              <label>Kolor bazowy powierzchni<input id="adminThemeSurfaceColor" type="color"></label>
-              
-              <label>Czcionka menu Admina<select id="adminThemeFontMenu">${renderFontOptions()}</select></label>
-              <label>Czcionka kart Admina<select id="adminThemeFontCard">${renderFontOptions()}</select></label>
-              <label>Czcionka opisów Admina<select id="adminThemeFontDescription">${renderFontOptions()}</select></label>
-              
-              <label>Tło strony Zaplecza<input id="adminThemeBg" type="color"></label>
-              <label>Zaokrąglenie kart Admina<input id="adminThemeCardRadius" type="range" min="8" max="34" step="1"><span></span></label>
-              <label>Odstęp kart Admina<input id="adminThemeCardGap" type="range" min="8" max="28" step="1"><span></span></label>
-              
-              <label>Kolor paneli Admina<input id="adminThemePanelColor" type="color"></label>
-              <label>Krycie paneli Admina (Glass)<input id="adminThemePanelAlpha" type="range" min="5" max="95" step="1"><span></span></label>
-              <label>Rozmycie paneli (Blur)<input id="adminThemeGlassBlur" type="range" min="0" max="60" step="1"><span></span></label>
+              <label>Kolor okien (modali)<input id="adminThemeSurfaceColor" type="color"></label>
+
+              <label>Czcionka menu<select id="adminThemeFontMenu">${renderFontOptions()}</select></label>
+              <label>Czcionka kart<select id="adminThemeFontCard">${renderFontOptions()}</select></label>
+              <label>Czcionka opisów<select id="adminThemeFontDescription">${renderFontOptions()}</select></label>
+
+              <label>Tło strony<input id="adminThemeBg" type="color"></label>
+              <label>Zaokrąglenie kart<input id="adminThemeCardRadius" type="range" min="0" max="34" step="1"><span></span></label>
+              <label>Odstęp kart<input id="adminThemeCardGap" type="range" min="8" max="40" step="1"><span></span></label>
+
+              <label>Kolor paneli<input id="adminThemePanelColor" type="color"></label>
+              <label>Krycie paneli<input id="adminThemePanelAlpha" type="range" min="5" max="100" step="1"><span></span></label>
+              <label>Rozmycie paneli<input id="adminThemeGlassBlur" type="range" min="0" max="40" step="1"><span></span></label>
             </div>
 
-            <!-- Sterowanie Tłem Obrazowym jak na Stronie Głównej -->
-            <span style="font-size: 11px; font-weight: bold; display: block; margin: 16px 0 8px; color: var(--accent);">🖼️ Tapeta Obrazowa i Efekty Tła Zaplecza</span>
+            <span style="font-size: 11px; font-weight: bold; display: block; margin: 16px 0 8px; color: var(--accent);">🖼️ Tapeta</span>
             <div class="admin-form-grid three-cols">
               <label>Obraz tła
                 <select id="adminThemeBackgroundImage">
-                  <option value="">Wyłączony (Tylko kolor tła)</option>
-                  <option value="default">Domyślne tło (background.jpg)</option>
-                  <option value="custom">Własny upload (plik z dysku)</option>
+                  <option value="">Wyłączony (tylko kolor tła)</option>
+                  <option value="default">Domyślne tło</option>
+                  <option value="custom">Własny obraz</option>
                 </select>
               </label>
-              <label>Upload nowego obrazu tła<input id="adminThemeBackgroundUpload" type="file" accept="image/png,image/jpeg,image/webp"></label>
-              <label>Przyciemnienie tła (Dim)<input id="adminThemeBackgroundDim" type="range" min="0" max="85" step="1"><span></span></label>
-              <label>Rozmycie tła / Blur<input id="adminThemeBackgroundBlur" type="range" min="0" max="40" step="1"><span></span></label>
-              <label>Widoczność / Opacity tła<input id="adminThemeBackgroundOpacity" type="range" min="0" max="100" step="1"><span></span></label>
+              <label>Wgraj własny obraz<input id="adminThemeBackgroundUpload" type="file" accept="image/png,image/jpeg,image/webp"></label>
+              <label>Przyciemnienie<input id="adminThemeBackgroundDim" type="range" min="0" max="85" step="1"><span></span></label>
+              <label>Rozmycie tapety<input id="adminThemeBackgroundBlur" type="range" min="0" max="40" step="1"><span></span></label>
+              <label>Widoczność tapety<input id="adminThemeBackgroundOpacity" type="range" min="0" max="100" step="1"><span></span></label>
             </div>
           </div>
 
-          <!-- 2. Menu Boczne Zaplecza -->
-          <div class="preset-manager-box" style="margin-top: 10px; padding: 18px; border: 1px solid var(--line); border-radius: 14px; background: rgba(255, 255, 255, 0.02);">
-            <h4 style="margin-top: 0; margin-bottom: 6px; color: var(--accent);">📑 2. Pasek Boczny i Nawigacja Zaplecza</h4>
-            <p style="margin: 0 0 14px 0; font-size: 12px; color: var(--muted);">Dedykowana konfiguracja koloru tła, szerokości oraz przycisków w lewym menu Zaplecza.</p>
-            
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
-              <label style="font-size: 11px; display: grid; gap: 2px;">Kolor tła menu Admina<input id="adminSidebarColor" type="color" style="width:100%; height:32px; background: transparent; border: 0; cursor: pointer;"></label>
-              <label style="font-size: 11px; display: grid; gap: 2px;">Krycie tła menu Admina<input id="adminSidebarAlpha" type="range" min="5" max="95" step="1"><span></span></label>
-
-              <label style="font-size: 11px; display: grid; gap: 2px;">Kolor czcionki menu<input id="adminMenuTextColor" type="color" style="width:100%; height:32px; background: transparent; border: 0; cursor: pointer;"></label>
-              <label style="font-size: 11px; display: grid; gap: 2px;">Szerokość menu Admina<input id="adminSidebarWidth" type="range" min="220" max="380" step="5"><span></span></label>
+          <div ${box}>
+            <h4 style="margin-top: 0; margin-bottom: 6px; color: var(--accent);">📑 2. Pasek boczny</h4>
+            <div class="admin-form-grid">
+              <label>Kolor paska<input id="adminSidebarColor" type="color"></label>
+              <label>Krycie paska<input id="adminSidebarAlpha" type="range" min="5" max="100" step="1"><span></span></label>
+              <label>Kolor napisów paska<input id="adminMenuTextColor" type="color"></label>
+              <label>Szerokość paska<input id="adminSidebarWidth" type="range" min="220" max="380" step="5"><span></span></label>
             </div>
-
-            <span style="font-size: 11px; font-weight: bold; display: block; margin: 12px 0 8px; color: var(--accent);">Styl Przycisków Nawigacji Menu</span>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-              <label style="font-size: 11px;">Tło zwykłe przycisków<input id="adminMenuBtnBg" type="color" style="width:100%; height:28px; background: transparent; border: 0;"></label>
-              <label style="font-size: 11px;">Tekst zwykły przycisków<input id="adminMenuBtnText" type="color" style="width:100%; height:28px; background: transparent; border: 0;"></label>
-              <label style="font-size: 11px;">Tło aktywnego przycisku<input id="adminMenuBtnActiveBg" type="color" style="width:100%; height:28px; background: transparent; border: 0;"></label>
-              <label style="font-size: 11px;">Tekst aktywnego przycisku<input id="adminMenuBtnActiveText" type="color" style="width:100%; height:28px; background: transparent; border: 0;"></label>
-              <label style="font-size: 11px;">Tło Hover przycisków<input id="adminMenuBtnHoverBg" type="color" style="width:100%; height:28px; background: transparent; border: 0;"></label>
-              <label style="font-size: 11px;">Tekst Hover przycisków<input id="adminMenuBtnHoverText" type="color" style="width:100%; height:28px; background: transparent; border: 0;"></label>
+            <span style="font-size: 11px; font-weight: bold; display: block; margin: 16px 0 8px; color: var(--accent);">Przyciski menu</span>
+            <div class="admin-form-grid">
+              <label>Tło<input id="adminMenuBtnBg" type="color"></label>
+              <label>Tekst<input id="adminMenuBtnText" type="color"></label>
+              <label>Tło po najechaniu<input id="adminMenuBtnHoverBg" type="color"></label>
+              <label>Tekst po najechaniu<input id="adminMenuBtnHoverText" type="color"></label>
+              <label>Tło aktywnego<input id="adminMenuBtnActiveBg" type="color"></label>
+              <label>Tekst aktywnego<input id="adminMenuBtnActiveText" type="color"></label>
             </div>
           </div>
 
-          <!-- 3. Stylistyka Przycisków Akcji Zaplecza -->
-          <div class="preset-manager-box" style="margin-top: 10px; padding: 18px; border: 1px solid var(--line); border-radius: 14px; background: rgba(255, 255, 255, 0.02);">
-            <h4 style="margin-top: 0; margin-bottom: 14px; color: var(--accent);">🔘 3. Stylistyka Przycisków Akcji Zaplecza</h4>
-            
+          <div ${box}>
+            <h4 style="margin-top: 0; margin-bottom: 14px; color: var(--accent);">🔘 3. Przyciski akcji</h4>
             <div class="admin-form-grid three-cols" style="margin-bottom: 16px;">
-              <label>Zaokrąglenie przycisków<input id="adminBtnRadius" type="range" min="0" max="30" step="1"><span></span></label>
-              <label>Grubość ramki przycisków<input id="adminBtnBorderWidth" type="range" min="0" max="4" step="1"><span></span></label>
-              <label>Kolor ramki przycisków<input id="adminBtnBorderColor" type="color"></label>
-              
-              <label>Wielkość poświaty/cienia<input id="adminBtnGlow" type="range" min="0" max="30" step="1"><span></span></label>
-              <label>Kolor poświaty Primary<input id="adminBtnGlowColor" type="color"></label>
-              <label>Kolor poświaty Danger<input id="adminBtnDangerGlowColor" type="color"></label>
+              <label>Zaokrąglenie<input id="adminBtnRadius" type="range" min="0" max="30" step="1"><span></span></label>
+              <label>Grubość ramki<input id="adminBtnBorderWidth" type="range" min="0" max="4" step="1"><span></span></label>
+              <label>Kolor ramki<input id="adminBtnBorderColor" type="color"></label>
+              <label>Wielkość poświaty<input id="adminBtnGlow" type="range" min="0" max="30" step="1"><span></span></label>
+              <label>Poświata głównego<input id="adminBtnGlowColor" type="color"></label>
+              <label>Poświata ostrzegawczego<input id="adminBtnDangerGlowColor" type="color"></label>
             </div>
 
-            <div class="admin-form-grid" style="grid-template-columns: 1fr 1fr; gap: 18px; align-items: start;">
-              <!-- Przycisk Zwykły (Primary) -->
+            <div class="admin-form-grid" style="gap: 18px; align-items: start;">
               <div style="padding: 14px; border: 1px solid var(--line); border-radius: 10px; background: rgba(0,0,0,0.12);">
-                <h5 style="margin: 0 0 10px 0; font-size: 13px;">Przycisk Główny (Primary)</h5>
-                <div style="margin-bottom: 12px; display: flex; justify-content: center; align-items: center; min-height: 48px;">
-                  <button type="button" id="previewBtnNormal" class="button primary" style="padding: 10px 20px; font-size: 13px; font-weight: bold; cursor: pointer;">💾 Przykładowy Primary</button>
+                <h5 style="margin: 0 0 10px 0; font-size: 13px;">Przycisk główny</h5>
+                <div style="margin-bottom: 12px; display: flex; justify-content: center; gap: 10px; flex-wrap: wrap;">
+                  <button type="button" class="button primary" tabindex="-1">💾 Zapisz</button>
+                  <button type="button" class="button" tabindex="-1">Zwykły</button>
                 </div>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                  <label style="font-size: 11px;">Tło zwykłe<input id="adminBtnNormalBg" type="color"></label>
-                  <label style="font-size: 11px;">Tekst zwykły<input id="adminBtnNormalText" type="color"></label>
-                  <label style="font-size: 11px;">Tło Hover<input id="adminBtnNormalHoverBg" type="color"></label>
-                  <label style="font-size: 11px;">Tekst Hover<input id="adminBtnNormalHoverText" type="color"></label>
+                <div class="admin-form-grid">
+                  <label>Tło<input id="adminBtnNormalBg" type="color"></label>
+                  <label>Tekst<input id="adminBtnNormalText" type="color"></label>
+                  <label>Tło po najechaniu<input id="adminBtnNormalHoverBg" type="color"></label>
+                  <label>Tekst po najechaniu<input id="adminBtnNormalHoverText" type="color"></label>
                 </div>
               </div>
 
-              <!-- Przycisk Danger -->
-              <div style="padding: 14px; border: 1px solid rgba(220, 38, 38, 0.4); border-radius: 10px; background: rgba(220, 38, 38, 0.05);">
-                <h5 style="margin: 0 0 10px 0; font-size: 13px; color: #ff6b6b;">⚠️ Przycisk Niebezpieczny (Danger)</h5>
-                <div style="margin-bottom: 12px; display: flex; justify-content: center; align-items: center; min-height: 48px;">
-                  <button type="button" id="previewBtnDanger" class="button danger" style="padding: 10px 20px; font-size: 13px; font-weight: bold; cursor: pointer;">🗑️ Przykładowy Danger</button>
+              <div style="padding: 14px; border: 1px solid var(--line); border-radius: 10px; background: rgba(0,0,0,0.12);">
+                <h5 style="margin: 0 0 10px 0; font-size: 13px;">Przycisk ostrzegawczy</h5>
+                <div style="margin-bottom: 12px; display: flex; justify-content: center;">
+                  <button type="button" class="button danger" tabindex="-1">🗑️ Usuń</button>
                 </div>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                  <label style="font-size: 11px;">Tło zwykłe<input id="adminBtnDangerBg" type="color"></label>
-                  <label style="font-size: 11px;">Tekst zwykły<input id="adminBtnDangerText" type="color"></label>
-                  <label style="font-size: 11px;">Tło Hover<input id="adminBtnDangerHoverBg" type="color"></label>
-                  <label style="font-size: 11px;">Tekst Hover<input id="adminBtnDangerHoverText" type="color"></label>
+                <div class="admin-form-grid">
+                  <label>Tło<input id="adminBtnDangerBg" type="color"></label>
+                  <label>Tekst<input id="adminBtnDangerText" type="color"></label>
+                  <label>Tło po najechaniu<input id="adminBtnDangerHoverBg" type="color"></label>
+                  <label>Tekst po najechaniu<input id="adminBtnDangerHoverText" type="color"></label>
                 </div>
               </div>
             </div>
           </div>
 
-          <menu style="margin-top: 18px; display: flex; justify-content: flex-end; gap: 12px;">
-            <button id="resetAdminAppearance" class="button danger" type="button">Przywróć domyślne Zaplecza</button>
-            <button class="button primary" type="submit">💾 Zapisz motyw Zaplecza</button>
+          <menu style="margin-top: 18px; display: flex; justify-content: flex-end; gap: 12px; flex-wrap: wrap;">
+            <button id="resetAdminAppearance" class="button danger" type="button">Wygląd startowy</button>
+            <button id="revertAdminAppearance" class="button" type="button">Cofnij zmiany</button>
+            <button class="button primary" type="submit">💾 Zapisz wygląd</button>
           </menu>
         </form>
       </section>
@@ -176,365 +268,228 @@ function renderAdminThemeTab() {
   `;
 }
 
-function populateAdminAppearanceForm(t) {
-  if (!t) t = {};
-  if (t.saveTheme?.themeSettings) t = t.saveTheme.themeSettings;
-  if (t.themeSettings) t = t.themeSettings;
-  if (t.theme) t = t.theme;
+// ─── Formularz ───────────────────────────────────────────────────────────────
 
-  const setVal = (id, val) => {
-    const el = document.querySelector(`#${id}`);
-    if (el) {
-      el.value = val;
-      if (typeof updateRangeValue === "function") updateRangeValue(el);
-    }
-  };
+function setAdminInput(id, value) {
+  const el = document.querySelector(`#${id}`);
+  if (!el) return;
+  el.value = value;
+  if (typeof updateRangeValue === "function") updateRangeValue(el);
+}
 
-  setVal("adminThemeAccent", t.accent || "#54ffb2");
-  setVal("adminThemeAccentAlt", t.accentAlt || "#3390ff");
-  setVal("adminThemeSurfaceColor", t.surfaceColor || "#0e181d");
-  setVal("adminThemeFontMenu", t.fontMenu || "Inter");
-  setVal("adminThemeFontCard", t.fontCard || "Inter");
-  setVal("adminThemeFontDescription", t.fontDescription || "Inter");
-  setVal("adminThemeBg", t.bg || "#071014");
-  setVal("adminThemeCardRadius", parseInt(t.cardRadius) || 16);
-  setVal("adminThemeCardGap", parseInt(t.cardGap) || 14);
-  setVal("adminThemePanelColor", t.panelColor || "#ffffff");
-  setVal("adminThemePanelAlpha", Math.round(Number(t.panelAlpha || 0.85) * 100));
-  setVal("adminThemeGlassBlur", parseInt(t.glassBlur) || 12);
+function populateAdminAppearanceForm(theme) {
+  const t = normalizeAdminTheme(theme);
 
-  // Tło obrazowe
-  setVal("adminThemeBackgroundImage", t.backgroundImage || "");
-  setVal("adminThemeBackgroundDim", Math.round(Number(t.backgroundDim ?? 0.34) * 100));
-  setVal("adminThemeBackgroundBlur", parseInt(t.backgroundBlur ?? 10, 10));
-  setVal("adminThemeBackgroundOpacity", Math.round(Number(t.backgroundOpacity ?? 0.55) * 100));
+  ADMIN_THEME_FIELDS.forEach((field) => {
+    const saved = t[field.key];
+    const value = saved != null && saved !== "" ? themeValueToInput(field, saved) : cssValueToInput(field);
+    setAdminInput(field.id, value);
+  });
+
+  setAdminInput("adminThemeBackgroundImage", ["default", "custom"].includes(t.backgroundImage) ? t.backgroundImage : "");
+  setAdminInput("adminThemeBackgroundDim", t.backgroundDim != null ? Math.round(Number(t.backgroundDim) * 100) : ADMIN_BACKGROUND_DEFAULTS.backgroundDim);
+  setAdminInput("adminThemeBackgroundBlur", t.backgroundBlur != null ? parseInt(t.backgroundBlur, 10) || 0 : ADMIN_BACKGROUND_DEFAULTS.backgroundBlur);
+  setAdminInput("adminThemeBackgroundOpacity", t.backgroundOpacity != null ? Math.round(Number(t.backgroundOpacity) * 100) : ADMIN_BACKGROUND_DEFAULTS.backgroundOpacity);
   const uploadInput = document.querySelector("#adminThemeBackgroundUpload");
   if (uploadInput) uploadInput.value = "";
-
-  // Menu Boczna Zaplecza
-  setVal("adminSidebarColor", t.sidebarColor || "#0d171c");
-  setVal("adminSidebarAlpha", Math.round(Number(t.sidebarAlpha || 0.85) * 100));
-  setVal("adminMenuTextColor", t.menuTextColor || "#94a3b8");
-  setVal("adminSidebarWidth", parseInt(t.sidebarWidth) || 280);
-
-  setVal("adminMenuBtnBg", t.menuBtnBg || "#0d171c");
-  setVal("adminMenuBtnText", t.menuBtnText || "#94a3b8");
-  setVal("adminMenuBtnActiveBg", t.menuBtnActiveBg || "#54ffb2");
-  setVal("adminMenuBtnActiveText", t.menuBtnActiveText || "#071014");
-  setVal("adminMenuBtnHoverBg", t.menuBtnHoverBg || "#16242c");
-  setVal("adminMenuBtnHoverText", t.menuBtnHoverText || "#54ffb2");
-
-  // Przycisk Zwykły
-  setVal("adminBtnNormalBg", t.btnNormalBg || "#54ffb2");
-  setVal("adminBtnNormalText", t.btnNormalText || "#071014");
-  setVal("adminBtnNormalHoverBg", t.btnNormalHoverBg || "#3ce89f");
-  setVal("adminBtnNormalHoverText", t.btnNormalHoverText || "#071014");
-
-  // Przycisk Danger
-  setVal("adminBtnDangerBg", t.btnDangerBg || "#dc2626");
-  setVal("adminBtnDangerText", t.btnDangerText || "#ffffff");
-  setVal("adminBtnDangerHoverBg", t.btnDangerHoverBg || "#b91c1c");
-  setVal("adminBtnDangerHoverText", t.btnDangerHoverText || "#ffffff");
-
-  // Cechy ogólne przycisków
-  setVal("adminBtnRadius", parseInt(t.btnRadius) || 12);
-  setVal("adminBtnGlow", parseInt(t.btnGlow) || 10);
-  setVal("adminBtnGlowColor", t.btnGlowColor || "#54ffb2");
-  setVal("adminBtnDangerGlowColor", t.btnDangerGlowColor || "#dc2626");
-  setVal("adminBtnBorderWidth", parseInt(t.btnBorderWidth) || 1);
-  setVal("adminBtnBorderColor", t.btnBorderColor || "rgba(255,255,255,0.15)");
-
-  updateAdminButtonPreviews();
 }
 
-function updateAdminButtonPreviews() {
-  const normalBg = document.querySelector("#adminBtnNormalBg")?.value || "#54ffb2";
-  const normalText = document.querySelector("#adminBtnNormalText")?.value || "#071014";
-  const normalHoverBg = document.querySelector("#adminBtnNormalHoverBg")?.value || "#3ce89f";
-  const normalHoverText = document.querySelector("#adminBtnNormalHoverText")?.value || "#071014";
-
-  const dangerBg = document.querySelector("#adminBtnDangerBg")?.value || "#dc2626";
-  const dangerText = document.querySelector("#adminBtnDangerText")?.value || "#ffffff";
-  const dangerHoverBg = document.querySelector("#adminBtnDangerHoverBg")?.value || "#b91c1c";
-  const dangerHoverText = document.querySelector("#adminBtnDangerHoverText")?.value || "#ffffff";
-
-  const radius = `${document.querySelector("#adminBtnRadius")?.value || 12}px`;
-  const glow = `${document.querySelector("#adminBtnGlow")?.value || 10}px`;
-  const glowColor = document.querySelector("#adminBtnGlowColor")?.value || "#54ffb2";
-  const dangerGlowColor = document.querySelector("#adminBtnDangerGlowColor")?.value || "#dc2626";
-  const borderWidth = `${document.querySelector("#adminBtnBorderWidth")?.value || 1}px`;
-  const borderColor = document.querySelector("#adminBtnBorderColor")?.value || "rgba(255,255,255,0.15)";
-  const fontCard = document.querySelector("#adminThemeFontCard")?.value || "Inter";
-
-  const btnNormal = document.querySelector("#previewBtnNormal");
-  if (btnNormal) {
-    btnNormal.style.setProperty("background", normalBg, "important");
-    btnNormal.style.setProperty("background-color", normalBg, "important");
-    btnNormal.style.setProperty("color", normalText, "important");
-    btnNormal.style.setProperty("border-radius", radius, "important");
-    btnNormal.style.setProperty("font-family", fontCard, "important");
-    btnNormal.style.setProperty("border", `${borderWidth} solid ${borderColor}`, "important");
-    btnNormal.style.setProperty("box-shadow", `0 4px ${glow} ${glowColor}66`, "important");
-    
-    btnNormal.onmouseenter = () => {
-      btnNormal.style.setProperty("background", normalHoverBg, "important");
-      btnNormal.style.setProperty("background-color", normalHoverBg, "important");
-      btnNormal.style.setProperty("color", normalHoverText, "important");
-    };
-    btnNormal.onmouseleave = () => {
-      btnNormal.style.setProperty("background", normalBg, "important");
-      btnNormal.style.setProperty("background-color", normalBg, "important");
-      btnNormal.style.setProperty("color", normalText, "important");
-    };
-  }
-
-  const btnDanger = document.querySelector("#previewBtnDanger");
-  if (btnDanger) {
-    btnDanger.style.setProperty("background", dangerBg, "important");
-    btnDanger.style.setProperty("background-color", dangerBg, "important");
-    btnDanger.style.setProperty("color", dangerText, "important");
-    btnDanger.style.setProperty("border-radius", radius, "important");
-    btnDanger.style.setProperty("font-family", fontCard, "important");
-    btnDanger.style.setProperty("border", `${borderWidth} solid ${borderColor}`, "important");
-    btnDanger.style.setProperty("box-shadow", `0 4px ${glow} ${dangerGlowColor}66`, "important");
-
-    btnDanger.onmouseenter = () => {
-      btnDanger.style.setProperty("background", dangerHoverBg, "important");
-      btnDanger.style.setProperty("background-color", dangerHoverBg, "important");
-      btnDanger.style.setProperty("color", dangerHoverText, "important");
-    };
-    btnDanger.onmouseleave = () => {
-      btnDanger.style.setProperty("background", dangerBg, "important");
-      btnDanger.style.setProperty("background-color", dangerBg, "important");
-      btnDanger.style.setProperty("color", dangerText, "important");
-    };
-  }
-}
-
-function bindAdminThemeEvents() {
-  const adminForm = document.querySelector("#adminAppearanceForm");
-  if (adminForm) {
-    const applyLive = (e) => {
-      if (e && e.target && typeof updateRangeValue === "function") {
-        updateRangeValue(e.target);
-      }
-      const current = collectAdminTheme();
-      applyAdminThemeStyles(current);
-      updateAdminButtonPreviews();
-    };
-
-    adminForm.addEventListener("input", applyLive);
-    adminForm.addEventListener("change", applyLive);
-
-    const uploadInput = document.querySelector("#adminThemeBackgroundUpload");
-    if (uploadInput) {
-      uploadInput.addEventListener("change", async () => {
-        if (uploadInput.files && uploadInput.files[0]) {
-          try {
-            const dataUrl = await fileToDataUrl(uploadInput.files[0]);
-            const bgSelect = document.querySelector("#adminThemeBackgroundImage");
-            if (bgSelect) bgSelect.value = "custom";
-            if (!state.adminTheme) state.adminTheme = {};
-            state.adminTheme.backgroundImageDataUrl = dataUrl;
-            state.adminTheme.backgroundImage = "custom";
-            
-            const current = collectAdminTheme();
-            current.backgroundImage = "custom";
-            current.backgroundImageDataUrl = dataUrl;
-            applyAdminThemeStyles(current);
-          } catch (err) {
-            console.error("Błąd odczytu pliku tła:", err);
-          }
-        }
-      });
-    }
-  }
-
-  document.querySelector("#adminAppearanceForm")?.addEventListener("submit", saveAdminAppearance);
-  document.querySelector("#resetAdminAppearance")?.addEventListener("click", resetAdminAppearance);
-
-  // Pierwsze załadowanie wartości do formularza
-  populateAdminAppearanceForm(state.adminTheme || {});
-}
-
-function collectAdminTheme() {
+function collectBackgroundFromForm() {
   return {
-    accent: document.querySelector("#adminThemeAccent")?.value || "#54ffb2",
-    accentAlt: document.querySelector("#adminThemeAccentAlt")?.value || "#3390ff",
-    surfaceColor: document.querySelector("#adminThemeSurfaceColor")?.value || "#0e181d",
-    fontMenu: document.querySelector("#adminThemeFontMenu")?.value || "Inter",
-    fontCard: document.querySelector("#adminThemeFontCard")?.value || "Inter",
-    fontDescription: document.querySelector("#adminThemeFontDescription")?.value || "Inter",
-    bg: document.querySelector("#adminThemeBg")?.value || "#071014",
-    cardRadius: `${document.querySelector("#adminThemeCardRadius")?.value || 16}px`,
-    cardGap: `${document.querySelector("#adminThemeCardGap")?.value || 14}px`,
-    panelColor: document.querySelector("#adminThemePanelColor")?.value || "#ffffff",
-    panelAlpha: String(Number(document.querySelector("#adminThemePanelAlpha")?.value || 85) / 100),
-    glassBlur: `${document.querySelector("#adminThemeGlassBlur")?.value || 12}px`,
-
-    // Tło obrazowe
     backgroundImage: document.querySelector("#adminThemeBackgroundImage")?.value || "",
-    backgroundDim: String(Number(document.querySelector("#adminThemeBackgroundDim")?.value || 34) / 100),
-    backgroundBlur: `${document.querySelector("#adminThemeBackgroundBlur")?.value || 10}px`,
-    backgroundOpacity: String(Number(document.querySelector("#adminThemeBackgroundOpacity")?.value || 55) / 100),
-    backgroundUrl: state.adminTheme?.backgroundUrl || "",
-    backgroundImageDataUrl: state.adminTheme?.backgroundImageDataUrl || "",
-
-    sidebarColor: document.querySelector("#adminSidebarColor")?.value || "#0d171c",
-    sidebarAlpha: String(Number(document.querySelector("#adminSidebarAlpha")?.value || 85) / 100),
-    menuTextColor: document.querySelector("#adminMenuTextColor")?.value || "#94a3b8",
-    sidebarWidth: `${document.querySelector("#adminSidebarWidth")?.value || 280}px`,
-    menuBtnBg: document.querySelector("#adminMenuBtnBg")?.value || "#0d171c",
-    menuBtnText: document.querySelector("#adminMenuBtnText")?.value || "#94a3b8",
-    menuBtnActiveBg: document.querySelector("#adminMenuBtnActiveBg")?.value || "#54ffb2",
-    menuBtnActiveText: document.querySelector("#adminMenuBtnActiveText")?.value || "#071014",
-    menuBtnHoverBg: document.querySelector("#adminMenuBtnHoverBg")?.value || "#16242c",
-    menuBtnHoverText: document.querySelector("#adminMenuBtnHoverText")?.value || "#54ffb2",
-
-    btnNormalBg: document.querySelector("#adminBtnNormalBg")?.value || "#54ffb2",
-    btnNormalText: document.querySelector("#adminBtnNormalText")?.value || "#071014",
-    btnNormalHoverBg: document.querySelector("#adminBtnNormalHoverBg")?.value || "#3ce89f",
-    btnNormalHoverText: document.querySelector("#adminBtnNormalHoverText")?.value || "#071014",
-
-    btnDangerBg: document.querySelector("#adminBtnDangerBg")?.value || "#dc2626",
-    btnDangerText: document.querySelector("#adminBtnDangerText")?.value || "#ffffff",
-    btnDangerHoverBg: document.querySelector("#adminBtnDangerHoverBg")?.value || "#b91c1c",
-    btnDangerHoverText: document.querySelector("#adminBtnDangerHoverText")?.value || "#ffffff",
-
-    btnRadius: `${document.querySelector("#adminBtnRadius")?.value || 12}px`,
-    btnGlow: `${document.querySelector("#adminBtnGlow")?.value || 10}px`,
-    btnGlowColor: document.querySelector("#adminBtnGlowColor")?.value || "#54ffb2",
-    btnDangerGlowColor: document.querySelector("#adminBtnDangerGlowColor")?.value || "#dc2626",
-    btnBorderWidth: `${document.querySelector("#adminBtnBorderWidth")?.value || 1}px`,
-    btnBorderColor: document.querySelector("#adminBtnBorderColor")?.value || "rgba(255,255,255,0.15)"
+    backgroundDim: String(Number(document.querySelector("#adminThemeBackgroundDim")?.value ?? 34) / 100),
+    backgroundBlur: `${Number(document.querySelector("#adminThemeBackgroundBlur")?.value ?? 10)}px`,
+    backgroundOpacity: String(Number(document.querySelector("#adminThemeBackgroundOpacity")?.value ?? 55) / 100)
   };
 }
 
-async function saveAdminAppearance(e) {
-  e.preventDefault();
+const ADMIN_BACKGROUND_INPUT_IDS = new Set([
+  "adminThemeBackgroundImage", "adminThemeBackgroundDim", "adminThemeBackgroundBlur", "adminThemeBackgroundOpacity"
+]);
+
+function bindAdminThemeEvents() {
+  adminThemeDirty = new Set();
+  adminPendingBackground = null;
+
+  const form = document.querySelector("#adminAppearanceForm");
+  if (!form) return;
+
+  populateAdminAppearanceForm(state.adminTheme || {});
+
+  const onEdit = (event) => {
+    const input = event.target;
+    if (!input?.id) return;
+    if (typeof updateRangeValue === "function") updateRangeValue(input);
+
+    const field = ADMIN_THEME_FIELDS.find((item) => item.id === input.id);
+    if (field) {
+      adminThemeDirty.add(field.key);
+      applyAdminThemeField(field, inputToThemeValue(field, input.value));
+      return;
+    }
+    if (ADMIN_BACKGROUND_INPUT_IDS.has(input.id)) {
+      ["backgroundImage", "backgroundDim", "backgroundBlur", "backgroundOpacity"].forEach((key) => adminThemeDirty.add(key));
+      applyAdminBackground({ ...collectBackgroundFromForm(), backgroundUrl: state.adminTheme?.backgroundUrl }, adminPendingBackground);
+    }
+  };
+
+  form.addEventListener("input", onEdit);
+  form.addEventListener("change", onEdit);
+
+  document.querySelector("#adminThemeBackgroundUpload")?.addEventListener("change", async (event) => {
+    event.stopPropagation();
+    const file = event.target.files?.[0];
+    if (!file) return;
+    if (file.size > 8 * 1024 * 1024) {
+      showToast("Obraz jest za duży (maks. 8 MB).");
+      event.target.value = "";
+      return;
+    }
+    try {
+      adminPendingBackground = await fileToDataUrl(file);
+      setAdminInput("adminThemeBackgroundImage", "custom");
+      ["backgroundImage", "backgroundDim", "backgroundBlur", "backgroundOpacity"].forEach((key) => adminThemeDirty.add(key));
+      applyAdminBackground(collectBackgroundFromForm(), adminPendingBackground);
+    } catch (error) {
+      showToast("Nie udało się odczytać pliku.");
+    }
+  });
+
+  form.addEventListener("submit", saveAdminAppearance);
+  document.querySelector("#resetAdminAppearance")?.addEventListener("click", resetAdminAppearance);
+  document.querySelector("#revertAdminAppearance")?.addEventListener("click", revertAdminAppearance);
+}
+
+// Motyw do zapisu: wcześniej zapisane pola + pola zmienione teraz.
+function collectAdminTheme() {
+  const saved = normalizeAdminTheme(state.adminTheme);
+  const theme = {};
+
+  ADMIN_THEME_FIELDS.forEach((field) => {
+    if (adminThemeDirty.has(field.key)) {
+      const input = document.querySelector(`#${field.id}`);
+      if (input) theme[field.key] = inputToThemeValue(field, input.value);
+    } else if (saved[field.key] != null && saved[field.key] !== "") {
+      theme[field.key] = saved[field.key];
+    }
+  });
+
+  const background = collectBackgroundFromForm();
+  ["backgroundImage", "backgroundDim", "backgroundBlur", "backgroundOpacity"].forEach((key) => {
+    if (adminThemeDirty.has(key)) theme[key] = background[key];
+    else if (saved[key] != null) theme[key] = saved[key];
+  });
+  if (saved.backgroundUrl) theme.backgroundUrl = saved.backgroundUrl;
+  return theme;
+}
+
+async function saveAdminAppearance(event) {
+  event.preventDefault();
   try {
     const themeSettings = collectAdminTheme();
-    const backgroundData = state.adminTheme?.backgroundImageDataUrl || null;
-
     const data = await request("/api/admin/theme", {
       method: "PUT",
-      body: JSON.stringify({
-        themeSettings,
-        backgroundData
-      })
+      body: JSON.stringify({ themeSettings, backgroundData: adminPendingBackground })
     });
-
     state.adminTheme = data.theme || themeSettings;
+    adminThemeDirty = new Set();
+    adminPendingBackground = null;
+    clearAdminThemeStyles();
     applyAdminThemeStyles(state.adminTheme);
-    showToast("Zapisano motyw i tło Zaplecza 💾");
+    populateAdminAppearanceForm(state.adminTheme);
+    showToast("Zapisano wygląd Zaplecza 💾");
   } catch (error) {
     showToast(error.message);
   }
 }
 
+function revertAdminAppearance() {
+  adminThemeDirty = new Set();
+  adminPendingBackground = null;
+  clearAdminThemeStyles();
+  applyAdminThemeStyles(state.adminTheme || {});
+  populateAdminAppearanceForm(state.adminTheme || {});
+  showToast("Cofnięto niezapisane zmiany.");
+}
+
 async function resetAdminAppearance() {
-  if (!confirm("Czy na pewno chcesz zresetować motyw Zaplecza do domyślnego?")) return;
+  if (!confirm("Przywrócić wygląd startowy Zaplecza? Zapisane ustawienia wyglądu zostaną usunięte.")) return;
   try {
     const data = await request("/api/admin/theme", {
       method: "PUT",
       body: JSON.stringify({ reset: true })
     });
     state.adminTheme = data.theme || {};
-    applyAdminThemeStyles(data.theme);
-    populateAdminAppearanceForm(data.theme);
-    showToast("Motyw Zaplecza zresetowany do domyślnego.");
+    adminThemeDirty = new Set();
+    adminPendingBackground = null;
+    clearAdminThemeStyles();
+    applyAdminThemeStyles(state.adminTheme);
+    populateAdminAppearanceForm(state.adminTheme);
+    showToast("Przywrócono wygląd startowy Zaplecza.");
   } catch (error) {
     showToast(error.message);
   }
 }
 
-function applyAdminThemeStyles(theme) {
-  const root = document.body || document.documentElement;
+// ─── Nakładanie stylów ───────────────────────────────────────────────────────
 
-  if (theme && typeof theme === "object") {
-    if (theme.saveTheme?.themeSettings) theme = theme.saveTheme.themeSettings;
-    if (theme.themeSettings) theme = theme.themeSettings;
-    if (theme.theme) theme = theme.theme;
+function applyAdminThemeField(field, value) {
+  const root = adminThemeRoot();
+  root.style.setProperty(field.cssVar, themeValueToCss(field, value));
 
-    if (theme.accent) {
-      root.style.setProperty("--accent", theme.accent);
-      root.style.setProperty("--accent-soft", `color-mix(in srgb, ${theme.accent} 16%, transparent)`);
-      root.style.setProperty("--glow-start", `color-mix(in srgb, ${theme.accent} 12%, transparent)`);
-    }
-    if (theme.accentAlt) {
-      root.style.setProperty("--accent-alt", theme.accentAlt);
-      root.style.setProperty("--glow-end", `color-mix(in srgb, ${theme.accentAlt} 10%, transparent)`);
-    }
-    if (theme.surfaceColor) {
-      root.style.setProperty("--surface-color", theme.surfaceColor);
-      root.style.setProperty("--surface-base-rgb", hexToRgbChannels(theme.surfaceColor));
-      root.style.setProperty("--tile-panel-rgb", hexToRgbChannels(theme.surfaceColor));
-    }
-    if (theme.bg) {
-      root.style.setProperty("--page-bg", theme.bg);
-    }
-    if (theme.fontMenu) root.style.setProperty("--font-menu", fontStack(theme.fontMenu));
-    if (theme.fontCard) root.style.setProperty("--font-card", fontStack(theme.fontCard));
-    if (theme.fontDescription) root.style.setProperty("--font-description", fontStack(theme.fontDescription));
-    if (theme.cardRadius) root.style.setProperty("--card-radius", theme.cardRadius);
-    if (theme.cardGap) root.style.setProperty("--card-gap", theme.cardGap);
-    if (theme.panelColor) root.style.setProperty("--admin-panel-rgb", hexToRgbChannels(theme.panelColor));
-    if (theme.panelAlpha) root.style.setProperty("--admin-panel-alpha", theme.panelAlpha);
-    if (theme.glassBlur) root.style.setProperty("--glass-blur", theme.glassBlur);
-
-    // Tło obrazowe
-    let backgroundUrl = "/images/background.jpg";
-    if (theme.backgroundImageDataUrl) {
-      backgroundUrl = theme.backgroundImageDataUrl;
-    } else if (theme.backgroundImage === "custom") {
-      backgroundUrl = theme.backgroundUrl || "/images/background-admin-custom.jpg";
-      if (backgroundUrl.startsWith("./")) backgroundUrl = "/" + backgroundUrl.slice(2);
-      if (backgroundUrl.startsWith("../../")) backgroundUrl = "/" + backgroundUrl.slice(6);
-    } else if (theme.backgroundImage === "default") {
-      backgroundUrl = "/images/background.jpg";
-    }
-
-    const hasBackgroundImage = ["default", "custom"].includes(theme.backgroundImage) || Boolean(theme.backgroundImageDataUrl);
-    root.style.setProperty("--background-image", hasBackgroundImage ? `url("${backgroundUrl}")` : "none");
-    root.style.setProperty("--background-image-opacity", hasBackgroundImage ? (theme.backgroundOpacity || "0.55") : "0");
-    root.style.setProperty("--background-image-blur", hasBackgroundImage ? (theme.backgroundBlur || "10px") : "0px");
-    root.style.setProperty("--background-image-dim", hasBackgroundImage ? (theme.backgroundDim || "0.34") : "0");
-
-    // Sidebar & Menu
-    if (theme.sidebarColor) root.style.setProperty("--admin-sidebar-rgb", hexToRgbChannels(theme.sidebarColor));
-    if (theme.sidebarAlpha) root.style.setProperty("--admin-sidebar-alpha", theme.sidebarAlpha);
-    if (theme.sidebarWidth) root.style.setProperty("--admin-sidebar-width", theme.sidebarWidth);
-    if (theme.menuTextColor) root.style.setProperty("--admin-menu-text-color", theme.menuTextColor);
-    if (theme.menuBtnBg) root.style.setProperty("--admin-menu-btn-bg", theme.menuBtnBg);
-    if (theme.menuBtnText) root.style.setProperty("--admin-menu-btn-text", theme.menuBtnText);
-    if (theme.menuBtnActiveBg) root.style.setProperty("--admin-menu-btn-active-bg", theme.menuBtnActiveBg);
-    if (theme.menuBtnActiveText) root.style.setProperty("--admin-menu-btn-active-text", theme.menuBtnActiveText);
-    if (theme.menuBtnHoverBg) root.style.setProperty("--admin-menu-btn-hover-bg", theme.menuBtnHoverBg);
-    if (theme.menuBtnHoverText) root.style.setProperty("--admin-menu-btn-hover-text", theme.menuBtnHoverText);
-
-    // Przyciski
-    if (theme.btnNormalBg) root.style.setProperty("--btn-normal-bg", theme.btnNormalBg);
-    if (theme.btnNormalText) root.style.setProperty("--btn-normal-text", theme.btnNormalText);
-    if (theme.btnNormalHoverBg) root.style.setProperty("--btn-normal-hover-bg", theme.btnNormalHoverBg);
-    if (theme.btnDangerBg) root.style.setProperty("--btn-danger-bg", theme.btnDangerBg);
-    if (theme.btnDangerText) root.style.setProperty("--btn-danger-text", theme.btnDangerText);
-    if (theme.btnDangerHoverBg) root.style.setProperty("--btn-danger-hover-bg", theme.btnDangerHoverBg);
-    if (theme.btnRadius) root.style.setProperty("--btn-radius", theme.btnRadius);
-    if (theme.btnGlow) root.style.setProperty("--btn-glow", theme.btnGlow);
-    if (theme.btnGlowColor) root.style.setProperty("--btn-glow-color", theme.btnGlowColor);
-    if (theme.btnDangerGlowColor) root.style.setProperty("--btn-danger-glow-color", theme.btnDangerGlowColor);
-    if (theme.btnBorderWidth) root.style.setProperty("--btn-border-width", theme.btnBorderWidth);
-    if (theme.btnBorderColor) root.style.setProperty("--btn-border-color", theme.btnBorderColor);
-
-    // Ujednolicone zmienne Modali z motywu IF-startpage
-    const modalSource = (typeof state !== "undefined" && state && state.theme) ? state.theme : theme;
-    if (modalSource) {
-      if (modalSource.modalBg) root.style.setProperty("--modal-bg-rgb", hexToRgbChannels(modalSource.modalBg));
-      if (modalSource.modalAlpha) root.style.setProperty("--modal-alpha", modalSource.modalAlpha);
-      if (modalSource.modalGlassBlur) root.style.setProperty("--modal-glass-blur", String(modalSource.modalGlassBlur).endsWith("px") ? modalSource.modalGlassBlur : `${modalSource.modalGlassBlur}px`);
-      if (modalSource.modalBackdropBlur) root.style.setProperty("--modal-backdrop-blur", String(modalSource.modalBackdropBlur).endsWith("px") ? modalSource.modalBackdropBlur : `${modalSource.modalBackdropBlur}px`);
-      if (modalSource.modalBackdropAlpha) root.style.setProperty("--modal-backdrop-alpha", modalSource.modalBackdropAlpha);
-      if (modalSource.modalRadius) root.style.setProperty("--modal-radius", String(modalSource.modalRadius).endsWith("px") ? modalSource.modalRadius : `${modalSource.modalRadius}px`);
-    }
+  if (field.key === "accent") {
+    root.style.setProperty("--accent-soft", `color-mix(in srgb, ${value} 16%, transparent)`);
+    root.style.setProperty("--glow-start", `color-mix(in srgb, ${value} 12%, transparent)`);
   }
+  if (field.key === "accentAlt") {
+    root.style.setProperty("--glow-end", `color-mix(in srgb, ${value} 10%, transparent)`);
+  }
+}
+
+function applyAdminBackground(background, pendingDataUrl) {
+  const root = adminThemeRoot();
+  const mode = background?.backgroundImage;
+  let url = "";
+  if (pendingDataUrl) url = pendingDataUrl;
+  else if (mode === "custom" && background.backgroundUrl) url = background.backgroundUrl;
+  else if (mode === "default") url = "/images/background.jpg";
+
+  if (!url) {
+    ["--background-image", "--background-image-opacity", "--background-image-blur", "--background-image-dim"]
+      .forEach((name) => root.style.removeProperty(name));
+    return;
+  }
+  root.style.setProperty("--background-image", `url("${url}")`);
+  root.style.setProperty("--background-image-opacity", String(background.backgroundOpacity ?? "0.55"));
+  const blur = String(background.backgroundBlur ?? "10px");
+  root.style.setProperty("--background-image-blur", blur.endsWith("px") ? blur : `${parseInt(blur, 10) || 0}px`);
+  root.style.setProperty("--background-image-dim", String(background.backgroundDim ?? "0.34"));
+}
+
+function clearAdminThemeStyles() {
+  const root = adminThemeRoot();
+  ADMIN_THEME_FIELDS.forEach((field) => root.style.removeProperty(field.cssVar));
+  ADMIN_DERIVED_VARS.forEach((name) => root.style.removeProperty(name));
+}
+
+// Wywoływana też z admin.js przy starcie Zaplecza.
+function applyAdminThemeStyles(theme) {
+  const t = normalizeAdminTheme(theme);
+
+  ADMIN_THEME_FIELDS.forEach((field) => {
+    const value = t[field.key];
+    if (value != null && value !== "") applyAdminThemeField(field, value);
+  });
+  applyAdminBackground(t, null);
+
+  // Okna (modale) wyglądają tak samo jak na Stronie Głównej — biorą ustawienia z jej motywu.
+  const modal = (typeof state !== "undefined" && state && state.theme) ? state.theme : {};
+  const root = adminThemeRoot();
+  const px = (v) => (String(v).endsWith("px") ? String(v) : `${parseInt(v, 10) || 0}px`);
+  if (modal.modalBg) root.style.setProperty("--modal-bg-rgb", hexToRgbChannels(modal.modalBg));
+  if (modal.modalAlpha) root.style.setProperty("--modal-alpha", modal.modalAlpha);
+  if (modal.modalGlassBlur) root.style.setProperty("--modal-glass-blur", px(modal.modalGlassBlur));
+  if (modal.modalBackdropBlur) root.style.setProperty("--modal-backdrop-blur", px(modal.modalBackdropBlur));
+  if (modal.modalBackdropAlpha) root.style.setProperty("--modal-backdrop-alpha", modal.modalBackdropAlpha);
+  if (modal.modalRadius) root.style.setProperty("--modal-radius", px(modal.modalRadius));
 }
