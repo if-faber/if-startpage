@@ -75,25 +75,57 @@ ghcr.io/if-faber/if-startpage:latest
 
 ## Uruchomienie
 
-W komendach i w `compose.yaml` poniżej:
+Potrzebujesz terminala na serwerze (np. przez SSH albo Cockpit → Terminal) i Dockge
+w przeglądarce. Polecenia kopiujesz i wklejasz **bez żadnych zmian**.
 
-`{user}` — twoja nazwa użytkownika (sprawdzisz ją komendą `whoami`)
+**Krok 1. Sprawdź swoją nazwę użytkownika.** W terminalu wpisz:
 
-1. Utwórz foldery na dane trwałe:
+```bash
+whoami
+```
 
-   ```bash
-   mkdir -p /home/{user}/docker/app-data/if-startpage/config
-   mkdir -p /home/{user}/docker/app-data/if-startpage/backups
-   mkdir -p /home/{user}/docker/app-data/if-startpage/icons
-   ```
+Pokaże się jedno słowo, np. `jan`. Zapisz je — przyda się w kroku 4.
 
-2. W Dockge utwórz nowy stos `if-startpage` i wklej zawartość pliku
-   [`compose.yaml`](compose.yaml) z tego repo.
-3. Zamień w nim każde `{user}` na swoją nazwę użytkownika i ustaw własny `DASHBOARD_PIN`.
-4. Wdróż stos. Strona będzie pod adresem `http://adres-serwera/`.
+**Krok 2. Utwórz foldery na dane.** Wklej w terminalu:
 
-Pełne ścieżki (`/home/{user}/...`) zamiast względnych (`../../...`) zawsze wskazują
-właściwe miejsce, niezależnie od tego, jak Dockge widzi swój katalog stosów.
+```bash
+mkdir -p ~/docker/app-data/if-startpage/config ~/docker/app-data/if-startpage/backups ~/docker/app-data/if-startpage/icons
+```
+
+Sprawdź, czy są:
+
+```bash
+ls ~/docker/app-data/if-startpage/
+```
+
+Powinno się pokazać: `backups  config  icons`.
+
+**Krok 3. Utwórz stos w Dockge.** W Dockge kliknij **+ Utwórz** (Compose), w polu nazwy
+wpisz `if-startpage` i wklej całą zawartość pliku [`compose.yaml`](compose.yaml)
+z tego repozytorium.
+
+**Krok 4. Wpisz swoją nazwę użytkownika w compose.** W wklejonym tekście są miejsca
+z napisem `{user}` (razem z nawiasami klamrowymi). Każde zamień na nazwę z kroku 1.
+
+Przykład dla użytkownika `jan`:
+
+```text
+przed:  /home/{user}/docker/app-data/if-startpage/config:/app/config
+po:     /home/jan/docker/app-data/if-startpage/config:/app/config
+```
+
+Dockge nie rozumie skrótu `~`, dlatego tutaj nazwę trzeba wpisać ręcznie.
+W pliku nie może zostać żadne `{user}`.
+
+**Krok 5. Ustaw własny PIN.** W linii `DASHBOARD_PIN=1234` zamień `1234` na swój PIN
+(co najmniej 4 znaki). PIN chroni edycję strony i Zaplecze.
+
+**Krok 6. Sprawdź port.** Strona działa na porcie 80 (linia `"80:3010"`). Jeśli na
+serwerze port 80 jest już zajęty, zmień pierwszą liczbę, np. `"8090:3010"` — wtedy
+adres strony będzie `http://adres-serwera:8090/`.
+
+**Krok 7. Uruchom.** Kliknij **Wdróż** (Deploy). Strona będzie pod adresem
+`http://adres-serwera/` (adres serwera to np. `192.168.1.10`).
 
 ### Ustawienia opcjonalne (zmienne środowiskowe)
 
@@ -131,7 +163,7 @@ W oknie linku w polu „Ikona” wpisujesz nazwę pliku, np. `immich.png`, `jell
   i druk 3D (Printables, Prusa, OctoPrint, Klipper, Mainsail, Fluidd, OrcaSlicer, Cura, Spoolman).
   Logo Idea Forge: `idea-forge.webp`.
 - Własne ikony przesyłasz w Zaplecze → Strony i sekcje → **Ikony aplikacji** („Prześlij ikony”)
-  albo kopiujesz do folderu `/home/{user}/docker/app-data/if-startpage/icons`
+  albo kopiujesz do folderu `~/docker/app-data/if-startpage/icons` na serwerze
   (PNG, SVG, WebP, JPG, ICO). Ikona o tej samej nazwie co wbudowana — zastępuje ją.
 - **„Lista ikon”** w tym samym miejscu pokazuje wszystkie dostępne ikony z wyszukiwarką
   i przyciskiem „Kopiuj nazwę”.
