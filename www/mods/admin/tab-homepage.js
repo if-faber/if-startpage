@@ -20,12 +20,29 @@ function renderHomepageTab() {
           <div class="empty">Ładowanie sekcji i linków...</div>
         </div>
       </section>
+
+      <section class="admin-section-card">
+        <h2 style="margin: 0 0 6px;">${uiIcon("image", 22)} Ikony aplikacji</h2>
+        <p class="settings-note">Prześlij ikony z komputera do folderu <code>icons</code> na serwerze (PNG, SVG, WebP, JPG, ICO, do 2 MB). W oknie linku w polu „Ikona” wpisujesz nazwę pliku, np. <code>immich.png</code>.</p>
+        <div class="icons-upload-row">
+          <label class="icons-upload-pick">
+            <input type="file" id="iconsUploadInput" accept=".png,.svg,.webp,.jpg,.jpeg,.ico,image/png,image/svg+xml,image/webp,image/jpeg,image/x-icon" multiple>
+          </label>
+          <button type="button" class="button primary" id="btnIconsUpload">${uiIcon("arrowUp", 16)} Prześlij ikony</button>
+          <button type="button" class="button" id="btnIconsList">${uiIcon("search", 16)} Lista ikon</button>
+        </div>
+        <div id="iconsUploadResult" class="icons-upload-result"></div>
+      </section>
     </div>
   `;
 }
 
 function bindHomepageEvents() {
   loadAdminSections();
+  document.querySelector("#btnIconsUpload")?.addEventListener("click", uploadIcons);
+  document.querySelector("#btnIconsList")?.addEventListener("click", openIconsList);
+  const iconsSearch = document.querySelector("#iconsListSearch");
+  if (iconsSearch) iconsSearch.oninput = renderIconsList;
   document.querySelector("#linkFormAdmin")?.addEventListener("submit", saveAdminLink);
 }
 
@@ -391,3 +408,113 @@ window.openAddLinkAdmin = openAddLinkAdmin;
 window.openEditLinkAdmin = openEditLinkAdmin;
 window.saveAdminLink = saveAdminLink;
 window.deleteLinkAdmin = deleteLinkAdmin;
+
+// ─── Ikony aplikacji: przesyłanie do folderu icons i lista ───
+
+async function uploadIcons() {
+  const input = document.querySelector("#iconsUploadInput");
+  const result = document.querySelector("#iconsUploadResult");
+  const files = [...(input?.files || [])];
+  if (!files.length) return showToast("Najpierw wybierz pliki ikon z komputera.");
+  const done = [];
+  const failed = [];
+  for (const file of files) {
+    try {
+      const data = await fileToDataUrl(file);
+      try {
+        const res = await request("/api/icons", { method: "POST", body: JSON.stringify({ name: file.name, data }) });
+        done.push(res.name);
+      } catch (error) {
+        // Taka ikona już jest — pytamy, czy zastąpić.
+        if (/już jest/.test(error.message) && confirm(`${error.message} Zastąpić?`)) {
+          const res = await request("/api/icons", { method: "POST", body: JSON.stringify({ name: file.name, data, overwrite: true }) });
+          done.push(res.name);
+        } else {
+          failed.push(error.message);
+        }
+      }
+    } catch (error) {
+      failed.push(`${file.name}: ${error.message}`);
+    }
+  }
+  if (input) input.value = "";
+  if (result) {
+    result.innerHTML = `
+      ${done.length ? `<div class="icons-upload-ok">${uiIcon("ok", 16)} Przesłano (${done.length}): ${done.map((name) => `<code>${escapeHtml(name)}</code>`).join(", ")}</div>` : ""}
+      ${failed.length ? `<div class="icons-upload-bad">${uiIcon("warning", 16)} ${failed.map(escapeHtml).join("<br>")}</div>` : ""}
+    `;
+  }
+  if (done.length) showToast(`Przesłano ikon: ${done.length}.`);
+}
+
+let cachedIconList = [];
+
+async function openIconsList() {
+  const dialog = document.querySelector("#iconsListDialog");
+  const box = document.querySelector("#iconsListBox");
+  if (!dialog || !box) return;
+  box.innerHTML = '<div class="empty">Wczytywanie ikon...</div>';
+  const search = document.querySelector("#iconsListSearch");
+  if (search) search.value = "";
+  dialog.showModal();
+  try {
+    const data = await request("/api/icons");
+    cachedIconList = data.icons || [];
+    const summary = document.querySelector("#iconsListSummary");
+    if (summary) summary.textContent = `Wszystkich: ${cachedIconList.length} (Twoich: ${data.ownCount}, wbudowanych: ${data.builtInCount})`;
+    renderIconsList();
+  } catch (error) {
+    box.innerHTML = `<div class="empty">${escapeHtml(error.message)}</div>`;
+  }
+}
+
+function renderIconsList() {
+  const box = document.querySelector("#iconsListBox");
+  if (!box) return;
+  const query = (document.querySelector("#iconsListSearch")?.value || "").trim().toLowerCase();
+  const icons = cachedIconList.filter((icon) => !query || icon.name.includes(query));
+  if (!icons.length) {
+    box.innerHTML = '<div class="empty">Brak ikon pasujących do wyszukiwania.</div>';
+    return;
+  }
+  box.innerHTML = `
+    <table class="icons-list-table">
+      <thead><tr><th>Ikona</th><th>Nazwa</th><th></th></tr></thead>
+      <tbody>
+        ${icons.map((icon) => `
+          <tr>
+            <td><img src="../../icons/${encodeURIComponent(icon.name)}" alt="" loading="lazy"></td>
+            <td><code>${escapeHtml(icon.name)}</code>${icon.own ? ' <span class="icons-own-tag">Twoja</span>' : ' <span class="icons-builtin-tag">Wbudowana</span>'}</td>
+            <td><button type="button" class="button" data-copy-icon="${escapeHtml(icon.name)}">${uiIcon("logs", 14)} Kopiuj nazwę</button></td>
+          </tr>
+        `).join("")}
+      </tbody>
+    </table>
+  `;
+  box.querySelectorAll("[data-copy-icon]").forEach((button) => {
+    button.addEventListener("click", () => copyIconName(button.dataset.copyIcon));
+  });
+}
+
+// Schowek: navigator.clipboard działa tylko na https albo localhost — w sieci domowej
+// (http://adres-serwera) używamy zapasowej metody z ukrytym polem tekstowym.
+async function copyIconName(name) {
+  try {
+    if (navigator.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText(name);
+    } else {
+      const field = document.createElement("textarea");
+      field.value = name;
+      field.setAttribute("readonly", "");
+      field.style.position = "fixed";
+      field.style.opacity = "0";
+      document.querySelector("#iconsListDialog")?.appendChild(field);
+      field.select();
+      document.execCommand("copy");
+      field.remove();
+    }
+    showToast(`Skopiowano: ${name}`);
+  } catch {
+    showToast(`Nie udało się skopiować — nazwa: ${name}`);
+  }
+}

@@ -125,13 +125,32 @@ ustawia się w Zaplecze → Wygląd Zaplecza, osobno dla dnia i nocy — zapis t
 
 W oknie linku w polu „Ikona” wpisujesz nazwę pliku, np. `immich.png`, `jellyfin.png`.
 
-- Obraz zawiera ok. 100 najpopularniejszych ikon (Immich, Jellyfin, Home Assistant, Nextcloud,
-  Dockge, Pi-hole, Vaultwarden i inne) — działają od razu po instalacji.
-- Własne ikony kopiujesz do folderu `/home/{user}/docker/app-data/if-startpage/icons`
-  (PNG, SVG albo WebP). Ikona o tej samej nazwie co wbudowana — zastępuje ją.
-- Pełny pakiet ponad 2500 ikon: [dashboard-icons](https://github.com/homarr-labs/dashboard-icons).
+- Obraz zawiera ok. 160 popularnych ikon: aplikacje serwera domowego (Immich, Jellyfin,
+  Home Assistant, Nextcloud, Dockge, Pi-hole, Vaultwarden i inne), popularne serwisy
+  (Google, YouTube, Facebook, WhatsApp, Netflix, Amazon… — pełna lista w Zapleczu)
+  i druk 3D (Printables, Prusa, OctoPrint, Klipper, Mainsail, Fluidd, OrcaSlicer, Cura, Spoolman).
+  Logo Idea Forge: `idea-forge.webp`.
+- Własne ikony przesyłasz w Zaplecze → Strony i sekcje → **Ikony aplikacji** („Prześlij ikony”)
+  albo kopiujesz do folderu `/home/{user}/docker/app-data/if-startpage/icons`
+  (PNG, SVG, WebP, JPG, ICO). Ikona o tej samej nazwie co wbudowana — zastępuje ją.
+- **„Lista ikon”** w tym samym miejscu pokazuje wszystkie dostępne ikony z wyszukiwarką
+  i przyciskiem „Kopiuj nazwę”.
+- Wystarczy rozmiar ok. 128 × 128 px — na kafelku ikona ma 30 px.
 
 W polu „Ikona” można też wpisać jedną literę albo adres obrazka z internetu.
+
+### Gdzie szukać ikon
+
+| Źródło | Licencja | Co zawiera |
+|---|---|---|
+| [dashboard-icons](https://github.com/homarr-labs/dashboard-icons) (Homarr) | Apache 2.0 | ponad 2500 kolorowych ikon aplikacji i serwisów — z tego pakietu pochodzą ikony wbudowane |
+| [selfh.st/icons](https://selfh.st/icons-about/) | CC BY 4.0 (podaj autora) | ponad 7000 kolorowych ikon, PNG / WebP / SVG, wersje jasne i ciemne |
+| [Simple Icons](https://simpleicons.org) | CC0 | ponad 3300 marek, jednokolorowe SVG (m.in. Allegro, Creality) |
+| [SVG Logos](https://github.com/gilbarbara/logos) (Gil Barbara) | CC0 | ok. 1900 kolorowych logo, głównie technologie |
+| Ikona samej strony | — | strony udostępniają ikonę dla telefonów (`apple-touch-icon`, zwykle 180 × 180 px) — dobre źródło dla polskich serwisów, których nie ma w pakietach |
+
+Logotypy są znakami towarowymi swoich właścicieli — używaj ich tylko do oznaczenia kafelków
+prowadzących do tych usług.
 
 ## Progi alarmów
 

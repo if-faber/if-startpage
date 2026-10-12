@@ -840,14 +840,6 @@ dialog menu { display: flex; justify-content: flex-end; gap: 8px; margin: 4px 0 
   margin-top: auto;
   padding: 18px 0 4px;
 }
-.content-actions::before {
-  content: "";
-  position: absolute;
-  inset: 0 calc(-1 * var(--page-pad-x)) calc(-1 * var(--page-pad-y));
-  z-index: -1;
-  background: linear-gradient(to top, var(--page-bg) 55%, transparent);
-  pointer-events: none;
-}
 .content-actions button {
   min-height: 42px;
   padding: 0 16px;

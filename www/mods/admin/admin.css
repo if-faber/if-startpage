@@ -596,3 +596,25 @@ dialog menu {
 .admin-sidebar .nav-button .ui-icon { flex-shrink: 0; }
 #tabTitle { display: flex; align-items: center; gap: 10px; }
 #tabTitle .ui-icon { flex-shrink: 0; color: var(--accent); }
+
+/* Ikony aplikacji (Strony i sekcje): przesyłanie i lista */
+.icons-upload-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 12px; }
+.icons-upload-pick { flex: 1; min-width: 240px; }
+.icons-upload-pick input { width: 100%; }
+.icons-upload-result { display: grid; gap: 6px; margin-top: 12px; font-size: 13px; }
+.icons-upload-ok, .icons-upload-bad { display: flex; align-items: flex-start; gap: 8px; padding: 10px 12px; border-radius: 10px; }
+.icons-upload-ok { background: #047857; color: #ffffff; }
+.icons-upload-bad { background: #b91c1c; color: #ffffff; }
+.icons-upload-ok code, .icons-upload-bad code { color: inherit; }
+/* Okno listy mieści się w ekranie — przewija się tylko tabela. */
+#iconsListDialog { max-height: calc(100vh - 32px); overflow: hidden; }
+#iconsListDialog .modal-panel { max-height: calc(100vh - 34px); grid-template-rows: auto auto auto minmax(0, 1fr) auto; box-sizing: border-box; }
+.icons-list-box { min-height: 0; overflow: auto; }
+.icons-list-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.icons-list-table th { position: sticky; top: 0; z-index: 1; padding: 8px 10px; background: rgb(var(--modal-bg-rgb, var(--surface-base-rgb))); color: var(--muted); font-size: 11px; font-weight: 800; text-align: left; text-transform: uppercase; }
+.icons-list-table td { padding: 6px 10px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+.icons-list-table td:first-child { width: 56px; }
+.icons-list-table td:last-child { width: 1%; white-space: nowrap; }
+.icons-list-table img { display: block; width: 36px; height: 36px; object-fit: contain; }
+.icons-builtin-tag { margin-left: 6px; padding: 2px 8px; border-radius: 999px; background: color-mix(in srgb, var(--text) 8%, transparent); color: var(--muted); font-size: 11px; font-weight: 800; }
+.icons-own-tag { margin-left: 6px; padding: 2px 8px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); font-size: 11px; font-weight: 800; }

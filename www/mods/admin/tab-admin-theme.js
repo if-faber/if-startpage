@@ -166,6 +166,25 @@ function useAdminThemes(data) {
   applyAdminThemeStyles(state.adminTheme);
 }
 
+// Okna (modale) Zaplecza wyglądają jak na Stronie Głównej: zmienne --modal-* z pliku
+// bieżącego trybu (/custom/custom-d.css lub custom-n.css). Reszty wyglądu nie ruszamy.
+let pageModalVars = [];
+async function applyPageModalStyles() {
+  const mode = currentAdminMode();
+  try {
+    const response = await fetch(`/custom/custom-${mode}.css?v=${Date.now()}`, { cache: "no-store" });
+    const css = response.ok ? await response.text() : "";
+    if (mode !== currentAdminMode()) return;
+    const root = adminThemeRoot();
+    pageModalVars.forEach((name) => root.style.removeProperty(name));
+    pageModalVars = [];
+    for (const [, name, value] of css.matchAll(/(--modal-[a-z-]+)\s*:\s*([^;{}]+);/g)) {
+      root.style.setProperty(name, value.trim());
+      pageModalVars.push(name);
+    }
+  } catch {}
+}
+
 function renderAdminModeToggle() {
   const button = document.querySelector("#adminModeToggle");
   if (!button || typeof themeToggleIcon !== "function") return;
@@ -571,4 +590,6 @@ function applyAdminThemeStyles(theme) {
   if (modal.modalBackdropBlur) root.style.setProperty("--modal-backdrop-blur", px(modal.modalBackdropBlur));
   if (modal.modalBackdropAlpha) root.style.setProperty("--modal-backdrop-alpha", modal.modalBackdropAlpha);
   if (modal.modalRadius) root.style.setProperty("--modal-radius", px(modal.modalRadius));
+  // Ustawienia okien z pliku trybu Strony Głównej (mają pierwszeństwo przed starym theme.json).
+  applyPageModalStyles();
 }

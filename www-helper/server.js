@@ -71,8 +71,10 @@ app.use("/uploads", express.static(UPLOAD_DIR, {
   }
 }));
 app.use("/icons", express.static(ICONS_DIR, {
-  setHeaders: (res) => {
+  setHeaders: (res, filePath) => {
     res.setHeader("Cache-Control", "no-cache");
+    // SVG wgrany przez użytkownika może zawierać skrypt — przy otwarciu wprost nic się nie wykona.
+    if (/\.svg$/i.test(filePath)) res.setHeader("Content-Security-Policy", "default-src 'none'; style-src 'unsafe-inline'; sandbox");
   }
 }));
 app.use(express.static(WWW_DIR, {
@@ -2080,6 +2082,74 @@ app.get("/api/docker/container/:name/logs", requirePin, async (req, res) => {
     return res.json({ ok: true, logs: (stdout || stderr || "Brak logów.").trim() });
   } catch (error) {
     return res.status(500).json({ ok: false, logs: `Błąd odczytu logów: ${error.message}` });
+  }
+});
+
+// ─── Ikony aplikacji (Zaplecze → Strony i sekcje → Ikony aplikacji) ───
+const ICON_EXTENSIONS = /\.(png|svg|webp|jpe?g|ico)$/i;
+const ICON_MAX_BYTES = 2 * 1024 * 1024;
+
+function listIconFiles(dir) {
+  try {
+    return fs.readdirSync(dir).filter((name) => ICON_EXTENSIONS.test(name) && fs.statSync(path.join(dir, name)).isFile());
+  } catch {
+    return [];
+  }
+}
+
+// Bezpieczna nazwa pliku: małe litery, cyfry, „-”, „_”, „.”; bez ścieżek.
+function cleanIconName(name) {
+  const base = path.basename(String(name || "")).toLowerCase()
+    .replace(/ł/g, "l").normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .replace(/\s+/g, "-").replace(/[^a-z0-9._-]/g, "");
+  return ICON_EXTENSIONS.test(base) && !base.startsWith(".") ? base.slice(0, 120) : "";
+}
+
+// „Twoja” = ikona z folderu icons, której nie ma w obrazie albo która różni się od wbudowanej
+// (podmieniona). Kopia identyczna z wbudowaną liczy się jako wbudowana.
+function sameFile(a, b) {
+  try {
+    const statA = fs.statSync(a);
+    const statB = fs.statSync(b);
+    return statA.size === statB.size && fs.readFileSync(a).equals(fs.readFileSync(b));
+  } catch {
+    return false;
+  }
+}
+
+app.get("/api/icons", (req, res) => {
+  const builtInDir = path.join(WWW_DIR, "icons");
+  const builtIn = new Set(listIconFiles(builtInDir));
+  const own = new Set(listIconFiles(ICONS_DIR).filter((name) =>
+    !builtIn.has(name) || !sameFile(path.join(ICONS_DIR, name), path.join(builtInDir, name))));
+  const names = new Set([...listIconFiles(ICONS_DIR), ...builtIn]);
+  const icons = [...names].sort((a, b) => a.localeCompare(b)).map((name) => ({ name, own: own.has(name) }));
+  res.set("cache-control", "no-store");
+  res.json({ icons, ownCount: own.size, builtInCount: builtIn.size });
+});
+
+app.post("/api/icons", requirePin, (req, res) => {
+  const name = cleanIconName(req.body?.name);
+  if (!name) return res.status(400).json({ error: "Dozwolone pliki: PNG, SVG, WebP, JPG, ICO." });
+  const match = String(req.body?.data || "").match(/^data:[^;,]*;base64,(.+)$/);
+  if (!match) return res.status(400).json({ error: `${name}: nieprawidłowe dane pliku.` });
+  const buffer = Buffer.from(match[1], "base64");
+  if (!buffer.length || buffer.length > ICON_MAX_BYTES) return res.status(400).json({ error: `${name}: plik pusty albo większy niż 2 MB.` });
+  const target = path.join(ICONS_DIR, name);
+  if (fs.existsSync(target) && !req.body?.overwrite) return res.status(409).json({ error: `${name}: taka ikona już jest.`, exists: true, name });
+  try {
+    fs.mkdirSync(ICONS_DIR, { recursive: true });
+    fs.writeFileSync(target, buffer, { mode: 0o644 });
+    // Prawa jak dla zwykłego pliku (rw-r--r--) i właściciel jak folderu icons —
+    // ikona jest widoczna na stronie, a na serwerze można ją normalnie edytować i usunąć.
+    fs.chmodSync(target, 0o644);
+    try {
+      const dirStat = fs.statSync(ICONS_DIR);
+      fs.chownSync(target, dirStat.uid, dirStat.gid);
+    } catch {}
+    res.json({ success: true, name });
+  } catch (error) {
+    res.status(500).json({ error: `${name}: nie udało się zapisać (${error.message}).` });
   }
 });
 

@@ -4,6 +4,20 @@ Nowe wpisy dopisujemy na górze.
 
 ---
 
+## v0.1.6.7 — 2026-10-12
+
+Przesyłanie ikon, lista ikon i więcej ikon wbudowanych.
+
+- **Zaplecze → Strony i sekcje → Ikony aplikacji:** „Prześlij ikony” — wybór plików z komputera (PNG, SVG, WebP, JPG, ICO, do 2 MB, kilka naraz), zapis do folderu `icons`. Nazwa pliku porządkowana (małe litery, „-” zamiast spacji, polskie litery bez ogonków). Gdy ikona już jest — pytanie, czy zastąpić. Plik dostaje prawa `644` i właściciela folderu `icons` (nie root), więc wyświetla się na stronie i da się go edytować na serwerze. Wymaga PIN-u.
+- **„Lista ikon”** — okno z tabelą Ikona | Nazwa | „Kopiuj nazwę”, wyszukiwarka i podsumowanie. Plakietka „Twoja” — ikona dodana albo podmieniona; „Wbudowana” — ikona z obrazu (także jej identyczna kopia w folderze `icons`). Kopiowanie działa też na zwykłym `http://` w sieci domowej.
+- **Ikony wbudowane:** ok. 160 — doszły popularne serwisy (Facebook, WhatsApp, Telegram, Discord, Amazon, PayPal, usługi Google, Microsoft 365…), druk 3D (Printables, Prusa, OctoPrint, Klipper, Mainsail, Fluidd, Obico, OrcaSlicer, Cura, Spoolman) i logo Idea Forge (`idea-forge.webp`).
+- **README:** sekcja „Gdzie szukać ikon” (dashboard-icons, selfh.st/icons, Simple Icons, SVG Logos, ikona samej strony) z licencjami.
+- **Okna (modale) Zaplecza** wyglądają jak na Stronie Głównej — biorą ustawienia okien z pliku trybu dzień / noc Strony Głównej.
+- SVG z folderu `icons` wysyłany z blokadą skryptów.
+- Naprawione: na dole Strony Głównej tło strony zasłaniało pas tapety (pozostałość po pasku z trzema przyciskami).
+
+---
+
 ## v0.1.6.6 — 2026-10-12
 
 Ikony aplikacji w osobnym folderze.
