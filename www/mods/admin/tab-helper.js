@@ -57,6 +57,13 @@ async function saveSettings(e) {
       body: JSON.stringify(settings)
     });
     state.settings = data.settings || settings;
+    // Po zmianie PIN-u wylogowanie — logujesz się od nowa nowym PIN-em. Inaczej
+    // przeglądarka wysyłałaby stary PIN i serwer odrzucałby kolejne zapisy.
+    if (settings.newPin) {
+      logoutAdmin();
+      showToast("PIN zmieniony. Zaloguj się nowym PIN-em.");
+      return;
+    }
     showToast("Ustawienia Ogólne zostały zapisane.");
   } catch (error) {
     showToast(error.message);

@@ -4,6 +4,12 @@ Nowe wpisy dopisujemy na górze.
 
 ---
 
+## v0.1.6.8 — 2026-10-12
+
+- **Po zmianie PIN-u wylogowanie.** Zmiana PIN-u w Zapleczu → Ustawienia ogólne wylogowuje z Zaplecza; na Stronie Głównej przeglądarka zapomina zapisany PIN i przy następnej edycji pyta o nowy. Wcześniej przeglądarka wysyłała dalej stary PIN — kolejne zapisy (np. wygląd dnia) były odrzucane, a każda próba liczyła się do blokady PIN-u.
+
+---
+
 ## v0.1.6.7 — 2026-10-12
 
 Przesyłanie ikon, lista ikon i więcej ikon wbudowanych.

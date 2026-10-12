@@ -894,9 +894,14 @@ async function saveDashboardSettings(event) {
       method: "PUT",
       body: JSON.stringify(payload)
     });
-    if (payload.newPin) setStoredAdminPin(payload.newPin);
     applyDashboardSettings(data.settings);
     document.querySelector("#settingsDialog").close();
+    // Po zmianie PIN-u wylogowanie — przy następnej edycji strona zapyta o nowy PIN.
+    if (payload.newPin) {
+      clearStoredAdminPin();
+      showToast("PIN zmieniony. Przy następnej edycji wpisz nowy PIN.");
+      return;
+    }
     showToast("Ustawienia zapisane.");
   } catch (error) {
     showToast(error.message);
