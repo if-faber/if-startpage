@@ -25,11 +25,7 @@ async function unlockAdmin(e) {
 
     state.settings = settingsData.settings || {};
     state.theme = themeData.theme || {};
-    state.adminTheme = adminThemeData.theme || {};
-
-    if (typeof applyAdminThemeStyles === "function") {
-      applyAdminThemeStyles(state.adminTheme);
-    }
+    if (typeof useAdminThemes === "function") useAdminThemes(adminThemeData);
 
     document.querySelector("#pinScreen").style.display = "none";
     document.querySelector("#adminDashboard").style.display = "grid";
@@ -38,7 +34,7 @@ async function unlockAdmin(e) {
     if (typeof switchTab === "function") {
       switchTab(savedTab);
     }
-    showToast("Zalogowano do Zaplecza 🔓");
+    showToast("Zalogowano do Zaplecza.");
   } catch (error) {
     clearStoredAdminPin();
     if (input) {
@@ -69,11 +65,7 @@ async function autoUnlockIfStored() {
 
     state.settings = settingsData.settings || {};
     state.theme = themeData.theme || {};
-    state.adminTheme = adminThemeData.theme || {};
-
-    if (typeof applyAdminThemeStyles === "function") {
-      applyAdminThemeStyles(state.adminTheme);
-    }
+    if (typeof useAdminThemes === "function") useAdminThemes(adminThemeData);
 
     document.querySelector("#pinScreen").style.display = "none";
     document.querySelector("#adminDashboard").style.display = "grid";
@@ -98,7 +90,7 @@ function logoutAdmin() {
   }
   document.querySelector("#adminDashboard").style.display = "none";
   document.querySelector("#pinScreen").style.display = "flex";
-  showToast("Wylogowano z Zaplecza 🔒");
+  showToast("Wylogowano z Zaplecza.");
 }
 
 window.unlockAdmin = unlockAdmin;

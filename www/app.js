@@ -169,7 +169,7 @@ async function reloadData() {
 function appShell() {
   document.querySelector("#app").innerHTML = `
     <div class="shell${state.sidebarHidden ? " sidebar-hidden" : ""}" id="shell">
-      <button class="menu-toggle" id="menuToggle" type="button" aria-label="Pokaż lub ukryj menu" title="Pokaż lub ukryj menu">☰</button>
+      <button class="menu-toggle" id="menuToggle" type="button" aria-label="Pokaż lub ukryj menu" title="Pokaż lub ukryj menu">${uiIcon("menu", 22)}</button>
       <aside class="sidebar">
         <div class="brand">
           <div><strong>${escapeHtml(state.data.title)}</strong></div>
@@ -178,7 +178,6 @@ function appShell() {
         <div class="sidebar-actions">
           <div class="sidebar-menu" id="sidebarMenu" role="menu" hidden>
             <button type="button" role="menuitem" data-menu-action="appearance">${uiIcon("appearance", 18)} Wygląd (na żywo)</button>
-            <button type="button" role="menuitem" data-menu-action="sections">${uiIcon("edit", 18)} Strona i sekcje</button>
             <a href="./mods/admin/" role="menuitem">${uiIcon("admin", 18)} Zaplecze</a>
             <div class="sidebar-menu-sep" role="separator"></div>
             <button type="button" role="menuitem" data-menu-action="lock" id="sidebarMenuLock">${uiIcon("lock", 18)} <span>Zablokuj edycję</span></button>
@@ -201,7 +200,6 @@ function appShell() {
           </div>
           <div class="header-stats" id="systemStatsWidget" aria-label="Statystyki systemu">
             <div class="header-stat is-loading"><span>CPU</span><strong>--</strong></div>
-            <div class="header-stat is-loading"><span>Temp</span><strong>--</strong></div>
             <div class="header-stat is-loading"><span>RAM</span><strong>--</strong></div>
           </div>
           <div class="toolbar-actions" id="toolbarActions"></div>
@@ -265,8 +263,8 @@ function appShell() {
         <div class="appearance-mode-bar">
           <label>Edytujesz wygląd dla trybu
             <select id="themeEditMode">
-              <option value="d">☀️ Dzień (custom-d.css)</option>
-              <option value="n">🌙 Noc (custom-n.css)</option>
+              <option value="d">Dzień (custom-d.css)</option>
+              <option value="n">Noc (custom-n.css)</option>
             </select>
           </label>
           <p>Zmiany widać od razu. „Zapisz wygląd” zapisuje plik wybranego trybu. „Anuluj” odrzuca niezapisane zmiany.</p>
@@ -274,7 +272,7 @@ function appShell() {
         <div class="appearance-sections">
           <!-- 1. Ogólne i tło -->
           <section class="appearance-section">
-            <div class="appearance-section-title">🎨 Ogólne i Tło</div>
+            <div class="appearance-section-title">${uiIcon("appearance", 16)} Ogólne i Tło</div>
             <div class="appearance-section-grid">
               <label>Akcent<input id="themeAccent" type="color"></label>
               <label>Akcent 2<input id="themeAccentAlt" type="color"></label>
@@ -293,7 +291,7 @@ function appShell() {
 
           <!-- 2. Header / Nagłówek -->
           <section class="appearance-section">
-            <div class="appearance-section-title">🏷️ Nagłówek (Header)</div>
+            <div class="appearance-section-title">${uiIcon("tag", 16)} Nagłówek (Header)</div>
             <div class="appearance-section-grid">
               <label>Kolor nazwy serwisu<input id="themeTitleColor" type="color"></label>
               <label>Wielkość nazwy serwisu<input id="themeTitleSize" type="range" min="16" max="52" step="1"><span></span></label>
@@ -309,20 +307,20 @@ function appShell() {
 
           <!-- 3. Sidebar / Pasek boczny -->
           <section class="appearance-section">
-            <div class="appearance-section-title">📑 Pasek boczny (Sidebar)</div>
+            <div class="appearance-section-title">${uiIcon("tabs", 16)} Pasek boczny (Sidebar)</div>
             <div class="appearance-section-grid">
               <label>Kolor tła menu<input id="themeSidebarPanelColor" type="color"></label>
               <label>Glass / Krycie menu<input id="themeSidebarPanelAlpha" type="range" min="0" max="95" step="1"><span></span></label>
               <label>Szerokość menu<input id="themeSidebarWidth" type="range" min="240" max="360" step="5"><span></span></label>
-              <label>Kolor ikony menu (☰)<input id="themeSidebarToggleColor" type="color"></label>
-              <label>Wielkość ikony menu (☰)<input id="themeSidebarToggleSize" type="range" min="16" max="44" step="1"><span></span></label>
+              <label>Kolor ikony menu<input id="themeSidebarToggleColor" type="color"></label>
+              <label>Wielkość ikony menu<input id="themeSidebarToggleSize" type="range" min="16" max="44" step="1"><span></span></label>
               <label>Czcionka menu<select id="themeFontMenu">${renderFontOptions()}</select></label>
             </div>
           </section>
 
           <!-- 4. Kafelki i Strona -->
           <section class="appearance-section">
-            <div class="appearance-section-title">🎴 Kafelki i Zawartość Strony</div>
+            <div class="appearance-section-title">${uiIcon("page", 16)} Kafelki i Zawartość Strony</div>
             <div class="appearance-section-grid">
               <label>Kolor kafelków linków<input id="themePanelColor" type="color"></label>
               <label>Glass kafelków linków<input id="themePanelAlpha" type="range" min="5" max="85" step="1"><span></span></label>
@@ -341,7 +339,7 @@ function appShell() {
 
           <!-- 5. Okna modalne (Modale) -->
           <section class="appearance-section">
-            <div class="appearance-section-title">🪟 Okna Modalne (Modale)</div>
+            <div class="appearance-section-title">${uiIcon("window", 16)} Okna Modalne (Modale)</div>
             <div class="appearance-section-grid">
               <label>Kolor modali<input id="themeModalBg" type="color"></label>
               <label>Krycie modali<input id="themeModalAlpha" type="range" min="10" max="100" step="1"><span></span></label>
@@ -358,7 +356,7 @@ function appShell() {
     <dialog id="alertsQuickModal" class="wide-dialog">
       <div class="modal-panel">
         <header class="modal-heading">
-          <div><span class="eyebrow">Diagnostyka</span><h2>🔔 Szybki Podgląd Alertów</h2></div>
+          <div><span class="eyebrow">Diagnostyka</span><h2>${uiIcon("alerts", 22)} Szybki Podgląd Alertów</h2></div>
           <button type="button" data-close aria-label="Zamknij">×</button>
         </header>
         <div id="quickAlertsContent" style="display: grid; gap: 10px; max-height: 50vh; overflow-y: auto; padding-right: 4px;">
@@ -366,7 +364,7 @@ function appShell() {
         </div>
         <menu>
           <button type="button" data-close>Zamknij</button>
-          <button type="button" id="btnQuickRefresh" class="button">🔄 Odśwież</button>
+          <button type="button" id="btnQuickRefresh" class="button">${uiIcon("refresh", 16)} Odśwież</button>
           <a href="./mods/admin/?tab=alerts" class="button primary" style="display: inline-flex; align-items: center; text-decoration: none;">Centrum Alertów & Narzędzia →</a>
         </menu>
       </div>
@@ -389,18 +387,16 @@ function appShell() {
         </div>
       </div>
     </dialog>
-    <dialog id="sectionsDialog" class="wide-dialog">
+    <dialog id="sectionAddDialog">
       <div class="modal-panel">
         <header class="modal-heading">
-          <div><span class="eyebrow">Edycja</span><h2>Strona i sekcje</h2></div>
+          <div><span class="eyebrow">Strona: <span id="sectionAddPage"></span></span><h2>Dodaj sekcję</h2></div>
           <button type="button" data-close aria-label="Zamknij">×</button>
         </header>
-        <div class="page-editor" id="pageEditor"></div>
-        <form id="sectionCreateForm" class="inline-form">
-          <label>Nowa sekcja<input id="sectionName" required placeholder="Nazwa sekcji"></label>
+        <form id="sectionAddForm" class="inline-form">
+          <label>Nazwa sekcji<input id="sectionAddName" required maxlength="60" placeholder="np. Usługi serwera"></label>
           <button class="primary" type="submit">Dodaj</button>
         </form>
-        <div class="section-manager" id="sectionManager"></div>
       </div>
     </dialog>
     <div class="toast" id="toast"></div>
@@ -454,7 +450,7 @@ function bindShell() {
     setMode(currentMode() === "n" ? "d" : "n");
   });
   document.querySelector("#resetAppearance")?.addEventListener("click", resetThemeSettings);
-  document.querySelector("#sectionCreateForm")?.addEventListener("submit", saveSection);
+  document.querySelector("#sectionAddForm")?.addEventListener("submit", saveQuickSection);
   document.querySelector("#linkForm")?.addEventListener("submit", saveLink);
   document.querySelector("#sidebarIconAlerts")?.addEventListener("click", openQuickAlertsModal);
   document.querySelector("#btnQuickRefresh")?.addEventListener("click", renderQuickAlertsContent);
@@ -490,12 +486,10 @@ function bindShell() {
     closeMenu();
     if (action === "appearance") {
       if (getStoredAdminPin()) openAppearancePanel(); else requestAdminPin("appearance");
-    } else if (action === "sections") {
-      if (getStoredAdminPin()) openSectionsPanel(); else requestAdminPin("sections");
     } else if (action === "lock") {
       if (getStoredAdminPin()) {
         clearStoredAdminPin();
-        showToast("Edycja zablokowana 🔒");
+        showToast("Edycja zablokowana.");
         if (state.view === "admin") {
           state.view = "links";
           render();
@@ -590,13 +584,6 @@ function renderNavigation() {
     nav.appendChild(button);
   });
 
-  const addPage = document.createElement("button");
-  addPage.type = "button";
-  addPage.className = "nav-add";
-  addPage.innerHTML = `${uiIcon("plus", 16)}<span>Dodaj stronę</span>`;
-  addPage.addEventListener("click", () => withAdminPin(addPagePrompt));
-  nav.appendChild(addPage);
-
   const separator = document.createElement("div");
   separator.className = "nav-separator";
   nav.appendChild(separator);
@@ -611,17 +598,61 @@ function renderNavigation() {
   });
 }
 
-async function addPagePrompt() {
-  const name = (prompt("Nazwa nowej strony (np. Ulubione, Zakupy):") || "").trim();
-  if (!name) return;
+// Menu ⚙️ na dole strony: szybkie dodawanie sekcji i linków, „Zarządzanie”
+// prowadzi do Zaplecza → Homepage od razu na bieżącej stronie.
+function bindContentMenu() {
+  const menu = document.querySelector("#contentMenu");
+  const button = document.querySelector("#contentMenuButton");
+  if (!menu || !button) return;
+  const close = () => {
+    menu.hidden = true;
+    button.setAttribute("aria-expanded", "false");
+    document.removeEventListener("click", onOutside);
+    document.removeEventListener("keydown", onKey);
+  };
+  const onOutside = (event) => { if (!menu.contains(event.target) && event.target !== button) close(); };
+  const onKey = (event) => { if (event.key === "Escape") close(); };
+  button.addEventListener("click", (event) => {
+    event.stopPropagation();
+    if (!menu.hidden) return close();
+    menu.hidden = false;
+    button.setAttribute("aria-expanded", "true");
+    document.addEventListener("click", onOutside);
+    document.addEventListener("keydown", onKey);
+  });
+  menu.addEventListener("click", (event) => {
+    const action = event.target.closest("[data-content-action]")?.dataset.contentAction;
+    if (!action) return;
+    close();
+    if (action === "link") withAdminPin(() => openLinkDialog());
+    else if (action === "section") withAdminPin(openSectionAddDialog);
+    else if (action === "manage") {
+      try { localStorage.setItem("ifs.adminPage", state.activePageId); } catch {}
+    }
+  });
+}
+
+function openSectionAddDialog() {
+  const dialog = document.querySelector("#sectionAddDialog");
+  dialog.querySelector("#sectionAddPage").textContent = activePage().name;
+  dialog.querySelector("form").reset();
+  dialog.showModal();
+  dialog.querySelector("#sectionAddName").focus();
+}
+
+async function saveQuickSection(event) {
+  event.preventDefault();
+  const name = document.querySelector("#sectionAddName").value.trim();
+  if (!name) return showToast("Podaj nazwę sekcji.");
   try {
-    const data = await request(`${dashboardConfig.apiUrl}/api/services/page`, {
+    await request(`${dashboardConfig.apiUrl}/api/services/section`, {
       method: "POST",
-      body: JSON.stringify({ name })
+      body: JSON.stringify({ name, pageId: state.activePageId })
     });
+    document.querySelector("#sectionAddDialog").close();
     await reloadData();
-    setActivePage(data.page.id);
-    showToast(`Dodano stronę „${name}”.`);
+    render();
+    showToast(`Dodano sekcję „${name}”.`);
   } catch (error) {
     showToast(error.message);
   }
@@ -642,21 +673,22 @@ function renderLinks() {
   document.querySelector("#content").innerHTML = `
     <div class="page-sections" id="pageSections"></div>
     <div class="content-actions">
-      <button id="editPage" type="button">${uiIcon("edit", 16)} Strona i sekcje</button>
-      <button id="addSection" type="button">+ Dodaj sekcję</button>
-      ${sections.length ? '<button id="addLink" class="primary" type="button">+ Dodaj link</button>' : ""}
+      <div class="content-menu-wrap">
+        <div class="sidebar-menu content-menu" id="contentMenu" role="menu" hidden>
+          ${sections.length ? `<button type="button" role="menuitem" data-content-action="link">${uiIcon("plus", 18)} Dodaj link</button>` : ""}
+          <button type="button" role="menuitem" data-content-action="section">${uiIcon("plus", 18)} Dodaj sekcję</button>
+          <div class="sidebar-menu-sep" role="separator"></div>
+          <a href="./mods/admin/?tab=homepage" role="menuitem" data-content-action="manage">${uiIcon("admin", 18)} Zarządzanie</a>
+        </div>
+        <button type="button" class="sidebar-icon-btn content-menu-btn" id="contentMenuButton" title="Sekcje i linki" aria-label="Sekcje i linki" aria-haspopup="menu" aria-expanded="false">${uiIcon("settings", 22)}</button>
+      </div>
     </div>
   `;
   document.querySelector("#search").addEventListener("input", (event) => {
     state.query = event.target.value;
     renderLinkCards();
   });
-  document.querySelector("#addLink")?.addEventListener("click", () => withAdminPin(() => openLinkDialog()));
-  document.querySelector("#addSection")?.addEventListener("click", () => withAdminPin(() => {
-    openSectionsPanel();
-    document.querySelector("#sectionName")?.focus();
-  }));
-  document.querySelector("#editPage")?.addEventListener("click", () => withAdminPin(openSectionsPanel));
+  bindContentMenu();
   renderLinkCards();
 }
 
@@ -673,9 +705,9 @@ function buildLinkCard(link) {
     <button class="link-main" type="button">
       <span class="link-icon">${linkIconHtml(link)}</span>
       <span class="link-copy"><strong>${escapeHtml(link.name)}</strong><span>${escapeHtml(link.description || link.url)}</span></span>
-      <span class="open-mark">↗</span>
+      <span class="open-mark">${uiIcon("external", 14)}</span>
     </button>
-    <div class="card-actions"><button data-edit type="button" aria-label="Edytuj link" title="Edytuj">✎</button><button data-delete type="button" aria-label="Usuń link" title="Usuń">🗑</button></div>
+    <div class="card-actions"><button data-edit type="button" aria-label="Edytuj link" title="Edytuj">${uiIcon("edit", 15)}</button><button data-delete type="button" aria-label="Usuń link" title="Usuń">${uiIcon("trash", 15)}</button></div>
   `;
   card.querySelector(".link-main").addEventListener("click", () => openLink(link));
   card.querySelector("[data-edit]").addEventListener("click", () => withAdminPin(() => openLinkDialog(link)));
@@ -720,7 +752,7 @@ function openLink(link) {
         <div>
           <strong>${escapeHtml(link.name)}</strong>
           <button id="closeFrame" type="button">Zamknij</button>
-          <a href="${escapeHtml(link.url)}" target="_blank" rel="noreferrer">Otwórz w karcie ↗</a>
+          <a href="${escapeHtml(link.url)}" target="_blank" rel="noreferrer">Otwórz w karcie ${uiIcon("external", 14)}</a>
         </div>
         <iframe src="${escapeHtml(link.url)}" title="${escapeHtml(link.name)}"></iframe>
       </div>
@@ -818,10 +850,9 @@ async function unlockAdminPanel(event) {
     });
     setStoredAdminPin(pin);
     document.querySelector("#pinDialog").close();
-    showToast("Zaplecze odblokowane 🔓");
+    showToast("Edycja odblokowana.");
     if (state.pendingAdminPanel === "settings") openSettingsPanel();
     else if (state.pendingAdminPanel === "appearance") openAppearancePanel();
-    else if (state.pendingAdminPanel === "sections") openSectionsPanel();
     else if (state.pendingAdminPanel === "action" && typeof state.pendingAction === "function") {
       const action = state.pendingAction;
       state.pendingAction = null;
@@ -1037,10 +1068,8 @@ function setMode(mode) {
   applyLegacyThemeIfNeeded();
 }
 
-// Ikona przełącznika: „theme-toggles” (Alfie Jones, MIT) — wariant classic.
 function modeToggleIcon() {
-  const toggled = currentMode() === "n" ? " theme-toggle--toggled" : "";
-  return `<span class="theme-toggle${toggled}" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" width="1em" height="1em" fill="currentColor" stroke-linecap="round" class="theme-toggle__classic" viewBox="0 0 32 32"><clipPath id="theme-toggle__classic__cutout"><path d="M0-5h30a1 1 0 0 0 9 13v24H0Z" /></clipPath><g clip-path="url(#theme-toggle__classic__cutout)"><circle cx="16" cy="16" r="9.34" /><g stroke="currentColor" stroke-width="1.5"><path d="M16 5.5v-4" /><path d="M16 30.5v-4" /><path d="M1.5 16h4" /><path d="M26.5 16h4" /><path d="m23.4 8.6 2.8-2.8" /><path d="m5.7 26.3 2.9-2.9" /><path d="m5.8 5.8 2.8 2.8" /><path d="m23.4 23.4 2.9 2.9" /></g></g></svg></span>`;
+  return themeToggleIcon(currentMode() === "n");
 }
 
 // Odświeża plik CSS trybu po zapisie (pomija pamięć podręczną przeglądarki).
@@ -1277,149 +1306,6 @@ function readFileAsDataUrl(file) {
   });
 }
 
-function openSectionsPanel() {
-  renderSectionsManager();
-  document.querySelector("#sectionsDialog").showModal();
-}
-
-function renderPageEditor() {
-  const target = document.querySelector("#pageEditor");
-  if (!target) return;
-  const page = activePage();
-  const pages = state.data.pages;
-  const index = pages.findIndex((item) => item.id === page.id);
-  const isHome = page.id === "home";
-  target.innerHTML = `
-    <label>Nazwa strony<input id="pageNameInput" value="${escapeHtml(page.name)}" maxlength="60"></label>
-    <div class="section-editor-actions">
-      ${isHome ? "" : `<button type="button" id="pageUp"${index <= 1 ? " disabled" : ""} title="Wyżej w menu">↑</button><button type="button" id="pageDown"${index === pages.length - 1 ? " disabled" : ""} title="Niżej w menu">↓</button>`}
-      <button type="button" class="primary" id="pageRename">Zapisz nazwę</button>
-      ${isHome ? "" : '<button type="button" class="danger" id="pageDelete">Usuń stronę</button>'}
-    </div>
-    ${isHome ? '<p class="page-editor-note">Home to strona główna — można zmienić jej nazwę, ale nie można jej usunąć.</p>' : '<p class="page-editor-note">Usunięcie strony nie kasuje kafelków — jej sekcje przejdą na Home.</p>'}
-  `;
-  const call = async (method, url, body, message) => {
-    try {
-      await request(`${dashboardConfig.apiUrl}${url}`, { method, body: body ? JSON.stringify(body) : undefined });
-      await reloadData();
-      render();
-      renderSectionsManager();
-      if (message) showToast(message);
-    } catch (error) {
-      showToast(error.message);
-    }
-  };
-  target.querySelector("#pageRename").addEventListener("click", () => {
-    const name = target.querySelector("#pageNameInput").value.trim();
-    if (!name) return showToast("Podaj nazwę strony.");
-    call("PUT", `/api/services/page/${page.id}`, { name }, "Nazwa strony zmieniona.");
-  });
-  target.querySelector("#pageUp")?.addEventListener("click", () => call("PUT", `/api/services/page/${page.id}/move`, { direction: "up" }));
-  target.querySelector("#pageDown")?.addEventListener("click", () => call("PUT", `/api/services/page/${page.id}/move`, { direction: "down" }));
-  target.querySelector("#pageDelete")?.addEventListener("click", async () => {
-    if (!confirm(`Usunąć stronę „${page.name}”? Jej sekcje i linki przejdą na Home.`)) return;
-    await call("DELETE", `/api/services/page/${page.id}`, null, "Strona usunięta, sekcje przeniesione na Home.");
-    setActivePage("home");
-    document.querySelector("#sectionsDialog")?.close();
-  });
-}
-
-function renderSectionsManager() {
-  renderPageEditor();
-  const target = document.querySelector("#sectionManager");
-  target.innerHTML = "";
-  const sections = sectionsOfPage(state.activePageId);
-  sections.forEach((section, index) => {
-    const row = document.createElement("div");
-    row.className = "section-editor-row";
-    row.innerHTML = `
-      <input class="section-edit-name" value="${escapeHtml(section.name)}">
-      <span>${section.links.length} linków</span>
-      <div class="section-editor-actions">
-        <button class="btn-move-up" type="button"${index === 0 ? " disabled" : ""}>↑</button>
-        <button class="btn-move-down" type="button"${index === sections.length - 1 ? " disabled" : ""}>↓</button>
-        <button class="primary btn-save-section" type="button">Zapisz</button>
-        <button class="danger btn-del-section" type="button">Usuń</button>
-      </div>
-    `;
-    row.querySelector(".btn-move-up").addEventListener("click", () => moveSection(section.id, "up"));
-    row.querySelector(".btn-move-down").addEventListener("click", () => moveSection(section.id, "down"));
-    row.querySelector(".btn-save-section").addEventListener("click", () => {
-      const newName = row.querySelector(".section-edit-name").value;
-      updateSection(section.id, newName);
-    });
-    row.querySelector(".btn-del-section").addEventListener("click", () => deleteSection(section));
-    target.appendChild(row);
-  });
-  if (!sections.length) {
-    target.innerHTML = '<div class="empty">Na tej stronie nie ma jeszcze sekcji. Dodaj pierwszą powyżej.</div>';
-  }
-}
-
-async function saveSection(event) {
-  event.preventDefault();
-  const name = document.querySelector("#sectionName").value.trim();
-  if (!name) return showToast("Podaj nazwę sekcji.");
-  try {
-    await request(`${dashboardConfig.apiUrl}/api/services/section`, {
-      method: "POST",
-      body: JSON.stringify({ name, pageId: state.activePageId })
-    });
-    event.target.reset();
-    await reloadData();
-    render();
-    renderSectionsManager();
-    showToast("Sekcja dodana.");
-  } catch (error) {
-    showToast(error.message);
-  }
-}
-
-async function updateSection(sectionId, name) {
-  const cleanName = name.trim();
-  if (!cleanName) return showToast("Podaj nazwę sekcji.");
-  try {
-    await request(`${dashboardConfig.apiUrl}/api/services/section/${sectionId}`, {
-      method: "PUT",
-      body: JSON.stringify({ name: cleanName })
-    });
-    await reloadData();
-    render();
-    renderSectionsManager();
-    showToast("Nazwa sekcji zmieniona.");
-  } catch (error) {
-    showToast(error.message);
-  }
-}
-
-async function moveSection(sectionId, direction) {
-  try {
-    await request(`${dashboardConfig.apiUrl}/api/services/section/${sectionId}/move`, {
-      method: "PUT",
-      body: JSON.stringify({ direction })
-    });
-    await reloadData();
-    render();
-    renderSectionsManager();
-    showToast("Kolejność sekcji zmieniona.");
-  } catch (error) {
-    showToast(error.message);
-  }
-}
-
-async function deleteSection(section) {
-  if (!confirm(`Usunąć sekcję „${section.name}” i wszystkie jej linki?`)) return;
-  try {
-    await request(`${dashboardConfig.apiUrl}/api/services/section/${section.id}`, { method: "DELETE" });
-    await reloadData();
-    render();
-    renderSectionsManager();
-    showToast("Sekcja usunięta.");
-  } catch (error) {
-    showToast(error.message);
-  }
-}
-
 let statusTopController = null;
 
 function stopStatusTopDiagnostics() {
@@ -1568,6 +1454,14 @@ async function runPortCheck() {
   }
 }
 
+function loadDismissedAlerts() {
+  try { return JSON.parse(localStorage.getItem("ifs.dismissedAlerts") || "[]"); } catch { return []; }
+}
+
+function saveDismissedAlerts(keys) {
+  try { localStorage.setItem("ifs.dismissedAlerts", JSON.stringify(keys)); } catch {}
+}
+
 async function loadAlertsSummary() {
   const badge = document.querySelector("#sidebarAlertBadge");
   const headerAlert = document.querySelector("#headerAlert");
@@ -1575,7 +1469,6 @@ async function loadAlertsSummary() {
     const data = await request(`${dashboardConfig.apiUrl}/api/alerts/summary`);
     state.alertsData = data;
     const total = data.summary?.total || 0;
-    const critical = data.summary?.critical || 0;
 
     if (badge) {
       if (total > 0) {
@@ -1587,16 +1480,36 @@ async function loadAlertsSummary() {
     }
 
     if (headerAlert) {
-      if (critical > 0) {
-        const criticalAlerts = (data.alerts || []).filter((a) => a.severity === "critical");
-        const names = criticalAlerts.map((a) => a.resource || a.title).join(", ");
+      // Pasek: każda awaria (czerwony) i ostrzeżenia temperatur (pomarańczowy).
+      // CPU / RAM / dyski jako ostrzeżenie zostają tylko w dzwonku.
+      // Zamknięty ✕ nie wraca dla tych samych zgłoszeń; wraca przy nowym, przy
+      // zmianie z „uwagi” na „alarm” albo gdy usługa po naprawie padnie znowu.
+      const barAlerts = (data.alerts || []).filter((a) => a.severity === "critical" || a.type === "temperature");
+      const keyOf = (a) => `${a.id || a.resource || a.title}:${a.severity}`;
+      const barKeys = barAlerts.map(keyOf);
+      const dismissed = loadDismissedAlerts().filter((key) => barKeys.includes(key));
+      saveDismissedAlerts(dismissed);
+      const visible = barAlerts.filter((a) => !dismissed.includes(keyOf(a)));
+      if (visible.length) {
+        const isCritical = visible.some((a) => a.severity === "critical");
+        const names = visible.map((a) => a.type === "temperature" ? `${a.resource} (${a.message.split(" — ")[0]})` : (a.resource || a.title));
         headerAlert.innerHTML = `
-          <a href="./mods/admin/?tab=alerts" class="header-alert-item" title="Kliknij, aby otworzyć szczegóły diagnostyki">
-            <span class="alert-icon">⚠️</span>
-            <span><strong>Uwaga — wykryto awarię usług:</strong> ${escapeHtml(names || "Problemy z kontenerami/sprzętem")}</span>
-            <span class="header-alert-link">Szczegóły →</span>
-          </a>
+          <div class="incident-bar ${isCritical ? "critical" : "warning"}">
+            <span class="incident-bar-icon">${uiIcon(isCritical ? "siren" : "warning", 24)}</span>
+            <span class="incident-bar-text">
+              <strong>${isCritical ? "Alarm — wykryto awarię" : "Uwaga — podwyższona temperatura"}</strong>
+              <span>${escapeHtml(names.join(", "))}</span>
+            </span>
+            <a href="./mods/admin/?tab=alerts" class="incident-bar-btn" title="Otwórz szczegóły w Centrum alertów">Szczegóły →</a>
+            <span class="incident-bar-spacer"></span>
+            <button type="button" class="incident-bar-close" id="headerAlertClose" title="Zamknij pasek (alert zostaje w dzwonku)" aria-label="Zamknij pasek">${uiIcon("close", 18)}</button>
+          </div>
         `;
+        headerAlert.querySelector("#headerAlertClose").addEventListener("click", () => {
+          saveDismissedAlerts([...dismissed, ...visible.map(keyOf)]);
+          headerAlert.innerHTML = "";
+          headerAlert.style.display = "none";
+        });
         headerAlert.style.display = "flex";
       } else {
         headerAlert.innerHTML = "";
@@ -1631,22 +1544,26 @@ async function renderAlertsInto(selector) {
     if (alerts.length === 0) {
       container.innerHTML = `
         <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding: 24px; text-align:center; background: rgba(16,185,129,0.06); border:1px solid rgba(16,185,129,0.25); border-radius:14px;">
-          <span style="font-size:32px; margin-bottom:8px;">✅</span>
+          <span style="margin-bottom:8px; color:#34d399;">${uiIcon("ok", 34)}</span>
           <strong style="color:#34d399; font-size:15px;">Wszystkie usługi i kontenery działają stabilnie.</strong>
           <span style="color:var(--muted); font-size:12px; margin-top:4px;">Brak aktywnych awarii w Homelabie.</span>
         </div>
       `;
       return;
     }
-    container.innerHTML = alerts.map((a) => `
-      <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; padding:12px 14px; border-radius:12px; background: ${a.severity === "critical" ? "rgba(239,68,68,0.12)" : "rgba(245,158,11,0.12)"}; border:1px solid ${a.severity === "critical" ? "rgba(239,68,68,0.35)" : "rgba(245,158,11,0.35)"};">
-        <div>
-          <strong style="display:block; font-size:13px; color:#fff;">${escapeHtml(a.title)}</strong>
-          <span style="font-size:11px; color:var(--muted);">${escapeHtml(a.message)}</span>
+    container.innerHTML = alerts.map((a) => {
+      const isCritical = a.severity === "critical";
+      return `
+        <div class="incident-bar ${isCritical ? "critical" : "warning"}">
+          <span class="incident-bar-icon">${uiIcon(isCritical ? "siren" : "warning", 24)}</span>
+          <span class="incident-bar-text">
+            <strong>${escapeHtml(a.title)}</strong>
+            <span>${escapeHtml(a.message)}</span>
+          </span>
+          <span class="incident-bar-tag">${isCritical ? "Awaria" : "Ostrzeżenie"}</span>
         </div>
-        <span style="font-size:11px; font-weight:bold; color:${a.severity === "critical" ? "#f87171" : "#fbbf24"}; text-transform:uppercase;">${escapeHtml(a.severity)}</span>
-      </div>
-    `).join("");
+      `;
+    }).join("");
   } catch (err) {
     container.innerHTML = `<div class="empty" style="color:var(--danger);">Błąd pobierania alertów: ${escapeHtml(err.message)}</div>`;
   }
@@ -1674,7 +1591,6 @@ async function loadSystemStats() {
     widget.title = error.message;
     widget.innerHTML = `
       <div class="header-stat is-error"><span>CPU</span><strong>--</strong></div>
-      <div class="header-stat is-error"><span>Temp</span><strong>--</strong></div>
       <div class="header-stat is-error"><span>RAM</span><strong>--</strong></div>
     `;
     if (container) container.innerHTML = `<div class="empty">${escapeHtml(error.message)}</div>`;
@@ -1684,12 +1600,17 @@ async function loadSystemStats() {
 
 function renderHeaderStats(data) {
   const cpuUsage = data.cpu?.usage == null ? null : Number(data.cpu.usage);
-  const temperature = data.cpu?.temperature == null ? null : Number(data.cpu.temperature);
   const memoryPercent = data.memory?.percent == null ? null : Number(data.memory.percent);
+  // Kolor wg progów z Zaplecza → Centrum alertów (CPU i RAM tylko kolorem, bez paska).
+  const level = (value, limits) => {
+    if (value == null || Number.isNaN(value) || !limits) return "";
+    if (value >= limits.alarm) return " is-alarm";
+    if (value >= limits.warn) return " is-warn";
+    return "";
+  };
   return `
-    <div class="header-stat"><span>CPU</span><strong>${percentLabel(cpuUsage)}</strong></div>
-    <div class="header-stat"><span>Temp</span><strong>${temperature == null || Number.isNaN(temperature) ? "—" : `${Math.round(temperature)}°C`}</strong></div>
-    <div class="header-stat"><span>RAM</span><strong>${percentLabel(memoryPercent)}</strong></div>
+    <div class="header-stat${level(cpuUsage, data.thresholds?.cpu)}"><span>CPU</span><strong>${percentLabel(cpuUsage)}</strong></div>
+    <div class="header-stat${level(memoryPercent, data.thresholds?.ram)}"><span>RAM</span><strong>${percentLabel(memoryPercent)}</strong></div>
   `;
 }
 

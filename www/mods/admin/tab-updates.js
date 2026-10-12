@@ -12,12 +12,12 @@ function renderUpdatesTab() {
       <section class="admin-section-card">
         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 12px;">
           <div>
-            <h2>🐧 Pakiety systemowe (Debian apt)</h2>
+            <h2>${uiIcon("terminal", 22)} Pakiety systemowe (Debian apt)</h2>
             <p class="settings-note">Informacja o oczekujących aktualizacjach systemu. Aktualizacje wykonujesz przez Cockpit.</p>
           </div>
           <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
-            <button type="button" class="button primary" id="btnCheckOsUpdates">🔍 Sprawdź aktualizacje</button>
-            <a href="${escapeHtml(cockpitUrl)}" target="_blank" class="button" style="font-size: 13px;">🖥️ Otwórz Cockpit ↗</a>
+            <button type="button" class="button primary" id="btnCheckOsUpdates">${uiIcon("search", 16)} Sprawdź aktualizacje</button>
+            <a href="${escapeHtml(cockpitUrl)}" target="_blank" class="button" style="font-size: 13px;">${uiIcon("monitor", 16)} Otwórz Cockpit ${uiIcon("external", 14)}</a>
           </div>
         </div>
 
@@ -31,12 +31,12 @@ function renderUpdatesTab() {
       <section class="admin-section-card">
         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 12px;">
           <div>
-            <h2>🐳 Kontenery Docker</h2>
+            <h2>${uiIcon("container", 22)} Kontenery Docker</h2>
             <p class="settings-note">Zainstalowana i najnowsza stabilna wersja każdego kontenera (bez beta/rc/dev). Nowe kontenery pojawiają się tu automatycznie. Zapis nowego tagu do compose.yaml nie restartuje sam — restart/aktualizację zawsze robisz ręcznie w Dockge.</p>
           </div>
           <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
-            <button type="button" class="button primary" id="btnRefreshContainers">🔄 Odśwież</button>
-            <a href="${escapeHtml(dockgeUrl)}" target="_blank" class="button" style="font-size: 13px;">📦 Otwórz Dockge ↗</a>
+            <button type="button" class="button primary" id="btnRefreshContainers">${uiIcon("refresh", 16)} Odśwież</button>
+            <a href="${escapeHtml(dockgeUrl)}" target="_blank" class="button" style="font-size: 13px;">${uiIcon("package", 16)} Otwórz Dockge ${uiIcon("external", 14)}</a>
           </div>
         </div>
 
@@ -80,12 +80,12 @@ async function checkOsUpdates() {
     } else if (count === 0) {
       result.innerHTML = `
         <div style="padding: 12px 16px; border-radius: 10px; background: rgba(16,185,129,0.1); color: #10b981; font-size: 13px; font-weight: 500;">
-          🟢 Wszystkie pakiety systemowe są aktualne.
+          ${uiIcon("ok", 16)} Wszystkie pakiety systemowe są aktualne.
         </div>`;
     } else {
       result.innerHTML = `
         <div style="padding: 10px 14px; border-radius: 10px; background: rgba(239,119,119,0.1); color: var(--danger); font-size: 13px; font-weight: 500; margin-bottom: 12px;">
-          ⚠️ ${count} pakiet${count === 1 ? "" : count < 5 ? "i" : "ów"} do aktualizacji. Użyj Cockpit → Software Updates.
+          ${uiIcon("warning", 16)} ${count} pakiet${count === 1 ? "" : count < 5 ? "i" : "ów"} do aktualizacji. Użyj Cockpit → Software Updates.
         </div>
         <div style="display: grid; gap: 6px;">
           ${pkgs.map(p => `
@@ -142,7 +142,7 @@ async function loadContainers() {
       const hasLatest = Boolean(v.latestStable);
       const isOutdated = hasLatest && v.installedVersion && compareTagsClient(v.installedVersion, v.latestStable) < 0;
       const latestCell = hasLatest
-        ? `${escapeHtml(v.latestStable)}${isOutdated ? " ⚠️" : ""}`
+        ? `${escapeHtml(v.latestStable)}${isOutdated ? ` ${uiIcon("warning", 14)}` : ""}`
         : `<span style="color:var(--muted);">nieznana</span>`;
       const stackUrl = `${dockgeBase}/compose/${encodeURIComponent(v.stack)}`;
 
@@ -153,11 +153,11 @@ async function loadContainers() {
           <td style="padding:8px 10px;${isOutdated ? "color:#f59e0b;font-weight:600;" : ""}">${latestCell}</td>
           <td style="padding:8px 10px;">
             ${hasLatest
-              ? `<button type="button" class="button" style="font-size:12px;" data-update-compose data-container="${escapeHtml(v.container)}" data-tag="${escapeHtml(v.latestStable)}">💾 Aktualizuj compose</button>`
+              ? `<button type="button" class="button" style="font-size:12px;" data-update-compose data-container="${escapeHtml(v.container)}" data-tag="${escapeHtml(v.latestStable)}">${uiIcon("save", 14)} Aktualizuj compose</button>`
               : `<span style="color:var(--muted);font-size:12px;">—</span>`}
           </td>
           <td style="padding:8px 10px;">
-            <a href="${escapeHtml(stackUrl)}" target="_blank" class="button" style="font-size:12px;">🔁 Restart / Aktualizuj ↗</a>
+            <a href="${escapeHtml(stackUrl)}" target="_blank" class="button" style="font-size:12px;">${uiIcon("repeat", 14)} Restart / Aktualizuj ${uiIcon("external", 13)}</a>
           </td>
         </tr>`;
     }).join("");

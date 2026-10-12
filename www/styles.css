@@ -312,6 +312,11 @@ nav { display: grid; align-content: start; gap: 7px; overflow: auto; }
   line-height: 1;
 }
 .header-stat.is-loading strong, .header-stat.is-error strong { color: var(--muted); }
+/* CPU / RAM powyżej progów z Centrum alertów — pomarańczowy (uwaga), czerwony (alarm). */
+.header-stat.is-warn { border: 2px solid #ea580c; background: color-mix(in srgb, #ea580c 14%, transparent); }
+.header-stat.is-warn strong { color: #ea580c; }
+.header-stat.is-alarm { border: 2px solid #dc2626; background: color-mix(in srgb, #dc2626 16%, transparent); }
+.header-stat.is-alarm strong { color: #dc2626; }
 .eyebrow { color: var(--accent-alt); font-size: 11px; font-weight: 900; letter-spacing: .12em; text-transform: uppercase; }
 .toolbar-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
 input, select {
@@ -321,7 +326,7 @@ input, select {
 select option { background: var(--panel-strong); }
 input:focus, select:focus { border-color: color-mix(in srgb, var(--accent) 55%, transparent); box-shadow: 0 0 0 3px var(--accent-soft); }
 button, a { color: inherit; }
-.primary, .danger, dialog menu button, .card-actions button, .frame-panel button, .frame-panel a {
+.primary, .danger, :where(body:not(.admin-body)) .button, dialog menu button, .card-actions button, .frame-panel button, .frame-panel a {
   min-height: 40px; padding: 0 13px; border: 1px solid var(--line); border-radius: 12px;
   background: rgb(var(--admin-panel-rgb) / max(var(--admin-panel-alpha), 0.16));
   color: var(--text); text-decoration: none;
@@ -330,7 +335,7 @@ button, a { color: inherit; }
   box-shadow: 0 8px 18px rgb(0 0 0 / 0.18), inset 0 1px 0 rgb(255 255 255 / 0.13);
   transition: transform .16s ease, box-shadow .16s ease, border-color .16s ease;
 }
-.primary:hover, .danger:hover, dialog menu button:hover, .frame-panel button:hover, .frame-panel a:hover {
+.primary:hover, .danger:hover, :where(body:not(.admin-body)) .button:hover, dialog menu button:hover, .frame-panel button:hover, .frame-panel a:hover {
   transform: translateY(-1px);
   border-color: color-mix(in srgb, var(--accent) 36%, transparent);
   box-shadow: 0 12px 24px rgb(0 0 0 / 0.24), inset 0 1px 0 rgb(255 255 255 / 0.17);
@@ -338,6 +343,8 @@ button, a { color: inherit; }
 .primary { border-color: var(--accent); background: var(--accent); color: var(--on-accent, #052016); font-weight: 800; }
 .primary:hover { background: color-mix(in srgb, var(--accent) 80%, #ffffff); color: var(--on-accent, #052016); }
 .danger { color: var(--danger); }
+/* Klasa .button z modułów (np. Top) na Stronie Głównej; w Zapleczu styluje ją admin.css. */
+:where(body:not(.admin-body)) .button { display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
 
 /* Header Alert Banner */
 .header-alert-box {
@@ -346,49 +353,73 @@ button, a { color: inherit; }
   gap: 8px;
   margin-bottom: 22px;
 }
-.header-alert-item {
+/* ==========================================================================
+   Pasek awarii i ostrzeżeń (Strona Główna i Centrum alertów w Zapleczu) — pełne kolory niezależne od
+   motywu i edytora wyglądu, żeby zgłoszenie zawsze było widoczne.
+   ========================================================================== */
+.incident-bar {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 12px 18px;
-  border: 1px solid rgba(239, 68, 68, 0.4);
-  border-radius: 14px;
-  background: rgba(239, 68, 68, 0.12);
-  color: #fca5a5;
-  font-size: 13px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  cursor: pointer;
+  gap: 14px;
+  min-width: 0;
+  padding: 14px 18px;
+  border-radius: 12px;
+  border: 2px solid;
+  box-shadow: 0 6px 18px rgb(0 0 0 / 0.25);
+}
+.incident-bar.critical { background: #b91c1c; border-color: #fca5a5; color: #ffffff; }
+.incident-bar.warning { background: #b45309; border-color: #fcd34d; color: #ffffff; }
+.incident-bar-icon { flex-shrink: 0; font-size: 22px; }
+.incident-bar-text { flex: 1; min-width: 0; }
+.incident-bar-text strong { display: block; font-size: 15px; font-weight: 800; color: inherit; word-break: break-word; }
+.incident-bar-text span { display: block; margin-top: 2px; font-size: 13px; font-weight: 600; color: inherit; opacity: 0.92; word-break: break-word; }
+.incident-bar .incident-bar-btn {
+  display: inline-flex;
+  align-items: center;
   text-decoration: none;
-  transition: transform 0.15s ease, background 0.15s ease;
-}
-.header-alert-item:hover {
-  transform: translateY(-1px);
-  background: rgba(239, 68, 68, 0.18);
-}
-.header-alert-item.warning {
-  border-color: rgba(245, 158, 11, 0.4);
-  background: rgba(245, 158, 11, 0.12);
-  color: #fcd34d;
-}
-.header-alert-item strong {
+  flex-shrink: 0;
+  min-height: 36px;
+  padding: 0 14px;
+  border: 1px solid rgb(255 255 255 / 0.7) !important;
+  border-radius: 10px;
+  background: rgb(0 0 0 / 0.25) !important;
+  color: #ffffff !important;
+  font-size: 13px;
   font-weight: 700;
-  color: #fff;
 }
-.header-alert-item .alert-icon {
-  font-size: 18px;
-  animation: pulse-alert 2s infinite;
+.incident-bar .incident-bar-btn:hover { background: rgb(0 0 0 / 0.4) !important; }
+.incident-bar-tag {
+  flex-shrink: 0;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: rgb(0 0 0 / 0.25);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
-.header-alert-link {
-  font-size: 12px;
-  font-weight: 700;
-  color: #fff;
-  text-decoration: underline;
-  margin-left: auto;
-  white-space: nowrap;
+/* Pasek na górze Strony Głównej: tekst nie rozpycha się, „Szczegóły” zaraz za nim, ✕ na końcu. */
+#headerAlert .incident-bar-text { flex: 0 1 auto; }
+.incident-bar-spacer { flex: 1; }
+.incident-bar .incident-bar-close {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  min-height: 0;
+  padding: 0;
+  border: 1px solid rgb(255 255 255 / 0.7);
+  border-radius: 50%;
+  background: transparent;
+  color: #ffffff;
+  font-size: 16px;
+  font-weight: 800;
+  line-height: 1;
+  box-shadow: none;
 }
+.incident-bar .incident-bar-close:hover { background: rgb(0 0 0 / 0.3); }
+a.incident-bar { text-decoration: none; transition: transform 0.15s ease; }
+a.incident-bar:hover { transform: translateY(-1px); }
+.incident-bar-icon { animation: pulse-alert 2s infinite; }
 
 @keyframes pulse-alert {
   0% { transform: scale(1); opacity: 1; }
@@ -572,9 +603,6 @@ dialog menu { display: flex; justify-content: flex-end; gap: 8px; margin: 4px 0 
 .command-list article { display: grid; gap: 7px; padding: 12px; border: 1px solid var(--line); border-radius: 14px; background: rgb(255 255 255 / 0.045); }
 .command-list strong { color: var(--text); font-size: 13px; }
 .command-list code { display: block; overflow-x: auto; padding: 10px; border-radius: 10px; background: rgb(0 0 0 / 0.22); color: var(--accent); font-size: 12px; white-space: nowrap; }
-.section-manager { display: grid; gap: 10px; max-height: min(58vh, 520px); overflow: auto; padding-right: 4px; }
-.section-editor-row { display: grid; grid-template-columns: minmax(180px, 1fr) auto auto; align-items: end; gap: 10px; padding: 12px; border: 1px solid var(--line); border-radius: 16px; background: rgb(255 255 255 / 0.045); }
-.section-editor-row > span { align-self: center; color: var(--muted); font-size: 12px; white-space: nowrap; }
 .section-editor-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; }
 .section-editor-actions button { min-height: 38px; padding: 0 10px; border: 1px solid var(--line); border-radius: 11px; background: rgb(255 255 255 / 0.06); color: var(--text); }
 .section-editor-actions button.primary { border-color: var(--accent); background: var(--accent); color: var(--on-accent, #052016); font-weight: 800; }
@@ -616,7 +644,7 @@ dialog menu { display: flex; justify-content: flex-end; gap: 8px; margin: 4px 0 
   .admin-grid { grid-template-columns: 1fr; grid-template-rows: auto; }
   .system-stats-card { grid-column: auto; }
   .metrics { grid-template-columns: repeat(2, minmax(100px, 1fr)); }
-  .inline-form, .section-editor-row, .settings-grid, .appearance-grid, .appearance-section-grid { grid-template-columns: 1fr; }
+  .inline-form, .settings-grid, .appearance-grid, .appearance-section-grid { grid-template-columns: 1fr; }
   .settings-grid label:nth-child(2) { grid-column: auto; }
   .section-editor-actions { justify-content: stretch; }
   .section-editor-actions button { flex: 1; }
@@ -832,6 +860,22 @@ dialog menu { display: flex; justify-content: flex-end; gap: 8px; margin: 4px 0 
 .content-actions button:hover { border-color: color-mix(in srgb, var(--accent) 40%, transparent); }
 .content-actions button.primary { border-color: var(--accent); background: var(--accent); color: var(--on-accent, #052016); font-weight: 800; }
 .content-actions button.primary:hover { background: color-mix(in srgb, var(--accent) 80%, #ffffff); }
+/* Kółko ⚙️ na dole strony i jego menu (wygląd jak menu ⚙️ w pasku bocznym). */
+.content-menu-wrap { position: relative; }
+.content-actions .content-menu-btn { width: 48px; max-width: 48px; min-height: 0; padding: 0; border-radius: 50%; }
+.content-menu { left: auto; right: 0; bottom: calc(100% + 8px); width: 230px; }
+.content-actions .content-menu button {
+  display: flex; align-items: center; justify-content: flex-start; gap: 8px;
+  width: 100%; min-height: 40px; padding: 0 12px;
+  border: 1px solid transparent; border-radius: 10px;
+  background: transparent; color: var(--text);
+  font-family: var(--font-menu); font-size: 14px; font-weight: 400; text-align: left;
+  box-shadow: none; transform: none;
+}
+.content-actions .content-menu button:hover {
+  border-color: transparent; background: var(--accent-soft); color: var(--accent);
+  box-shadow: none; transform: none;
+}
 
 /* ==========================================================================
    Menu stron — przyciski „lizak” (główka z ikoną + patyczek z nazwą)
@@ -928,11 +972,6 @@ dialog menu { display: flex; justify-content: flex-end; gap: 8px; margin: 4px 0 
   text-transform: uppercase;
 }
 .empty-small { min-height: 60px; padding: 12px; font-size: 13px; }
-
-/* Okno „Strona i sekcje” */
-.page-editor { display: grid; gap: 10px; padding: 14px; border: 1px solid var(--line); border-radius: 14px; }
-.page-editor label { display: grid; gap: 6px; font-size: 11px; font-weight: 800; text-transform: uppercase; color: var(--muted); }
-.page-editor-note { margin: 0; font-size: 12px; color: var(--muted); }
 
 /* Ikony w menu ⚙️ i na przyciskach */
 .sidebar-menu button .ui-icon, .sidebar-menu a .ui-icon { color: var(--muted); }

@@ -38,43 +38,58 @@ function switchTab(tabId) {
 
   const content = document.querySelector("#tabContent");
   const title = document.querySelector("#tabTitle");
+  // Tytuł zakładki z ikoną Lucide — ta sama, co przy przycisku w menu.
+  const setTabTitle = (icon, text) => {
+    title.innerHTML = `${typeof uiIcon === "function" ? uiIcon(icon, 24) : ""}<span>${escapeHtml(text)}</span>`;
+  };
 
   if (tabId === "helper") {
-    title.textContent = "⚙️ Helper & Ustawienia Ogólne";
+    setTabTitle("settings", "Ustawienia ogólne");
     content.innerHTML = renderHelperTab();
     bindHelperEvents();
   } else if (tabId === "alerts") {
-    title.textContent = "🔔 Centrum Alertów & Diagnostyka";
+    setTabTitle("alerts", "Centrum Alertów & Diagnostyka");
     content.innerHTML = renderAlertsTab();
     bindAlertsEvents();
   } else if (tabId === "live") {
-    title.textContent = "📊 Statystyki Live";
+    setTabTitle("status", "Statystyki Live");
     content.innerHTML = renderLiveTab();
     bindLiveEvents();
   } else if (tabId === "homepage") {
-    title.textContent = "🏠 Homepage — Ustawienia i Sekcje";
+    setTabTitle("page", "Strony i sekcje");
     content.innerHTML = renderHomepageTab();
     bindHomepageEvents();
   } else if (tabId === "modules") {
-    title.textContent = "🧩 Moduły";
+    setTabTitle("modules", "Moduły");
     content.innerHTML = renderModulesHubTab();
     bindModulesHubEvents();
   } else if (tabId === "kiosk") {
-    title.textContent = "🖥️ Kiosk Serwera — Ustawienia i Wygląd";
+    setTabTitle("modules", "Kiosk Serwera — Ustawienia i Wygląd");
     content.innerHTML = renderKioskTab();
     bindKioskEvents();
   } else if (tabId === "updates") {
-    title.textContent = "📦 Aktualizacje Systemu & Docker";
+    setTabTitle("package", "Aktualizacje Systemu & Docker");
     content.innerHTML = renderUpdatesTab();
     bindUpdatesEvents();
   } else if (tabId === "admin-theme") {
-    title.textContent = "⚙️ Wygląd Zaplecza";
+    setTabTitle("appearance", "Wygląd Zaplecza");
     content.innerHTML = renderAdminThemeTab();
     bindAdminThemeEvents();
   }
 }
 
+// Ikony Lucide w menu Zaplecza (atrybut data-icon przy przycisku).
+function renderNavIcons() {
+  if (typeof uiIcon !== "function") return;
+  document.querySelectorAll(".admin-sidebar [data-icon]").forEach((el) => {
+    if (el.querySelector(".ui-icon")) return;
+    el.insertAdjacentHTML("afterbegin", uiIcon(el.dataset.icon, 18));
+  });
+}
+
 function init() {
+  renderNavIcons();
+  if (typeof bindAdminModeToggle === "function") bindAdminModeToggle();
   const pinInput = document.querySelector("#adminPinInput");
   if (pinInput) {
     pinInput.value = "";
@@ -113,10 +128,7 @@ function init() {
     request("/api/admin/theme").catch(() => ({ theme: {} }))
   ]).then(([themeData, adminThemeData]) => {
     state.theme = themeData.theme || {};
-    state.adminTheme = adminThemeData.theme || {};
-    if (typeof applyAdminThemeStyles === "function") {
-      applyAdminThemeStyles(state.adminTheme);
-    }
+    if (typeof useAdminThemes === "function") useAdminThemes(adminThemeData);
   }).catch(() => {});
 
   if (typeof autoUnlockIfStored === "function") {

@@ -55,7 +55,7 @@
 
 /* Karty Sekcji wewnątrz panelu (Zgodne z systemem kart IF-startpage) */
 .top-section-card {
-  background: rgba(0, 0, 0, 0.28);
+  background: color-mix(in srgb, var(--text) 5%, transparent);
   border: 1px solid var(--line);
   border-radius: var(--card-radius, 14px);
   padding: 14px 16px;
@@ -91,7 +91,7 @@
 }
 
 .top-core-box {
-  background: rgba(0, 0, 0, 0.35);
+  background: color-mix(in srgb, var(--text) 6%, transparent);
   border: 1px solid var(--line);
   border-radius: 10px;
   padding: 10px 12px;
@@ -114,16 +114,16 @@
   font-family: monospace;
   padding: 2px 6px;
   border-radius: 6px;
-  background: rgba(255, 255, 255, 0.05);
+  background: color-mix(in srgb, var(--text) 10%, transparent);
 }
 
-.top-temp-cool { color: #34d399; background: rgba(52, 211, 153, 0.12); }
-.top-temp-warm { color: #fbbf24; background: rgba(251, 191, 36, 0.12); }
-.top-temp-hot { color: #f87171; background: rgba(248, 113, 113, 0.18); }
+.top-temp-cool { color: #ffffff; background: #047857; }
+.top-temp-warm { color: #ffffff; background: #c2410c; }
+.top-temp-hot { color: #ffffff; background: #b91c1c; }
 
 .top-core-bar {
   height: 7px;
-  background: rgba(255, 255, 255, 0.08);
+  background: color-mix(in srgb, var(--text) 10%, transparent);
   border-radius: 4px;
   overflow: hidden;
 }
@@ -155,7 +155,7 @@
 /* Pasek segmentów pamięci RAM */
 .top-ram-segments {
   height: 12px;
-  background: rgba(255, 255, 255, 0.08);
+  background: color-mix(in srgb, var(--text) 10%, transparent);
   border-radius: 6px;
   overflow: hidden;
   display: flex;
@@ -175,7 +175,7 @@
 }
 
 .top-ram-seg-free {
-  background: rgba(255, 255, 255, 0.18);
+  background: color-mix(in srgb, var(--text) 18%, transparent);
   height: 100%;
   transition: width 0.35s ease;
 }
@@ -204,7 +204,7 @@
 
 .top-legend-dot.used { background: var(--accent); }
 .top-legend-dot.cache { background: var(--accent-alt); }
-.top-legend-dot.free { background: rgba(255, 255, 255, 0.4); }
+.top-legend-dot.free { background: color-mix(in srgb, var(--text) 35%, transparent); }
 .top-legend-dot.swap { background: #fb923c; }
 
 /* Liczniki Sieci */
@@ -215,7 +215,7 @@
 }
 
 .top-net-box {
-  background: rgba(0, 0, 0, 0.35);
+  background: color-mix(in srgb, var(--text) 6%, transparent);
   border: 1px solid var(--line);
   border-radius: 10px;
   padding: 10px 12px;
@@ -253,7 +253,7 @@
 }
 
 .top-disk-box {
-  background: rgba(0, 0, 0, 0.35);
+  background: color-mix(in srgb, var(--text) 6%, transparent);
   border: 1px solid var(--line);
   border-radius: 10px;
   padding: 10px 12px;
@@ -306,7 +306,7 @@
 .top-table-box {
   overflow-x: auto;
   border-radius: 10px;
-  background: rgba(0, 0, 0, 0.35);
+  background: color-mix(in srgb, var(--text) 6%, transparent);
   border: 1px solid var(--line);
 }
 
@@ -319,7 +319,7 @@
 }
 
 .top-table th {
-  background: rgba(255, 255, 255, 0.04);
+  background: color-mix(in srgb, var(--text) 5%, transparent);
   padding: 8px 12px;
   color: var(--muted);
   font-weight: 700;
@@ -328,12 +328,12 @@
 
 .top-table td {
   padding: 6px 12px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  border-bottom: 1px solid var(--line);
   color: var(--text);
 }
 
 .top-table tr:hover td {
-  background: rgba(255, 255, 255, 0.04);
+  background: color-mix(in srgb, var(--text) 5%, transparent);
 }
 
 .top-badge-cpu {
@@ -383,7 +383,7 @@
 .top-accordion-summary::-webkit-details-marker,
 .top-accordion-summary::marker { display: none; content: ""; }
 
-.top-accordion-summary:hover { background: rgba(255, 255, 255, 0.04); }
+.top-accordion-summary:hover { background: color-mix(in srgb, var(--text) 5%, transparent); }
 
 .top-accordion-chevron {
   color: var(--muted);
@@ -395,4 +395,11 @@
 .top-accordion-body {
   padding: 4px 20px 20px;
   border-top: 1px solid var(--line);
+}
+
+/* Temperatury (Statystyki Live w Zapleczu) — wszystkie czujniki systemu. */
+.top-temps-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 10px;
 }

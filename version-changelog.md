@@ -4,6 +4,23 @@ Nowe wpisy dopisujemy na górze.
 
 ---
 
+## v0.1.6.5 — 2026-10-12
+
+Porządki w menu, progi alarmów, ikony Lucide i tryb dzień / noc w Zapleczu.
+
+- **Menu ⚙️ na dole strony** zamiast trzech przycisków: „Dodaj link”, „Dodaj sekcję” (małe okno z jednym polem, sekcja trafia na bieżącą stronę) i „Zarządzanie” (Zaplecze → Strony i sekcje, od razu na bieżącej stronie).
+- **Okno „Strony i sekcje” usunięte** ze Strony Głównej, razem z przyciskiem „Dodaj stronę” w menu i systemowym okienkiem `prompt()`. Strony dodaje się, przemianowuje, sortuje i usuwa w Zapleczu → **Strony i sekcje** (dawniej „Homepage”).
+- **Pasek awarii** (`incident-bar`) — jedna klasa dla paska na Stronie Głównej, okienka dzwonka, widoku Alerty i Centrum alertów; pełne kolory niezależne od motywu (czerwony — alarm, pomarańczowy — uwaga). Przycisk ✕ chowa pasek; wraca przy nowym zgłoszeniu albo zmianie z „uwagi” na „alarm”. Alert zostaje w dzwonku.
+- **Progi temperatur** (Zaplecze → Centrum alertów): tabela wszystkich czujników — obecna temperatura, próg „Uwaga” i „Alarm”, „Resetuj do domyślnych” i „Zapisz”. Domyślne progi wg rodzaju czujnika; własne w `config/temperature-thresholds.json`. Przekroczenie progu → alarm w pasku, dzwonku i Centrum alertów (wcześniej stały próg 78/85 °C tylko dla procesora).
+- **Progi obciążenia CPU i RAM** (domyślnie 70/90 % i 80/95 %, `config/load-thresholds.json`) — kolor kafelków CPU i RAM w nagłówku, bez paska alarmowego. Kafelek TEMP usunięty z nagłówka.
+- **Temperatury:** kafelek procesora bierze ogólną temperaturę CPU (Intel „Package id”, AMD „Tctl”), a nie pierwszy znaleziony czujnik (płyta główna). Statystyki Live mają kafelek „Temperatury” ze wszystkimi czujnikami; kolory wg progów.
+- **Top:** naprawiona tabela procesów (kolumny czytane wg nagłówka `top`, nie wg stałych pozycji); kolory ramek zależne od motywu — czytelne w trybie dziennym.
+- **Ikony Lucide zamiast emoji** w całym interfejsie Strony Głównej i Zaplecza (menu, tytuły, przyciski, nagłówki kafelków). Menu Zaplecza: „Helper & System” → **Ustawienia ogólne**, „Homepage” → **Strony i sekcje**; nazwy wyrównane do lewej.
+- **Tryb dzień / noc w Zapleczu** — przełącznik w menu Zaplecza, tryb wspólny ze Stroną Główną. Wygląd Zaplecza zapisywany osobno dla dnia i nocy (`config/admin-theme.json`: `{ themes: { d, n } }`; dotychczasowy wygląd staje się nocnym). Jasny wygląd startowy dnia w `admin.css`; edytor „Wygląd Zaplecza” ma na górze wybór trybu.
+- Naprawione: przyciski „Pauza” / „Odśwież” w panelu Top na Stronie Głównej nie miały stylu.
+
+---
+
 ## v0.1.6.4 — 2026-10-12
 
 - **Zaplecze → Homepage zna strony:** na górze wybór strony; sekcje i linki tej strony, ich kolejność strzałkami, dodawanie sekcji na wybraną stronę.

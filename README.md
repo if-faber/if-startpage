@@ -22,15 +22,20 @@ oraz zarządzanie stosami przez Dockge.
 ## Funkcje
 
 - **Strona Główna** — własne strony w menu (Home + dowolne, np. Ulubione), na nich sekcje
-  z kafelkami linków, stałe strony serwera (Status, Top, Narzędzia, Alerty), tryb dzień/noc (przełącznik ☀️/🌙 na dole
-  paska bocznego), menu ⚙️ (wygląd na żywo, sekcje i kafelki, Zaplecze, blokada edycji),
-  chowany pasek boczny, widżet CPU/RAM/temperatury i dzwonek alertów w nagłówku.
-- **Zaplecze** (chronione PIN-em):
-  - Centrum Alertów — stan kontenerów, temperatura, RAM, dyski, logi kontenerów,
-  - Diagnostyka Serwera (Top) i Statystyki Live — CPU, RAM, dyski, sieć, procesy,
+  z kafelkami linków, stałe strony serwera (Status, Top, Narzędzia, Alerty), tryb dzień/noc
+  (przełącznik ☀️/🌙 na dole paska bocznego), menu ⚙️ w pasku bocznym (wygląd na żywo,
+  Zaplecze, blokada edycji), menu ⚙️ na dole strony (dodaj link, dodaj sekcję, Zarządzanie),
+  chowany pasek boczny, kafelki CPU i RAM w nagłówku (kolor wg progów) i dzwonek alertów.
+  Awarie i przekroczone progi temperatur pokazuje pasek na górze strony (zamykany ✕).
+- **Zaplecze** (chronione PIN-em, tryb dzień/noc wspólny ze Stroną Główną):
+  - Ustawienia ogólne,
+  - Centrum Alertów — stan kontenerów, temperatury, RAM, dyski, logi kontenerów;
+    progi temperatur dla każdego czujnika i progi obciążenia CPU/RAM,
+  - Statystyki Live — CPU, temperatury wszystkich czujników, RAM, dyski, sieć, procesy,
+  - Strony i sekcje — dodawanie, nazwy, kolejność i usuwanie stron, sekcji i linków,
   - Aktualizacje kontenerów — porównuje wersje obrazów z najnowszymi stabilnymi
     i podmienia tag wersji w `compose.yaml` wybranego stosu,
-  - Helper & System, edytor wyglądu, ustawienia Kiosku.
+  - Moduły (ustawienia Kiosku), edytor wyglądu Zaplecza (osobno dzień i noc).
 - **Kiosk statusu serwera** — Status serwera, Live (zużycie per kontener),
   Status kontenerów, Radio.
 
@@ -47,7 +52,7 @@ Dostęp do `docker.sock` i zapis do `docker/app/` daje kontenerowi praktycznie p
 kontrolę nad serwerem. Dlatego:
 
 - **Zmień PIN** z domyślnego `1234` — w `compose.yaml` przed pierwszym uruchomieniem
-  albo w Zapleczu (Helper & System). PIN ustawiony w Zapleczu ma pierwszeństwo przed
+  albo w Zapleczu (Ustawienia ogólne). PIN ustawiony w Zapleczu ma pierwszeństwo przed
   tym z `compose.yaml`.
 - **Nie wystawiaj strony do internetu.** Jest przeznaczona do sieci domowej
   (z zewnątrz — przez VPN).
@@ -99,7 +104,7 @@ właściwe miejsce, niezależnie od tego, jak Dockge widzi swój katalog stosów
 ## Wygląd strony: dzień i noc
 
 Wygląd startowy jest w `www/styles.css` (część obrazu, nie zmieniasz go).
-Twoje zmiany z edytora wyglądu (🎨 na dole paska bocznego) trafiają do dwóch zwykłych
+Twoje zmiany z edytora wyglądu (menu ⚙️ w pasku bocznym → Wygląd) trafiają do dwóch zwykłych
 plików CSS w katalogu konfiguracji:
 
 - `config/custom-d.css` — tryb **dzień**,
@@ -109,13 +114,31 @@ Na górze edytora wybierasz, który tryb edytujesz; „Zapisz wygląd” zapisuj
 W plikach są tylko właściwości, dla których edytor ma kontrolki — każda z opisem po polsku.
 Plik można poprawić ręcznie, ale kolejny zapis z edytora nadpisze go w całości.
 „Wygląd startowy trybu” usuwa plik danego trybu. Tryb wybrany przełącznikiem zapamiętuje
-przeglądarka. Na razie dotyczy to Strony Głównej; Zaplecze i Kiosk mają jeden wygląd.
+przeglądarka.
+
+Zaplecze używa tego samego trybu (przełącznik ☀️/🌙 jest też w menu Zaplecza). Jego wygląd
+ustawia się w Zaplecze → Wygląd Zaplecza, osobno dla dnia i nocy — zapis trafia do
+`config/admin-theme.json`. Kiosk ma jeden wygląd.
+
+## Progi alarmów
+
+W Zaplecze → Centrum alertów:
+
+- **Progi temperatur** — dla każdego czujnika próg „Uwaga” (pomarańczowy) i „Alarm”
+  (czerwony). Każdy komputer ma inne normy, więc progi ustawia się dla swojego serwera
+  (`config/temperature-thresholds.json`). Przekroczenie progu pokazuje pasek na Stronie Głównej,
+  dzwonek i Centrum alertów.
+- **Progi obciążenia** — CPU i RAM zmieniają tylko kolor kafelków w nagłówku. Wysokie
+  obciążenie to zwykle praca (np. OCR, galeria zdjęć), a nie awaria, więc bez paska.
+  RAM powyżej 95 % trafia dodatkowo do dzwonka (`config/load-thresholds.json`).
 
 ## Znane ograniczenia
 
 - **Aktualizacje pakietów systemowych (apt)** nie są sprawdzane z wnętrza kontenera —
   kontener nie widzi pakietów serwera. Zakładka odsyła do Cockpit (port 9090).
 - **Dyski** w Diagnostyce pokazują to, co widzi kontener — zwykle dysk systemowy.
+- **Procesy** w Top / Statystykach Live to procesy kontenera, nie całego serwera
+  (kontener ma własną przestrzeń procesów).
 
 ## Dokumentacja i pytania
 

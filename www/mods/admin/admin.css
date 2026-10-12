@@ -39,6 +39,58 @@ body.admin-body {
   --btn-danger-glow-color: #ef4444;
 }
 
+/* --------------------------------------------------------------------------
+   WYGLĄD STARTOWY ZAPLECZA — TRYB DZIEŃ (html[data-mode="d"]).
+   Kolory jak w trybie dziennym Strony Głównej. Zmiany z edytora „Wygląd
+   Zaplecza” zapisują się osobno dla dnia i nocy i nadpisują te wartości.
+   -------------------------------------------------------------------------- */
+html[data-mode="d"] body.admin-body {
+  color-scheme: light;
+  --text: #15232b;
+  --muted: #5d6e78;
+  --bg: #eef2f5;
+  --page-bg: #eef2f5;
+  --surface-base-rgb: 255 255 255;
+  --panel-strong: rgb(255 255 255 / 0.96);
+  --border-alpha: 0.1;
+  --line: rgb(21 35 43 / 0.12);
+  --accent: #0b8457;
+  --accent-alt: #2f6fed;
+  --accent-soft: color-mix(in srgb, #0b8457 12%, transparent);
+  --glow-start: color-mix(in srgb, #0b8457 9%, transparent);
+  --glow-end: color-mix(in srgb, #2f6fed 9%, transparent);
+  --on-accent: #ffffff;
+  --modal-bg-rgb: 255 255 255;
+  --modal-alpha: 0.97;
+  --modal-backdrop-alpha: 0.32;
+  --admin-panel-rgb: 255 255 255;
+  --admin-panel-alpha: 0.88;
+  --admin-sidebar-rgb: 248 250 251;
+  --admin-sidebar-alpha: 0.95;
+  --admin-menu-text-color: #334155;
+  --admin-menu-btn-bg: #ffffff;
+  --admin-menu-btn-text: #334155;
+  --admin-menu-btn-hover-bg: #e3f3ec;
+  --admin-menu-btn-hover-text: #0b8457;
+  --admin-menu-btn-active-bg: #d1f0e2;
+  --admin-menu-btn-active-text: #065f46;
+  --btn-glow-color: #0b8457;
+  --btn-border-color: #cfd8dd;
+  --btn-normal-bg: #0b8457;
+  --btn-normal-text: #ffffff;
+  --btn-normal-hover-bg: #096c47;
+  --btn-normal-hover-text: #ffffff;
+  --btn-danger-bg: #fde2e2;
+  --btn-danger-text: #b91c1c;
+  --btn-danger-hover-bg: #fbcaca;
+  --btn-danger-hover-text: #7f1d1d;
+  --btn-danger-glow-color: #ef4444;
+}
+
+/* Przełącznik dzień / noc w menu Zaplecza (ikona jak na Stronie Głównej). */
+.admin-mode-toggle { font-size: 18px; }
+.admin-mode-toggle .theme-toggle { display: inline-flex; }
+
 /* Pasek tytułu Zaplecza nie potrzebuje wysokości paska strony głównej */
 .admin-main .toolbar { min-height: 0; }
 
@@ -48,9 +100,9 @@ input:-webkit-autofill:hover,
 input:-webkit-autofill:focus,
 textarea:-webkit-autofill,
 select:-webkit-autofill {
-  -webkit-box-shadow: 0 0 0px 1000px rgba(14, 24, 29, 0.95) inset !important;
-  -webkit-text-fill-color: #ffffff !important;
-  caret-color: #ffffff !important;
+  -webkit-box-shadow: 0 0 0px 1000px rgb(var(--surface-base-rgb, 14 24 29) / 0.95) inset !important;
+  -webkit-text-fill-color: var(--text, #ffffff) !important;
+  caret-color: var(--text, #ffffff) !important;
   transition: background-color 5000s ease-in-out 0s;
 }
 
@@ -137,6 +189,8 @@ select:-webkit-autofill {
 .admin-sidebar .nav-button {
   display: flex;
   align-items: center;
+  justify-content: flex-start;
+  text-align: left;
   gap: 8px;
   width: 100%;
   box-sizing: border-box;
@@ -310,7 +364,7 @@ button {
   padding: 0 16px;
   border-radius: var(--btn-radius, 10px);
   border: var(--btn-border-width, 1px) solid var(--btn-border-color, var(--line));
-  background: rgba(255, 255, 255, 0.06);
+  background: color-mix(in srgb, var(--text) 6%, transparent);
   color: var(--text);
   font-size: 13px;
   font-weight: 700;
@@ -323,7 +377,7 @@ button {
 .button:hover,
 button:hover {
   border-color: color-mix(in srgb, var(--accent) 45%, transparent);
-  background: rgba(255, 255, 255, 0.11);
+  background: color-mix(in srgb, var(--text) 11%, transparent);
   color: var(--text);
   transform: translateY(-1px);
 }
@@ -367,7 +421,7 @@ input[type="text"], input[type="password"], input[type="url"], input[type="numbe
   padding: 8px 12px;
   border-radius: var(--card-radius, 10px);
   border: 1px solid var(--line);
-  background: rgba(0, 0, 0, 0.25);
+  background: color-mix(in srgb, var(--text) 6%, transparent);
   color: var(--text);
   outline: none;
   transition: border-color 0.16s ease, box-shadow 0.16s ease;
@@ -428,7 +482,7 @@ dialog::backdrop {
   padding: 0;
   border: 1px solid var(--line);
   border-radius: 12px;
-  background: rgb(255 255 255 / 0.06);
+  background: color-mix(in srgb, var(--text) 6%, transparent);
   color: var(--muted);
   font-size: 22px;
   cursor: pointer;
@@ -438,7 +492,7 @@ dialog::backdrop {
 }
 
 .modal-heading > button:hover {
-  background: rgb(255 255 255 / 0.14) !important;
+  background: color-mix(in srgb, var(--text) 14%, transparent) !important;
   color: var(--text) !important;
   border-color: var(--line) !important;
 }
@@ -518,3 +572,27 @@ dialog menu {
 .admin-body input[type="radio"] {
   accent-color: var(--accent);
 }
+
+/* Progi temperatur (Centrum alertów) */
+.temp-thresholds-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.temp-thresholds-table th {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 800;
+  text-align: left;
+  text-transform: uppercase;
+}
+.temp-thresholds-table td { padding: 6px 10px; border-bottom: 1px solid var(--line); }
+.temp-thresholds-table input { width: 90px; min-height: 36px; padding: 4px 8px; }
+.temp-now { display: inline-block; min-width: 58px; padding: 3px 10px; border-radius: 999px; font-weight: 800; text-align: center; }
+.temp-now.is-ok { background: #047857; color: #ffffff; }
+.temp-now.is-warn { background: #c2410c; color: #ffffff; }
+.temp-now.is-alarm { background: #b91c1c; color: #ffffff; }
+.temp-thresholds-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 14px; }
+
+/* Ikony Lucide w menu i tytule zakładki Zaplecza (te same co na Stronie Głównej). */
+.admin-sidebar .nav-button .ui-icon { flex-shrink: 0; }
+#tabTitle { display: flex; align-items: center; gap: 10px; }
+#tabTitle .ui-icon { flex-shrink: 0; color: var(--accent); }

@@ -12,7 +12,7 @@ function renderHelperTab() {
   return `
     <div class="admin-tab-container">
       <section class="admin-section-card">
-        <h2>⚙️ Ustawienia Ogólne Systemu</h2>
+        <h2>${uiIcon("settings", 22)} Ustawienia Ogólne Systemu</h2>
         <form id="settingsForm" class="admin-form-panel">
           <div class="admin-form-grid">
             <label>Nazwa serwera<input id="settingTitle" value="${escapeHtml(config.title ?? "")}" required></label>
@@ -23,7 +23,7 @@ function renderHelperTab() {
             <label>Upload logo (PNG/JPG)<input id="settingLogo" type="file" accept="image/png,image/jpeg,image/webp"></label>
           </div>
           <menu style="margin-top: 15px;">
-            <button class="button primary" type="submit">💾 Zapisz Ustawienia Ogólne</button>
+            <button class="button primary" type="submit">${uiIcon("save", 16)} Zapisz Ustawienia Ogólne</button>
           </menu>
         </form>
       </section>

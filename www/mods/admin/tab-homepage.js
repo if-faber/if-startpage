@@ -11,8 +11,8 @@ function renderHomepageTab() {
     <div class="admin-tab-container">
       <section class="admin-section-card">
         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 8px;">
-          <h2 style="margin: 0;">🏠 Zarządzanie Sekcjami i Linkami Strony Głównej</h2>
-          <a href="../../" class="button primary" target="_blank" style="padding: 6px 16px; font-size: 13px; font-weight: bold; text-decoration: none;">Otwórz Stronę Główną ↗</a>
+          <h2 style="margin: 0;">${uiIcon("page", 22)} Strony, sekcje i linki</h2>
+          <a href="../../" class="button primary" target="_blank" style="padding: 6px 16px; font-size: 13px; font-weight: bold; text-decoration: none;">Otwórz Stronę Główną ${uiIcon("external", 14)}</a>
         </div>
         <p class="settings-note">Wybierz stronę, a potem twórz sekcje, ustawiaj ich kolejność, dodawaj i sortuj linki strzałkami. Sekcję można przenieść na inną stronę.</p>
 
@@ -44,7 +44,28 @@ async function loadAdminSections() {
       .map((page) => `<option value="${escapeHtml(page.id)}"${page.id === selectedId ? " selected" : ""}>${escapeHtml(page.name)}</option>`)
       .join("");
 
+    const pageRows = cachedAdminPages.map((page, idx) => {
+      const isHome = page.id === "home";
+      return `
+        <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+          <input id="adminPageName_${escapeHtml(page.id)}" value="${escapeHtml(page.name)}" maxlength="60" style="flex: 1; min-width: 180px; padding: 8px 12px; border-radius: var(--card-radius, 10px); border: 1px solid var(--modal-panel-border, var(--line)); background: var(--input-bg, rgba(0,0,0,0.3)); color: var(--input-text-color, var(--text)); font-size: 14px;">
+          ${!isHome && idx > 1 ? `<button type="button" class="button" onclick="movePageAdmin('${page.id}', 'up')" style="font-size: 12px; padding: 6px 10px;" title="Wyżej w menu">▲</button>` : ""}
+          ${!isHome && idx < cachedAdminPages.length - 1 ? `<button type="button" class="button" onclick="movePageAdmin('${page.id}', 'down')" style="font-size: 12px; padding: 6px 10px;" title="Niżej w menu">▼</button>` : ""}
+          <button type="button" class="button" onclick="renamePageAdmin('${page.id}')" style="font-size: 12px; padding: 6px 12px;">${uiIcon("save", 14)} Zapisz nazwę</button>
+          ${isHome ? `<span style="font-size: 12px; color: var(--muted);">strona główna — nie można jej usunąć</span>` : `<button type="button" class="button danger" onclick="deletePageAdmin('${page.id}')" style="font-size: 12px; padding: 6px 12px;">Usuń stronę</button>`}
+        </div>
+      `;
+    }).join("");
+
     let html = `
+      <div style="display: grid; gap: 10px; margin-bottom: 22px; padding: 18px; border: 1px solid var(--modal-panel-border, var(--line)); border-radius: 14px; background: var(--modal-panel-bg, rgba(0,0,0,0.2));">
+        <strong style="font-size: 16px;">${uiIcon("file", 18)} Strony</strong>
+        ${pageRows}
+        <form id="adminAddPageForm" onsubmit="addPageAdmin(event)" style="display: flex; gap: 12px; align-items: center; margin-top: 6px;">
+          <input id="newPageNameInput" maxlength="60" placeholder="Nazwa nowej strony (np. Ulubione, Zakupy)" style="flex: 1; padding: 10px 14px; border-radius: var(--card-radius, 10px); border: 1px solid var(--modal-panel-border, var(--line)); background: var(--input-bg, rgba(0,0,0,0.3)); color: var(--input-text-color, var(--text)); font-size: 14px;">
+          <button type="submit" class="button primary" style="padding: 10px 18px; font-weight: bold;">+ Dodaj stronę</button>
+        </form>
+      </div>
       <label class="admin-page-picker" style="display: grid; gap: 6px; margin-bottom: 18px; font-size: 11px; font-weight: 800; text-transform: uppercase; color: var(--muted);">
         Strona
         <select id="adminPageSelect" onchange="selectAdminPage(this.value)" style="font-size: 15px; font-weight: 700; text-transform: none; color: var(--text);">${pageOptions(adminPageId)}</select>
@@ -68,14 +89,14 @@ async function loadAdminSections() {
           <div class="admin-section-card" style="margin-bottom: 16px; padding: 18px; border: 1px solid var(--modal-panel-border, var(--line)); border-radius: 14px; background: var(--modal-panel-bg, rgba(0,0,0,0.2));">
             <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: ${isCollapsed ? '0' : '12px'};">
               <strong style="font-size: 16px; display: flex; align-items: center; gap: 8px;">
-                <span>📁</span> ${escapeHtml(sec.name)}
+                ${uiIcon("folder", 18)} ${escapeHtml(sec.name)}
                 <small style="color: var(--muted); font-weight normal; font-size: 12px;">(${items.length} wpisów)</small>
               </strong>
               <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
                 <button type="button" class="button" onclick="toggleCollapseAdminSection('${sec.id}')" style="font-size: 12px; padding: 6px 12px;" title="${isCollapsed ? 'Rozwiń sekcję' : 'Zwiń sekcję'}">
-                  ${isCollapsed ? '🔽 Rozwiń wpisy' : '🔼 Zwiń wpisy'}
+                  ${isCollapsed ? `${uiIcon("chevronDown", 14)} Rozwiń wpisy` : `${uiIcon("chevronUp", 14)} Zwiń wpisy`}
                 </button>
-                <button type="button" class="button" onclick="renameSectionAdmin('${sec.id}', '${escapeHtml(sec.name)}')" style="font-size: 12px; padding: 6px 12px;">✏️ Zmień nazwę</button>
+                <button type="button" class="button" onclick="renameSectionAdmin('${sec.id}', '${escapeHtml(sec.name)}')" style="font-size: 12px; padding: 6px 12px;">${uiIcon("edit", 14)} Zmień nazwę</button>
                 ${cachedAdminPages.length > 1 ? `<select onchange="moveSectionToPageAdmin('${sec.id}', this.value)" title="Przenieś sekcję na inną stronę" style="font-size: 12px; min-height: 32px; padding: 4px 8px;"><option value="">Przenieś na stronę…</option>${cachedAdminPages.filter((page) => page.id !== adminPageId).map((page) => `<option value="${escapeHtml(page.id)}">${escapeHtml(page.name)}</option>`).join("")}</select>` : ""}
                 ${idx > 0 ? `<button type="button" class="button" onclick="moveSectionAdmin('${sec.id}', 'up')" style="font-size: 12px; padding: 6px 10px;" title="Przesuń sekcję w górę">▲</button>` : ""}
                 ${idx < cachedAdminSections.length - 1 ? `<button type="button" class="button" onclick="moveSectionAdmin('${sec.id}', 'down')" style="font-size: 12px; padding: 6px 10px;" title="Przesuń sekcję w dół">▼</button>` : ""}
@@ -90,14 +111,14 @@ async function loadAdminSections() {
                   ${items.map((item, itemIdx) => `
                     <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 14px; border-radius: 8px; background: var(--input-bg, rgba(0,0,0,0.25)); border: 1px solid var(--modal-panel-border, var(--line));">
                       <div style="display: flex; align-items: center; gap: 10px; font-size: 13px; min-width: 0; overflow: hidden; text-overflow: ellipsis;">
-                        <span>🔗</span>
+                        <span style="display: inline-flex; color: var(--muted);">${uiIcon("link", 14)}</span>
                         <strong style="white-space: nowrap;">${escapeHtml(item.name)}</strong>
                         <span style="color: var(--muted); font-size: 11px; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">(${escapeHtml(item.url)})</span>
                       </div>
                       <div style="display: flex; gap: 6px; flex-shrink: 0; margin-left: 12px; align-items: center;">
                         ${itemIdx > 0 ? `<button type="button" class="button" onclick="moveLinkAdmin('${item.id}', 'up')" style="padding: 4px 8px; font-size: 11px;" title="Przesuń wpis w górę">▲</button>` : ""}
                         ${itemIdx < items.length - 1 ? `<button type="button" class="button" onclick="moveLinkAdmin('${item.id}', 'down')" style="padding: 4px 8px; font-size: 11px;" title="Przesuń wpis w dół">▼</button>` : ""}
-                        <button type="button" class="button" onclick="openEditLinkAdmin('${sec.id}', '${item.id}')" style="padding: 4px 10px; font-size: 11px;">✏️ Edytuj</button>
+                        <button type="button" class="button" onclick="openEditLinkAdmin('${sec.id}', '${item.id}')" style="padding: 4px 10px; font-size: 11px;">${uiIcon("edit", 13)} Edytuj</button>
                         <button type="button" class="button danger" onclick="deleteLinkAdmin('${item.id}', '${escapeHtml(item.name)}')" style="padding: 4px 10px; font-size: 11px;">Usuń</button>
                       </div>
                     </div>
@@ -120,6 +141,50 @@ function selectAdminPage(pageId) {
   adminPageId = pageId || "home";
   try { localStorage.setItem("ifs.adminPage", adminPageId); } catch {}
   loadAdminSections();
+}
+
+// ─── Strony: dodawanie, nazwa, kolejność w menu, usuwanie ───
+
+async function pageRequestAdmin(method, url, body, message) {
+  try {
+    const data = await request(url, { method, body: body ? JSON.stringify(body) : undefined });
+    if (message) showToast(message);
+    notifyServicesUpdated();
+    loadAdminSections();
+    return data;
+  } catch (error) {
+    showToast(error.message);
+    return null;
+  }
+}
+
+async function addPageAdmin(e) {
+  if (e && e.preventDefault) e.preventDefault();
+  const input = document.querySelector("#newPageNameInput");
+  const name = input?.value.trim();
+  if (!name) return showToast("Wpisz nazwę nowej strony.");
+  const data = await pageRequestAdmin("POST", "/api/services/page", { name }, `Dodano stronę „${name}”.`);
+  if (data?.page) {
+    adminPageId = data.page.id;
+    try { localStorage.setItem("ifs.adminPage", adminPageId); } catch {}
+  }
+}
+
+function renamePageAdmin(pageId) {
+  const name = document.querySelector(`#adminPageName_${pageId}`)?.value.trim();
+  if (!name) return showToast("Podaj nazwę strony.");
+  pageRequestAdmin("PUT", `/api/services/page/${pageId}`, { name }, "Nazwa strony zmieniona.");
+}
+
+function movePageAdmin(pageId, direction) {
+  pageRequestAdmin("PUT", `/api/services/page/${pageId}/move`, { direction });
+}
+
+function deletePageAdmin(pageId) {
+  const page = cachedAdminPages.find((item) => item.id === pageId);
+  if (!page || !confirm(`Usunąć stronę „${page.name}”? Jej sekcje i linki przejdą na Home.`)) return;
+  if (adminPageId === pageId) adminPageId = "home";
+  pageRequestAdmin("DELETE", `/api/services/page/${pageId}`, null, "Strona usunięta, sekcje przeniesione na Home.");
 }
 
 async function moveSectionToPageAdmin(sectionId, pageId) {

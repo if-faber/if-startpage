@@ -17,7 +17,7 @@ function renderKioskTab() {
       <a href="#" class="button module-back-link" data-modules-back>← Wróć do Modułów</a>
       <!-- Sekcja 1: Podstawowe Ustawienia Kiosku -->
       <section class="admin-section-card">
-        <h2>🖥️ Podstawowe Ustawienia Kiosku</h2>
+        <h2>${uiIcon("monitor", 22)} Podstawowe Ustawienia Kiosku</h2>
         <form id="kioskBasicSettingsForm">
           <div class="admin-form-grid" style="grid-template-columns: 1fr 1fr; gap: 16px;">
             <label>Czas auto-powrotu po bezczynności (sekundy, 0 = wyłączony)
@@ -25,7 +25,7 @@ function renderKioskTab() {
             </label>
           </div>
           <div style="margin-top: 16px; display: flex; justify-content: flex-end;">
-            <button class="button primary" type="submit">💾 Zapisz podstawowe ustawienia</button>
+            <button class="button primary" type="submit">${uiIcon("save", 16)} Zapisz podstawowe ustawienia</button>
           </div>
         </form>
       </section>
@@ -34,12 +34,12 @@ function renderKioskTab() {
 
       <!-- Sekcja 2: Zarządzanie Przyciskami Menu Kiosku (Lollipop Menu) -->
       <section class="admin-section-card">
-        <h2>🔘 Zarządzanie Przyciskami Menu Kiosku (Lollipop Menu)</h2>
+        <h2>${uiIcon("button", 22)} Zarządzanie Przyciskami Menu Kiosku (Lollipop Menu)</h2>
         <p class="settings-note" style="margin-bottom: 16px;">Te przyciski wyświetlają się w wysuwanym menu z góry ekranu na tablecie.</p>
         
         <!-- Formularz dodawania / edycji przycisku -->
         <div style="padding: 16px; border: 1px dashed var(--line); border-radius: 12px; background: rgba(0,0,0,0.12); margin-bottom: 20px;">
-          <h4 id="kioskItemFormTitle" style="margin-top: 0; margin-bottom: 12px; color: var(--accent);">➕ Dodaj przycisk do menu Kiosku</h4>
+          <h4 id="kioskItemFormTitle" style="margin-top: 0; margin-bottom: 12px; color: var(--accent);">${uiIcon("plus", 16)} Dodaj przycisk do menu Kiosku</h4>
           <form id="kioskMenuItemForm">
             <input type="hidden" id="kioskItemId">
             <div class="admin-form-grid" style="grid-template-columns: 1fr 1fr; gap: 12px;">
@@ -64,7 +64,7 @@ function renderKioskTab() {
             </div>
             <div style="margin-top: 14px; display: flex; justify-content: flex-end; gap: 10px;">
               <button id="cancelKioskItemEdit" class="button danger" type="button" style="display: none;">Anuluj edycję</button>
-              <button class="button primary" type="submit" id="saveKioskItemBtn">➕ Dodaj przycisk</button>
+              <button class="button primary" type="submit" id="saveKioskItemBtn">${uiIcon("plus", 16)} Dodaj przycisk</button>
             </div>
           </form>
         </div>
@@ -80,14 +80,14 @@ function renderKioskTab() {
       <!-- Sekcja 3: Wygląd, Efekty Glassmorphism i Stylizacja Kiosku (Zwijana karta) -->
       <details class="admin-details-card" open style="background: var(--surface); border: 1px solid var(--line); border-radius: 14px; margin-bottom: 20px; overflow: hidden;">
         <summary style="padding: 16px 20px; font-size: 18px; font-weight: 700; cursor: pointer; user-select: none; background: rgba(0,0,0,0.15); display: flex; align-items: center; justify-content: space-between;">
-          <span>🎨 Wygląd, Efekty Glassmorphism i Stylizacja Kiosku</span>
+          <span>${uiIcon("appearance", 16)} Wygląd, Efekty Glassmorphism i Stylizacja Kiosku</span>
           <span style="font-size: 12px; opacity: 0.7;">(kliknij aby zwinąć/rozwinąć)</span>
         </summary>
         <div style="padding: 20px;">
           <form id="kioskThemeForm">
             <!-- 1. Stylistyka i Efekty Przycisku MENU (Notch) -->
             <div style="margin-bottom: 24px; padding: 16px; border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; background: rgba(0,0,0,0.1);">
-              <h4 style="margin-top: 0; margin-bottom: 14px; color: var(--accent);">🔘 Wygląd & Efekty Przycisku MENU</h4>
+              <h4 style="margin-top: 0; margin-bottom: 14px; color: var(--accent);">${uiIcon("button", 16)} Wygląd & Efekty Przycisku MENU</h4>
               
               <!-- Live Preview Przycisk MENU -->
               <div style="margin-bottom: 16px; padding: 16px; background: rgba(0,0,0,0.4); border-radius: 10px; text-align: center; border: 1px dashed rgba(255,255,255,0.15);">
@@ -137,12 +137,12 @@ function renderKioskTab() {
 
             <!-- 2. Stylistyka i Efekty Panelu Menu (Lollipop Dropdown Panel) -->
             <div style="margin-bottom: 24px; padding: 16px; border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; background: rgba(0,0,0,0.1);">
-              <h4 style="margin-top: 0; margin-bottom: 14px; color: var(--accent);">📑 Wygląd & Efekty Rozwijanego Menu (Lollipop Dropdown)</h4>
+              <h4 style="margin-top: 0; margin-bottom: 14px; color: var(--accent);">${uiIcon("tabs", 16)} Wygląd & Efekty Rozwijanego Menu (Lollipop Dropdown)</h4>
 
               <!-- Live Preview Lollipop Panel -->
               <div id="prevLollipopPanel" style="margin-bottom: 16px; padding: 20px; border-radius: 12px; display: flex; justify-content: center; align-items: center; border: 1px dashed rgba(255,255,255,0.15); background: rgba(15,23,42,0.88); transition: all 0.2s;">
                 <div style="display: flex; align-items: center;">
-                  <div id="prevLollipopHead" style="width: 52px; height: 52px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; z-index: 2; position: relative;">🔘</div>
+                  <div id="prevLollipopHead" style="width: 52px; height: 52px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; z-index: 2; position: relative;">${uiIcon("monitor", 24)}</div>
                   <div id="prevLollipopStem" style="z-index: 1; position: relative; margin-left: -20px; padding: 8px 20px 8px 28px; height: 40px; border-radius: 0 20px 20px 0; font-size: 14px; font-weight: 700; display: flex; align-items: center; white-space: nowrap;">
                     <span>Immich (Przykładowy kafelek)</span>
                   </div>
@@ -180,7 +180,7 @@ function renderKioskTab() {
 
             <!-- 3. Stylistyka Kafelków w Menu (Lollipop Items) -->
             <div style="margin-bottom: 24px; padding: 16px; border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; background: rgba(0,0,0,0.1);">
-              <h4 style="margin-top: 0; margin-bottom: 14px; color: var(--accent);">🎯 Stylistyka Kafelków w Menu (Lollipop)</h4>
+              <h4 style="margin-top: 0; margin-bottom: 14px; color: var(--accent);">${uiIcon("target", 16)} Stylistyka Kafelków w Menu (Lollipop)</h4>
               <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px;">
                 <div>
                   <div style="font-size: 11px; font-weight: bold; margin-bottom: 6px; text-transform: uppercase;">Tło nieaktywnego kafelka</div>
@@ -218,7 +218,7 @@ function renderKioskTab() {
             </div>
 
             <div style="display: flex; justify-content: flex-end;">
-              <button class="button primary" type="submit">💾 Zapisz wygląd i efekty Glass Kiosku</button>
+              <button class="button primary" type="submit">${uiIcon("save", 16)} Zapisz wygląd i efekty Glass Kiosku</button>
             </div>
           </form>
         </div>
@@ -368,7 +368,7 @@ function renderKioskMenuItems() {
     <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border: 1px solid var(--line); border-radius: 10px; background: rgba(255,255,255,0.02);">
       <div style="display: flex; align-items: center; gap: 12px;">
         <span style="font-size: 20px; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.2); border-radius: 8px;">
-          ${item.icon ? `<img src="../../kiosk/icons/${item.icon}" alt="" style="width: 24px; height: 24px; object-fit: contain;" onerror="this.replaceWith('🔘')">` : '🔘'}
+          ${item.icon ? `<img src="../../kiosk/icons/${item.icon}" alt="" style="width: 24px; height: 24px; object-fit: contain;" onerror="this.style.display='none'">` : uiIcon("monitor", 22)}
         </span>
         <div>
           <strong style="display: block; font-size: 14px;">${escapeHtml(item.title)}</strong>
@@ -380,8 +380,8 @@ function renderKioskMenuItems() {
       <div style="display: flex; gap: 6px; align-items: center;">
         <button type="button" class="button" onclick="moveKioskMenuItem(${idx}, 'up')" ${idx === 0 ? 'disabled' : ''} title="Przesuń w górę">▲</button>
         <button type="button" class="button" onclick="moveKioskMenuItem(${idx}, 'down')" ${idx === items.length - 1 ? 'disabled' : ''} title="Przesuń w dół">▼</button>
-        <button type="button" class="button primary" onclick="editKioskMenuItem('${item.id}')">✏️ Edytuj</button>
-        <button type="button" class="button danger" onclick="deleteKioskMenuItem('${item.id}')">🗑️ Usunąć</button>
+        <button type="button" class="button primary" onclick="editKioskMenuItem('${item.id}')">${uiIcon("edit", 14)} Edytuj</button>
+        <button type="button" class="button danger" onclick="deleteKioskMenuItem('${item.id}')">${uiIcon("trash", 14)} Usuń</button>
       </div>
     </div>
   `).join("");
@@ -411,7 +411,7 @@ function bindKioskEvents() {
 
       try {
         await saveKioskConfig({ settings });
-        if (typeof showToast === "function") showToast("Podstawowe ustawienia Kiosku zapisane 💾");
+        if (typeof showToast === "function") showToast("Podstawowe ustawienia Kiosku zapisane.");
       } catch (err) {
         if (typeof showToast === "function") showToast("Błąd zapisu: " + err.message);
       }
@@ -451,7 +451,7 @@ function bindKioskEvents() {
       try {
         await saveKioskConfig({ menuItems: items });
         resetKioskMenuItemForm();
-        if (typeof showToast === "function") showToast(editingMenuItemId ? "Przycisk zaktualizowany! ✏️" : "Nowy przycisk dodany do menu! ➕");
+        if (typeof showToast === "function") showToast(editingMenuItemId ? "Przycisk zaktualizowany." : "Nowy przycisk dodany do menu.");
       } catch (err) {
         if (typeof showToast === "function") showToast("Błąd zapisu przycisku: " + err.message);
       }
@@ -496,7 +496,7 @@ function bindKioskEvents() {
 
       try {
         await saveKioskConfig({ theme });
-        if (typeof showToast === "function") showToast("Wygląd i efekty Glass Kiosku zapisane! 🎨✨");
+        if (typeof showToast === "function") showToast("Wygląd i efekty Glass Kiosku zapisane.");
       } catch (err) {
         if (typeof showToast === "function") showToast("Błąd zapisu wyglądu: " + err.message);
       }
@@ -532,8 +532,8 @@ function editKioskMenuItem(id) {
   const urlGroup = document.querySelector("#kioskItemUrlGroup");
   if (urlGroup) urlGroup.style.display = KIOSK_NATIVE_PANEL_TYPES.includes(item.type) ? "none" : "block";
 
-  document.querySelector("#kioskItemFormTitle").textContent = "✏️ Edytuj przycisk menu Kiosku";
-  document.querySelector("#saveKioskItemBtn").textContent = "💾 Zapisz zmiany";
+  document.querySelector("#kioskItemFormTitle").innerHTML = `${uiIcon("edit", 16)} Edytuj przycisk menu Kiosku`;
+  document.querySelector("#saveKioskItemBtn").innerHTML = `${uiIcon("save", 16)} Zapisz zmiany`;
   document.querySelector("#cancelKioskItemEdit").style.display = "inline-block";
 }
 
@@ -542,8 +542,8 @@ function resetKioskMenuItemForm() {
   const form = document.querySelector("#kioskMenuItemForm");
   if (form) form.reset();
   document.querySelector("#kioskItemId").value = "";
-  document.querySelector("#kioskItemFormTitle").textContent = "➕ Dodaj przycisk do menu Kiosku";
-  document.querySelector("#saveKioskItemBtn").textContent = "➕ Dodaj przycisk";
+  document.querySelector("#kioskItemFormTitle").innerHTML = `${uiIcon("plus", 16)} Dodaj przycisk do menu Kiosku`;
+  document.querySelector("#saveKioskItemBtn").innerHTML = `${uiIcon("plus", 16)} Dodaj przycisk`;
   document.querySelector("#cancelKioskItemEdit").style.display = "none";
   const urlGroup = document.querySelector("#kioskItemUrlGroup");
   if (urlGroup) urlGroup.style.display = "block";
@@ -554,7 +554,7 @@ async function deleteKioskMenuItem(id) {
   const items = (kioskState.menuItems || []).filter(it => it.id !== id);
   try {
     await saveKioskConfig({ menuItems: items });
-    if (typeof showToast === "function") showToast("Przycisk usunięty 🗑️");
+    if (typeof showToast === "function") showToast("Przycisk usunięty.");
   } catch (err) {
     if (typeof showToast === "function") showToast("Błąd usuwania przycisku: " + err.message);
   }
@@ -572,7 +572,7 @@ async function moveKioskMenuItem(index, direction) {
 
   try {
     await saveKioskConfig({ menuItems: items });
-    if (typeof showToast === "function") showToast("Kolejność przycisków zmieniona ↕️");
+    if (typeof showToast === "function") showToast("Kolejność przycisków zmieniona.");
   } catch (err) {
     if (typeof showToast === "function") showToast("Błąd zmiany kolejności: " + err.message);
   }

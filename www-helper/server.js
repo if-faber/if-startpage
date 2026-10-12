@@ -718,6 +718,152 @@ function readTemperature() {
   return null;
 }
 
+// Wszystkie czujniki temperatury z /sys/class/hwmon (nazwa układu + etykieta),
+// z czytelną nazwą po polsku. Gdy hwmon jest pusty — strefy z /sys/class/thermal.
+const SENSOR_NAMES = [
+  [/^coretemp$|^k10temp$|^zenpower$/, "Procesor"],
+  [/^acpitz$/, "Płyta główna (ACPI)"],
+  [/^pch_/, "Chipset"],
+  [/^nvme$/, "Dysk NVMe"],
+  [/^drivetemp$/, "Dysk"],
+  [/^amdgpu$|^nouveau$|^radeon$|^i915$/, "Karta graficzna"],
+  [/^iwlwifi/, "Wi-Fi"]
+];
+
+function sensorFriendlyName(chip, label) {
+  const group = SENSOR_NAMES.find(([re]) => re.test(chip))?.[1] || chip;
+  if (/^Package id \d+$/i.test(label) || /^Tctl$/i.test(label)) return `${group} — całość`;
+  const core = label.match(/^Core\s*(\d+)$/i);
+  if (core) return `${group} — rdzeń ${core[1]}`;
+  return label ? `${group} — ${label}` : group;
+}
+
+function readAllTemperatures() {
+  const sensors = [];
+  const readTemp = (file) => {
+    const raw = Number(fs.readFileSync(file, "utf8").trim());
+    if (!Number.isFinite(raw) || raw <= 0) return null;
+    const value = raw > 1000 ? raw / 1000 : raw;
+    return value > 0 && value < 130 ? value : null;
+  };
+  try {
+    const hwmonDir = "/sys/class/hwmon";
+    for (const entry of fs.existsSync(hwmonDir) ? fs.readdirSync(hwmonDir).sort() : []) {
+      const dir = path.join(hwmonDir, entry);
+      let chip = "";
+      try { chip = fs.readFileSync(path.join(dir, "name"), "utf8").trim(); } catch {}
+      const inputs = fs.readdirSync(dir)
+        .map((file) => file.match(/^temp(\d+)_input$/))
+        .filter(Boolean)
+        .sort((a, b) => Number(a[1]) - Number(b[1]));
+      for (const [file, idx] of inputs) {
+        let label = "";
+        try { label = fs.readFileSync(path.join(dir, `temp${idx}_label`), "utf8").trim(); } catch {}
+        try {
+          const temp = readTemp(path.join(dir, file));
+          if (temp !== null) sensors.push({ id: `${chip || entry}:${label || `temp${idx}`}`, chip, label, name: sensorFriendlyName(chip, label || (inputs.length > 1 ? `czujnik ${idx}` : "")), temp });
+        } catch {}
+      }
+    }
+    if (!sensors.length) {
+      const thermalDir = "/sys/class/thermal";
+      for (const entry of fs.existsSync(thermalDir) ? fs.readdirSync(thermalDir).sort() : []) {
+        if (!entry.startsWith("thermal_zone")) continue;
+        const dir = path.join(thermalDir, entry);
+        let type = entry;
+        try { type = fs.readFileSync(path.join(dir, "type"), "utf8").trim(); } catch {}
+        try {
+          const temp = readTemp(path.join(dir, "temp"));
+          if (temp !== null) sensors.push({ id: `${type}:${entry}`, chip: type, label: "", name: type === "x86_pkg_temp" ? "Procesor — całość" : sensorFriendlyName(type, ""), temp });
+        } catch {}
+      }
+    }
+  } catch {}
+  // Dwa układy o tej samej nazwie (np. dwa dyski NVMe) — numer w identyfikatorze.
+  const seen = {};
+  for (const sensor of sensors) {
+    seen[sensor.id] = (seen[sensor.id] || 0) + 1;
+    if (seen[sensor.id] > 1) sensor.id = `${sensor.id}#${seen[sensor.id]}`;
+    Object.assign(sensor, defaultTempThresholds(sensor.chip));
+  }
+  return sensors;
+}
+
+// ─── Progi temperatur (Zaplecze → Centrum alertów) ───
+// Domyślne wg rodzaju czujnika; własne progi danego serwera w config/temperature-thresholds.json.
+const TEMP_THRESHOLDS_FILE = path.join(CONFIG_DIR, "temperature-thresholds.json");
+const TEMP_DEFAULTS = [
+  [/^(coretemp|k10temp|zenpower|x86_pkg_temp)$/, 70, 85],
+  [/^pch_/, 70, 85],
+  [/^acpitz$/, 60, 75],
+  [/^(nvme|drivetemp)$/, 55, 65],
+  [/^(amdgpu|nouveau|radeon|i915)$/, 75, 90]
+];
+
+function defaultTempThresholds(chip) {
+  const [, warn, alarm] = TEMP_DEFAULTS.find(([re]) => re.test(chip)) || [null, 70, 85];
+  return { defaultWarn: warn, defaultAlarm: alarm };
+}
+
+function loadTempThresholds() {
+  try {
+    const data = JSON.parse(fs.readFileSync(TEMP_THRESHOLDS_FILE, "utf8"));
+    return data && typeof data.sensors === "object" ? data.sensors : {};
+  } catch {
+    return {};
+  }
+}
+
+// ─── Progi obciążenia CPU i RAM (kolor kafelków w nagłówku; bez alarmu w pasku) ───
+const LOAD_THRESHOLDS_FILE = path.join(CONFIG_DIR, "load-thresholds.json");
+const LOAD_DEFAULTS = { cpu: { warn: 70, alarm: 90 }, ram: { warn: 80, alarm: 95 } };
+
+function loadLoadThresholds() {
+  let saved = {};
+  try { saved = JSON.parse(fs.readFileSync(LOAD_THRESHOLDS_FILE, "utf8")) || {}; } catch {}
+  const result = {};
+  for (const key of Object.keys(LOAD_DEFAULTS)) {
+    result[key] = {
+      warn: saved[key]?.warn ?? LOAD_DEFAULTS[key].warn,
+      alarm: saved[key]?.alarm ?? LOAD_DEFAULTS[key].alarm,
+      defaultWarn: LOAD_DEFAULTS[key].warn,
+      defaultAlarm: LOAD_DEFAULTS[key].alarm
+    };
+  }
+  return result;
+}
+
+// Czujniki z progami: własne, jeśli zapisane, inaczej domyślne.
+function readTemperaturesWithThresholds() {
+  const saved = loadTempThresholds();
+  return readAllTemperatures().map((sensor) => ({
+    ...sensor,
+    warn: saved[sensor.id]?.warn ?? sensor.defaultWarn,
+    alarm: saved[sensor.id]?.alarm ?? sensor.defaultAlarm
+  }));
+}
+
+// Ogólna temperatura procesora (kafelek TEMP w nagłówku): Intel „Package id”,
+// AMD „Tctl”, strefa x86_pkg_temp; gdy żadnej nie ma — pierwszy czujnik jak dotąd.
+function readCpuTemperature() {
+  const sensors = readAllTemperatures();
+  const cpu = sensors.find((s) => /^(coretemp|k10temp|zenpower)$/.test(s.chip) && /^(Package id \d+|Tctl)$/i.test(s.label))
+    || sensors.find((s) => s.chip === "x86_pkg_temp");
+  if (cpu) return cpu.temp;
+  try {
+    const thermalDir = "/sys/class/thermal";
+    for (const entry of fs.existsSync(thermalDir) ? fs.readdirSync(thermalDir) : []) {
+      const dir = path.join(thermalDir, entry);
+      try {
+        if (fs.readFileSync(path.join(dir, "type"), "utf8").trim() !== "x86_pkg_temp") continue;
+        const raw = Number(fs.readFileSync(path.join(dir, "temp"), "utf8").trim());
+        if (Number.isFinite(raw) && raw > 0) return raw > 1000 ? raw / 1000 : raw;
+      } catch {}
+    }
+  } catch {}
+  return readTemperature();
+}
+
 function readCoreTemperatures() {
   const coreTemps = {};
   let packageTemp = null;
@@ -867,29 +1013,29 @@ async function readTopProcesses() {
   try {
     const { stdout } = await execFileAsync("top", ["-b", "-n", "1"], { timeout: 2000 });
     const lines = stdout.trim().split(/\r?\n/);
-    let headerFound = false;
+    // Kolumny wg nagłówka (procps: PID USER PR NI VIRT RES SHR S %CPU %MEM TIME+ COMMAND;
+    // busybox ma inną kolejność) — nie wg stałych pozycji.
+    let header = null;
     for (const line of lines) {
-      if (/PID\s+PPID/i.test(line) || /PID\s+USER/i.test(line)) {
-        headerFound = true;
+      if (!header) {
+        if (/^\s*PID\s+/i.test(line)) header = line.trim().split(/\s+/).map((name) => name.toUpperCase());
         continue;
       }
-      if (headerFound && line.trim()) {
-        const cols = line.trim().split(/\s+/);
-        if (cols.length >= 7) {
-          const pid = cols[0];
-          const user = cols[2] || cols[1];
-          const memPerc = cols[5];
-          const cpuPerc = cols[7] || cols[6];
-          const comm = cols.slice(8).join(" ") || cols[cols.length - 1];
-          processes.push({
-            pid: Number(pid) || pid,
-            user,
-            cpu: Number(String(cpuPerc).replace("%", "")) || 0,
-            mem: Number(String(memPerc).replace("%", "")) || 0,
-            command: comm
-          });
-        }
-      }
+      if (!line.trim()) continue;
+      const cols = line.trim().split(/\s+/);
+      const at = (...names) => {
+        const idx = header.findIndex((name) => names.includes(name));
+        return idx === -1 ? undefined : cols[idx];
+      };
+      const commandIdx = header.findIndex((name) => name === "COMMAND" || name === "CMD");
+      if (cols.length < header.length - 1) continue;
+      processes.push({
+        pid: Number(at("PID")) || at("PID"),
+        user: at("USER") || "—",
+        cpu: Number(String(at("%CPU", "CPU%", "CPU") ?? "0").replace("%", "").replace(",", ".")) || 0,
+        mem: Number(String(at("%MEM", "MEM%", "%VSZ") ?? "0").replace("%", "").replace(",", ".")) || 0,
+        command: commandIdx === -1 ? cols[cols.length - 1] : cols.slice(commandIdx).join(" ")
+      });
     }
   } catch {}
 
@@ -926,10 +1072,11 @@ async function loadSystemStats() {
       load1: load[0],
       load5: load[1],
       load15: load[2],
-      temperature: readTemperature()
+      temperature: readCpuTemperature()
     },
     ...memory,
-    disks
+    disks,
+    thresholds: loadLoadThresholds()
   };
 }
 
@@ -967,6 +1114,7 @@ async function loadSystemTopStats() {
     swap: memory.swap,
     network: netSpeed,
     disks,
+    temperatures: readTemperaturesWithThresholds(),
     processes: topData.processes,
     containers: topData.containers
   };
@@ -1228,32 +1376,46 @@ function sanitizeAdminTheme(input) {
   return output;
 }
 
-function loadAdminTheme() {
+// Wygląd Zaplecza osobno dla trybu dzień (d) i noc (n): { themes: { d: {...}, n: {...} } }.
+// Stary zapis { theme: {...} } (sprzed trybów) to wygląd nocny.
+function adminThemeMode(value) {
+  return value === "d" ? "d" : "n";
+}
+
+function loadAdminThemes() {
   ensureConfigDir(ADMIN_THEME_FILE);
-  if (!fs.existsSync(ADMIN_THEME_FILE)) return {};
+  if (!fs.existsSync(ADMIN_THEME_FILE)) return { d: {}, n: {} };
   try {
-    return sanitizeAdminTheme(JSON.parse(fs.readFileSync(ADMIN_THEME_FILE, "utf8")));
+    const data = JSON.parse(fs.readFileSync(ADMIN_THEME_FILE, "utf8"));
+    if (data && data.themes && typeof data.themes === "object") {
+      return { d: sanitizeAdminTheme(data.themes.d), n: sanitizeAdminTheme(data.themes.n) };
+    }
+    return { d: {}, n: sanitizeAdminTheme(data) };
   } catch (error) {
-    return {};
+    return { d: {}, n: {} };
   }
 }
 
-function saveAdminTheme(theme) {
+function saveAdminTheme(mode, theme) {
+  const themes = loadAdminThemes();
+  themes[adminThemeMode(mode)] = theme;
   ensureConfigDir(ADMIN_THEME_FILE);
-  fs.writeFileSync(ADMIN_THEME_FILE, JSON.stringify({ theme }, null, 2), "utf8");
+  fs.writeFileSync(ADMIN_THEME_FILE, JSON.stringify({ themes }, null, 2), "utf8");
 }
 
 app.get("/api/admin/theme", (req, res) => {
-  res.json({ theme: loadAdminTheme() });
+  const themes = loadAdminThemes();
+  res.json({ themes, theme: themes[adminThemeMode(req.query.mode)] });
 });
 
 app.put("/api/admin/theme", (req, res) => {
   if (!hasValidPin(req)) {
     return res.status(403).json({ error: "Niepoprawny PIN" });
   }
+  const mode = adminThemeMode(req.body?.mode);
   if (req.body?.reset) {
-    saveAdminTheme({});
-    return res.json({ success: true, theme: {} });
+    saveAdminTheme(mode, {});
+    return res.json({ success: true, mode, theme: {} });
   }
 
   const theme = sanitizeAdminTheme(req.body?.themeSettings || req.body?.theme || {});
@@ -1266,8 +1428,8 @@ app.put("/api/admin/theme", (req, res) => {
   } catch (error) {
     return res.status(400).json({ error: error.message });
   }
-  saveAdminTheme(theme);
-  res.json({ success: true, theme });
+  saveAdminTheme(mode, theme);
+  res.json({ success: true, mode, theme });
 });
 
 // --- Ustawienia Kiosku (www/kiosk/) — podstawowe ustawienia, motyw i przyciski menu ---
@@ -1913,6 +2075,64 @@ app.get("/api/docker/container/:name/logs", requirePin, async (req, res) => {
   }
 });
 
+app.get("/api/alerts/temperature-thresholds", (req, res) => {
+  res.set("cache-control", "no-store");
+  res.json({ sensors: readTemperaturesWithThresholds() });
+});
+
+app.put("/api/alerts/temperature-thresholds", requirePin, (req, res) => {
+  const input = req.body?.sensors;
+  if (!input || typeof input !== "object") return res.status(400).json({ error: "Brak progów do zapisania." });
+  const known = new Map(readAllTemperatures().map((sensor) => [sensor.id, sensor]));
+  const saved = loadTempThresholds();
+  for (const [id, value] of Object.entries(input)) {
+    const sensor = known.get(id);
+    if (!sensor) continue;
+    const warn = Number(value?.warn);
+    const alarm = Number(value?.alarm);
+    if (!Number.isFinite(warn) || !Number.isFinite(alarm) || warn < 1 || alarm > 150) {
+      return res.status(400).json({ error: `${sensor.name}: progi muszą być liczbami od 1 do 150 °C.` });
+    }
+    if (alarm <= warn) {
+      return res.status(400).json({ error: `${sensor.name}: próg alarmu musi być wyższy niż próg uwagi.` });
+    }
+    // Progi równe domyślnym nie są zapisywane — wtedy czujnik idzie za domyślnymi.
+    if (warn === sensor.defaultWarn && alarm === sensor.defaultAlarm) delete saved[id];
+    else saved[id] = { warn, alarm };
+  }
+  ensureConfigDir(TEMP_THRESHOLDS_FILE);
+  fs.writeFileSync(TEMP_THRESHOLDS_FILE, JSON.stringify({ sensors: saved }, null, 2), "utf8");
+  res.json({ success: true, sensors: readTemperaturesWithThresholds() });
+});
+
+app.get("/api/alerts/load-thresholds", async (req, res) => {
+  const stats = await loadSystemStats().catch(() => null);
+  res.set("cache-control", "no-store");
+  res.json({
+    thresholds: loadLoadThresholds(),
+    current: { cpu: stats?.cpu?.usage ?? null, ram: stats?.memory?.percent ?? null }
+  });
+});
+
+app.put("/api/alerts/load-thresholds", requirePin, (req, res) => {
+  const names = { cpu: "CPU", ram: "RAM" };
+  const saved = {};
+  for (const key of Object.keys(LOAD_DEFAULTS)) {
+    const warn = Number(req.body?.[key]?.warn);
+    const alarm = Number(req.body?.[key]?.alarm);
+    if (!Number.isFinite(warn) || !Number.isFinite(alarm) || warn < 1 || alarm > 100) {
+      return res.status(400).json({ error: `${names[key]}: progi muszą być liczbami od 1 do 100 %.` });
+    }
+    if (alarm <= warn) {
+      return res.status(400).json({ error: `${names[key]}: próg alarmu musi być wyższy niż próg uwagi.` });
+    }
+    if (warn !== LOAD_DEFAULTS[key].warn || alarm !== LOAD_DEFAULTS[key].alarm) saved[key] = { warn, alarm };
+  }
+  ensureConfigDir(LOAD_THRESHOLDS_FILE);
+  fs.writeFileSync(LOAD_THRESHOLDS_FILE, JSON.stringify(saved, null, 2), "utf8");
+  res.json({ success: true, thresholds: loadLoadThresholds() });
+});
+
 app.get("/api/alerts/summary", async (req, res) => {
   try {
     const alerts = [];
@@ -1971,15 +2191,17 @@ app.get("/api/alerts/summary", async (req, res) => {
     // 2. Hardware / System
     try {
       const stats = await loadSystemStats();
-      const temp = stats.cpu?.temperature;
-      if (temp != null && temp >= 78) {
+      // Temperatury: każdy czujnik wg własnych progów (Centrum alertów → Progi temperatur).
+      for (const sensor of readTemperaturesWithThresholds()) {
+        if (sensor.temp < sensor.warn) continue;
+        const isAlarm = sensor.temp >= sensor.alarm;
         alerts.push({
-          id: "hw-cpu-temp",
-          type: "hardware",
-          severity: temp >= 85 ? "critical" : "warning",
-          title: "Wysoka temperatura procesora",
-          message: `Temperatura CPU wynosi ${Math.round(temp)}°C`,
-          resource: "cpu",
+          id: `temp-${sensor.id}`,
+          type: "temperature",
+          severity: isAlarm ? "critical" : "warning",
+          title: `Temperatura: ${sensor.name}`,
+          message: `${Math.round(sensor.temp)}°C — ${isAlarm ? `alarm od ${sensor.alarm}°C` : `uwaga od ${sensor.warn}°C`}`,
+          resource: sensor.name,
           timestamp: new Date().toISOString()
         });
       }

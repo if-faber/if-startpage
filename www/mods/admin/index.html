@@ -6,10 +6,16 @@
     <title>Zaplecze — IF-startpage</title>
     <link rel="icon" type="image/png" href="/images/favicon.png">
     <link rel="shortcut icon" href="/images/favicon.png">
+    <script>
+      // Tryb dzień/noc wspólny ze Stroną Główną, ustawiony przed wyświetleniem (bez mignięcia).
+      try { document.documentElement.dataset.mode = localStorage.getItem("ifs.mode") === "d" ? "d" : "n"; }
+      catch (e) { document.documentElement.dataset.mode = "n"; }
+    </script>
     <link rel="stylesheet" href="../../styles.css?v=0.4.2">
     <link rel="stylesheet" href="./admin.css?v=0.4.2">
     <link rel="stylesheet" href="../top/top.css?v=0.4.2d">
     <!-- Modułowa architektura Zaplecza IF-startpage (mods/admin) -->
+    <script src="../../ui-icons.js" defer></script>
     <script src="../../shared.js?v=0.4.2" defer></script>
     <script src="../top/top.js?v=0.4.2d" defer></script>
     <script src="./secure.js?v=0.4.2" defer></script>
@@ -57,19 +63,20 @@
           </div>
 
           <nav class="admin-nav" style="margin-top: 20px;">
-            <button class="nav-button active" id="tab-helper" type="button">⚙️ Helper &amp; System</button>
-            <button class="nav-button" id="tab-alerts" type="button">🔔 Centrum Alertów</button>
-            <button class="nav-button" id="tab-live" type="button">📊 Statystyki Live</button>
-            <button class="nav-button" id="tab-homepage" type="button">🏠 Homepage</button>
-            <button class="nav-button" id="tab-modules" type="button">🧩 Moduły</button>
+            <button class="nav-button active" id="tab-helper" type="button" data-icon="settings">Ustawienia ogólne</button>
+            <button class="nav-button" id="tab-alerts" type="button" data-icon="alerts">Centrum Alertów</button>
+            <button class="nav-button" id="tab-live" type="button" data-icon="status">Statystyki Live</button>
+            <button class="nav-button" id="tab-homepage" type="button" data-icon="page">Strony i sekcje</button>
+            <button class="nav-button" id="tab-modules" type="button" data-icon="modules">Moduły</button>
             <!-- tab-kiosk: od v0.4.2 dostępny przez hub "Moduły" (tab-modules.js), bez własnego przycisku w sidebarze -->
-            <button class="nav-button" id="tab-updates" type="button">📦 Aktualizacje</button>
-            <button class="nav-button" id="tab-admin-theme" type="button">⚙️ Wygląd Zaplecza</button>
+            <button class="nav-button" id="tab-updates" type="button" data-icon="package">Aktualizacje</button>
+            <button class="nav-button" id="tab-admin-theme" type="button" data-icon="appearance">Wygląd Zaplecza</button>
           </nav>
 
           <div class="sidebar-actions" style="display: flex; flex-direction: column; gap: 8px; margin-top: auto;">
-            <a href="../../" class="nav-button" style="text-align: center; justify-content: center; font-weight: bold;">← Powrót do serwisu</a>
-            <button type="button" class="nav-button danger" onclick="logoutAdmin()" style="text-align: center; justify-content: center; font-weight: bold;">🔒 Wyloguj z Zaplecza</button>
+            <button type="button" class="nav-button admin-mode-toggle" id="adminModeToggle" title="Tryb dzień / noc" aria-label="Przełącz tryb dzień / noc"></button>
+            <a href="../../" class="nav-button" style="font-weight: bold;" data-icon="back">Powrót do serwisu</a>
+            <button type="button" class="nav-button danger" onclick="logoutAdmin()" style="font-weight: bold;" data-icon="logout">Wyloguj z Zaplecza</button>
           </div>
         </aside>
 
@@ -77,7 +84,7 @@
         <main class="admin-main">
           <header class="toolbar" style="margin-bottom: 20px;">
             <div class="page-title">
-              <h1 id="tabTitle" style="font-size: 24px; margin: 0;">⚙️ Helper &amp; Ustawienia Ogólne</h1>
+              <h1 id="tabTitle" style="font-size: 24px; margin: 0;">Ustawienia ogólne</h1>
             </div>
           </header>
           <section id="tabContent" class="admin-content"></section>

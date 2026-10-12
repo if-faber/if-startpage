@@ -44,11 +44,16 @@
     return parts.join(" ");
   }
 
-  function getTempClass(temp) {
+  function escapeTopHtml(value) {
+    return String(value ?? "").replace(/[&<>"']/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch]));
+  }
+
+  // Progi z Zaplecza → Centrum alertów → Progi temperatur (gdy brak — 70/85 °C).
+  function getTempClass(temp, warn = 70, alarm = 85) {
     if (temp == null) return "";
-    if (temp < 50) return "top-temp-cool";
-    if (temp < 70) return "top-temp-warm";
-    return "top-temp-hot";
+    if (temp >= alarm) return "top-temp-hot";
+    if (temp >= warn) return "top-temp-warm";
+    return "top-temp-cool";
   }
 
   // ─── Wspólne fragmenty HTML (modal, akordeon, karta w Zapleczu) ───────────
@@ -79,8 +84,8 @@
       <menu class="top-modal-footer">
         <span data-role="last-updated" style="color:var(--muted); font-size:12px;">Oczekiwanie na próbkę</span>
         <div style="display:flex; gap:8px;">
-          <button type="button" class="button" data-role="pause-btn">⏸️ Pauza</button>
-          <button type="button" class="button" data-role="refresh-btn">🔄 Odśwież</button>
+          <button type="button" class="button" data-role="pause-btn">${uiIcon("pause", 16)} Pauza</button>
+          <button type="button" class="button" data-role="refresh-btn">${uiIcon("refresh", 16)} Odśwież</button>
           ${withClose ? '<button type="button" class="button primary" data-role="footer-close-btn">Zamknij</button>' : ""}
         </div>
       </menu>
@@ -89,7 +94,7 @@
 
   // ─── Silnik: kontroler niezależny dla każdego zamontowanego panelu ────────
 
-  function createController(root) {
+  function createController(root, { withTemperatures = false } = {}) {
     let activeTimer = null;
     let isPaused = false;
     let currentTab = "processes"; // "processes" | "containers"
@@ -132,10 +137,13 @@
 
       // 1. CPU Cores Grid
       const cores = Array.isArray(data.cpu?.cores) ? data.cpu.cores : [];
+      const allSensors = Array.isArray(data.temperatures) ? data.temperatures : [];
+      const cpuSensor = allSensors.find((s) => /^(Package id \d+|Tctl)$/i.test(s.label || ""));
       const cpuGridHtml = cores.map((c) => {
         const usage = Math.max(0, Math.min(100, Number(c.usage) || 0));
         const temp = c.temperature ? `${Math.round(c.temperature)}°C` : "—";
-        const tempClass = getTempClass(c.temperature);
+        const coreSensor = allSensors.find((s) => new RegExp(`^Core\\s*${c.core}$`, "i").test(s.label || "")) || cpuSensor;
+        const tempClass = getTempClass(c.temperature, coreSensor?.warn, coreSensor?.alarm);
         return `
           <div class="top-core-box">
             <div class="top-core-header">
@@ -189,7 +197,27 @@
         `;
       }).join("");
 
-      // 5. Processes & Docker Table
+      // 5. Temperatury — wszystkie czujniki (tylko gdy włączone przy montażu)
+      const sensors = withTemperatures && Array.isArray(data.temperatures) ? data.temperatures : [];
+      const tempsHtml = sensors.map((s) => `
+          <div class="top-core-box">
+            <div class="top-core-header">
+              <span>${escapeTopHtml(s.name)}</span>
+              <span class="top-core-temp ${getTempClass(s.temp, s.warn, s.alarm)}">${Math.round(s.temp)}°C</span>
+            </div>
+          </div>
+        `).join("");
+      const tempsSectionHtml = withTemperatures ? `
+        <section class="top-section-card">
+          <div class="top-section-title">
+            <span>Temperatury</span>
+            <span>${sensors.length} ${sensors.length === 1 ? "czujnik" : sensors.length < 5 ? "czujniki" : "czujników"}</span>
+          </div>
+          <div class="top-temps-grid">${tempsHtml || '<div class="empty">Brak czujników temperatury</div>'}</div>
+        </section>
+      ` : "";
+
+      // 6. Processes & Docker Table
       const processes = Array.isArray(data.processes) ? data.processes : [];
       const containers = Array.isArray(data.containers) ? data.containers : [];
 
@@ -263,6 +291,8 @@
           <div class="top-cpu-grid">${cpuGridHtml || '<div class="empty">Brak danych CPU</div>'}</div>
         </section>
 
+        ${tempsSectionHtml}
+
         <!-- 2. RAM & Network Row -->
         <div class="top-row-2col">
           <!-- RAM -->
@@ -292,12 +322,12 @@
             </div>
             <div class="top-net-grid">
               <div class="top-net-box">
-                <span class="top-net-label">⬇️ Pobieranie (Download)</span>
+                <span class="top-net-label">${uiIcon("arrowDown", 14)} Pobieranie (Download)</span>
                 <span class="top-net-speed">${rxSpeed}</span>
                 <span class="top-net-total">Odebrano: ${rxTotal}</span>
               </div>
               <div class="top-net-box">
-                <span class="top-net-label">⬆️ Wysyłanie (Upload)</span>
+                <span class="top-net-label">${uiIcon("arrowUp", 14)} Wysyłanie (Upload)</span>
                 <span class="top-net-speed">${txSpeed}</span>
                 <span class="top-net-total">Wysłano: ${txTotal}</span>
               </div>
@@ -332,7 +362,7 @@
       isPaused = !isPaused;
       const btn = root.querySelector('[data-role="pause-btn"]');
       const dot = root.querySelector('[data-role="live-dot"]');
-      if (btn) btn.textContent = isPaused ? "▶️ Wznów" : "⏸️ Pauza";
+      if (btn) btn.innerHTML = isPaused ? `${uiIcon("play", 16)} Wznów` : `${uiIcon("pause", 16)} Pauza`;
       if (dot) dot.style.animationPlayState = isPaused ? "paused" : "running";
     }
 
@@ -376,7 +406,7 @@
      * wywołujący MUSI wywołać stop() przy odmontowaniu/nawigacji, inaczej
      * odpytywanie /api/system/top zostanie w tle.
      */
-    mount(root, { title } = {}) {
+    mount(root, { title, withTemperatures = false } = {}) {
       if (!root) return null;
       root.classList.add("top-inline-mount");
       root.innerHTML = `
@@ -384,7 +414,7 @@
         ${bodyHtml()}
         ${footerHtml()}
       `;
-      return createController(root);
+      return createController(root, { withTemperatures });
     }
   };
 })();

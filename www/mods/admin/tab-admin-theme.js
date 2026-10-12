@@ -149,6 +149,61 @@ function normalizeAdminTheme(theme) {
   return t;
 }
 
+// ─── Tryb dzień / noc ────────────────────────────────────────────────────────
+// Tryb wspólny ze Stroną Główną (localStorage „ifs.mode”, atrybut data-mode na <html>).
+// Wygląd Zaplecza zapisany osobno dla dnia (d) i nocy (n); wygląd startowy obu w admin.css.
+
+function currentAdminMode() {
+  return document.documentElement.dataset.mode === "d" ? "d" : "n";
+}
+
+// Odpowiedź /api/admin/theme → oba wyglądy w state, nałożony wygląd bieżącego trybu.
+function useAdminThemes(data) {
+  const themes = data?.themes || { d: {}, n: data?.theme || {} };
+  state.adminThemes = { d: themes.d || {}, n: themes.n || {} };
+  state.adminTheme = state.adminThemes[currentAdminMode()];
+  clearAdminThemeStyles();
+  applyAdminThemeStyles(state.adminTheme);
+}
+
+function renderAdminModeToggle() {
+  const button = document.querySelector("#adminModeToggle");
+  if (!button || typeof themeToggleIcon !== "function") return;
+  const isNight = currentAdminMode() === "n";
+  button.innerHTML = `${themeToggleIcon(isNight)}<span>${isNight ? "Tryb nocny" : "Tryb dzienny"}</span>`;
+}
+
+function setAdminMode(mode) {
+  const next = mode === "d" ? "d" : "n";
+  document.documentElement.dataset.mode = next;
+  try { localStorage.setItem("ifs.mode", next); } catch {}
+  renderAdminModeToggle();
+  if (state.adminThemes) {
+    state.adminTheme = state.adminThemes[next] || {};
+    clearAdminThemeStyles();
+    applyAdminThemeStyles(state.adminTheme);
+  }
+  // Otwarty edytor wyglądu przechodzi na wygląd wybranego trybu.
+  if (document.querySelector("#adminAppearanceForm")) {
+    adminThemeDirty = new Set();
+    adminPendingBackground = null;
+    populateAdminAppearanceForm(state.adminTheme || {});
+    const select = document.querySelector("#adminThemeMode");
+    if (select) select.value = next;
+  }
+}
+
+function bindAdminModeToggle() {
+  renderAdminModeToggle();
+  document.querySelector("#adminModeToggle")?.addEventListener("click", () => {
+    setAdminMode(currentAdminMode() === "n" ? "d" : "n");
+  });
+  // Przełączenie trybu w innej karcie (np. na Stronie Głównej) — Zaplecze idzie za nim.
+  window.addEventListener("storage", (event) => {
+    if (event.key === "ifs.mode" && event.newValue && event.newValue !== currentAdminMode()) setAdminMode(event.newValue);
+  });
+}
+
 // ─── Widok ───────────────────────────────────────────────────────────────────
 
 function renderAdminThemeTab() {
@@ -156,13 +211,21 @@ function renderAdminThemeTab() {
   return `
     <div class="admin-tab-container">
       <section class="admin-section-card">
-        <h2 style="margin: 0 0 8px;">⚙️ Wygląd Zaplecza</h2>
+        <h2 style="margin: 0 0 8px;">${uiIcon("appearance", 22)} Wygląd Zaplecza</h2>
         <p class="settings-note">Zmiany widać od razu. Zapisz, żeby zostały na stałe. „Cofnij zmiany” wraca do ostatnio zapisanego wyglądu, a „Wygląd startowy” — do wyglądu po instalacji.</p>
+        <label class="appearance-mode-bar" style="display: grid; gap: 6px; margin: 12px 0 4px; font-size: 11px; font-weight: 800; text-transform: uppercase; color: var(--muted);">
+          Edytujesz wygląd trybu
+          <select id="adminThemeMode" style="font-size: 15px; font-weight: 700; text-transform: none; color: var(--text);">
+            <option value="d">Dzień</option>
+            <option value="n">Noc</option>
+          </select>
+        </label>
+        <p class="settings-note" style="margin-top: 0;">Dzień i noc mają osobne ustawienia. Wybór trybu przełącza też Zaplecze, więc widzisz to, co edytujesz.</p>
 
         <form id="adminAppearanceForm" class="admin-form-panel">
 
           <div ${box}>
-            <h4 style="margin-top: 0; margin-bottom: 6px; color: var(--accent);">🎨 1. Kolory, czcionki i panele</h4>
+            <h4 style="margin-top: 0; margin-bottom: 6px; color: var(--accent);">${uiIcon("appearance", 16)} 1. Kolory, czcionki i panele</h4>
             <div class="admin-form-grid three-cols">
               <label>Akcent główny<input id="adminThemeAccent" type="color"></label>
               <label>Akcent pomocniczy<input id="adminThemeAccentAlt" type="color"></label>
@@ -181,7 +244,7 @@ function renderAdminThemeTab() {
               <label>Rozmycie paneli<input id="adminThemeGlassBlur" type="range" min="0" max="40" step="1"><span></span></label>
             </div>
 
-            <span style="font-size: 11px; font-weight: bold; display: block; margin: 16px 0 8px; color: var(--accent);">🖼️ Tapeta</span>
+            <span style="font-size: 11px; font-weight: bold; display: block; margin: 16px 0 8px; color: var(--accent);">${uiIcon("image", 14)} Tapeta</span>
             <div class="admin-form-grid three-cols">
               <label>Obraz tła
                 <select id="adminThemeBackgroundImage">
@@ -198,7 +261,7 @@ function renderAdminThemeTab() {
           </div>
 
           <div ${box}>
-            <h4 style="margin-top: 0; margin-bottom: 6px; color: var(--accent);">📑 2. Pasek boczny</h4>
+            <h4 style="margin-top: 0; margin-bottom: 6px; color: var(--accent);">${uiIcon("tabs", 16)} 2. Pasek boczny</h4>
             <div class="admin-form-grid">
               <label>Kolor paska<input id="adminSidebarColor" type="color"></label>
               <label>Krycie paska<input id="adminSidebarAlpha" type="range" min="5" max="100" step="1"><span></span></label>
@@ -217,7 +280,7 @@ function renderAdminThemeTab() {
           </div>
 
           <div ${box}>
-            <h4 style="margin-top: 0; margin-bottom: 14px; color: var(--accent);">🔘 3. Przyciski akcji</h4>
+            <h4 style="margin-top: 0; margin-bottom: 14px; color: var(--accent);">${uiIcon("button", 16)} 3. Przyciski akcji</h4>
             <div class="admin-form-grid three-cols" style="margin-bottom: 16px;">
               <label>Zaokrąglenie<input id="adminBtnRadius" type="range" min="0" max="30" step="1"><span></span></label>
               <label>Grubość ramki<input id="adminBtnBorderWidth" type="range" min="0" max="4" step="1"><span></span></label>
@@ -231,7 +294,7 @@ function renderAdminThemeTab() {
               <div style="padding: 14px; border: 1px solid var(--line); border-radius: 10px; background: rgba(0,0,0,0.12);">
                 <h5 style="margin: 0 0 10px 0; font-size: 13px;">Przycisk główny</h5>
                 <div style="margin-bottom: 12px; display: flex; justify-content: center; gap: 10px; flex-wrap: wrap;">
-                  <button type="button" class="button primary" tabindex="-1">💾 Zapisz</button>
+                  <button type="button" class="button primary" tabindex="-1">${uiIcon("save", 16)} Zapisz</button>
                   <button type="button" class="button" tabindex="-1">Zwykły</button>
                 </div>
                 <div class="admin-form-grid">
@@ -245,7 +308,7 @@ function renderAdminThemeTab() {
               <div style="padding: 14px; border: 1px solid var(--line); border-radius: 10px; background: rgba(0,0,0,0.12);">
                 <h5 style="margin: 0 0 10px 0; font-size: 13px;">Przycisk ostrzegawczy</h5>
                 <div style="margin-bottom: 12px; display: flex; justify-content: center;">
-                  <button type="button" class="button danger" tabindex="-1">🗑️ Usuń</button>
+                  <button type="button" class="button danger" tabindex="-1">${uiIcon("trash", 16)} Usuń</button>
                 </div>
                 <div class="admin-form-grid">
                   <label>Tło<input id="adminBtnDangerBg" type="color"></label>
@@ -260,7 +323,7 @@ function renderAdminThemeTab() {
           <menu style="margin-top: 18px; display: flex; justify-content: flex-end; gap: 12px; flex-wrap: wrap;">
             <button id="resetAdminAppearance" class="button danger" type="button">Wygląd startowy</button>
             <button id="revertAdminAppearance" class="button" type="button">Cofnij zmiany</button>
-            <button class="button primary" type="submit">💾 Zapisz wygląd</button>
+            <button class="button primary" type="submit">${uiIcon("save", 16)} Zapisz wygląd</button>
           </menu>
         </form>
       </section>
@@ -315,6 +378,19 @@ function bindAdminThemeEvents() {
   if (!form) return;
 
   populateAdminAppearanceForm(state.adminTheme || {});
+
+  const modeSelect = document.querySelector("#adminThemeMode");
+  if (modeSelect) {
+    modeSelect.value = currentAdminMode();
+    modeSelect.addEventListener("change", (event) => {
+      event.stopPropagation();
+      if (adminThemeDirty.size && !confirm("Niezapisane zmiany wyglądu przepadną. Przełączyć tryb?")) {
+        modeSelect.value = currentAdminMode();
+        return;
+      }
+      setAdminMode(modeSelect.value);
+    });
+  }
 
   const onEdit = (event) => {
     const input = event.target;
@@ -389,15 +465,16 @@ async function saveAdminAppearance(event) {
     const themeSettings = collectAdminTheme();
     const data = await request("/api/admin/theme", {
       method: "PUT",
-      body: JSON.stringify({ themeSettings, backgroundData: adminPendingBackground })
+      body: JSON.stringify({ mode: currentAdminMode(), themeSettings, backgroundData: adminPendingBackground })
     });
     state.adminTheme = data.theme || themeSettings;
+    if (state.adminThemes) state.adminThemes[currentAdminMode()] = state.adminTheme;
     adminThemeDirty = new Set();
     adminPendingBackground = null;
     clearAdminThemeStyles();
     applyAdminThemeStyles(state.adminTheme);
     populateAdminAppearanceForm(state.adminTheme);
-    showToast("Zapisano wygląd Zaplecza 💾");
+    showToast(`Zapisano wygląd Zaplecza (${currentAdminMode() === "d" ? "dzień" : "noc"}).`);
   } catch (error) {
     showToast(error.message);
   }
@@ -413,13 +490,15 @@ function revertAdminAppearance() {
 }
 
 async function resetAdminAppearance() {
-  if (!confirm("Przywrócić wygląd startowy Zaplecza? Zapisane ustawienia wyglądu zostaną usunięte.")) return;
+  const modeName = currentAdminMode() === "d" ? "dzień" : "noc";
+  if (!confirm(`Przywrócić wygląd startowy Zaplecza (${modeName})? Zapisane ustawienia wyglądu tego trybu zostaną usunięte.`)) return;
   try {
     const data = await request("/api/admin/theme", {
       method: "PUT",
-      body: JSON.stringify({ reset: true })
+      body: JSON.stringify({ mode: currentAdminMode(), reset: true })
     });
     state.adminTheme = data.theme || {};
+    if (state.adminThemes) state.adminThemes[currentAdminMode()] = state.adminTheme;
     adminThemeDirty = new Set();
     adminPendingBackground = null;
     clearAdminThemeStyles();
