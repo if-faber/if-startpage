@@ -21,8 +21,8 @@ oraz zarządzanie stosami przez Dockge.
 
 ## Funkcje
 
-- **Strona Główna** — kafelki linków w sekcjach, motyw dzień/noc, chowany pasek boczny,
-  widżet CPU/RAM/temperatury w nagłówku.
+- **Strona Główna** — kafelki linków w sekcjach, tryb dzień/noc (przełącznik ☀️/🌙 na dole
+  paska bocznego), chowany pasek boczny, widżet CPU/RAM/temperatury w nagłówku.
 - **Zaplecze** (chronione PIN-em):
   - Centrum Alertów — stan kontenerów, temperatura, RAM, dyski, logi kontenerów,
   - Diagnostyka Serwera (Top) i Statystyki Live — CPU, RAM, dyski, sieć, procesy,
@@ -93,6 +93,21 @@ właściwe miejsce, niezależnie od tego, jak Dockge widzi swój katalog stosów
   (np. obrazy budowane lokalnie).
 - `DOCKER_STACK_OVERRIDES` — gdy nazwa kontenera różni się od nazwy stosu lub serwisu,
   w formacie JSON, np. `{"wordpress_db":{"stack":"wordpress","service":"db"}}`.
+
+## Wygląd strony: dzień i noc
+
+Wygląd startowy jest w `www/styles.css` (część obrazu, nie zmieniasz go).
+Twoje zmiany z edytora wyglądu (🎨 na dole paska bocznego) trafiają do dwóch zwykłych
+plików CSS w katalogu konfiguracji:
+
+- `config/custom-d.css` — tryb **dzień**,
+- `config/custom-n.css` — tryb **noc**.
+
+Na górze edytora wybierasz, który tryb edytujesz; „Zapisz wygląd” zapisuje plik tego trybu.
+W plikach są tylko właściwości, dla których edytor ma kontrolki — każda z opisem po polsku.
+Plik można poprawić ręcznie, ale kolejny zapis z edytora nadpisze go w całości.
+„Wygląd startowy trybu” usuwa plik danego trybu. Tryb wybrany przełącznikiem zapamiętuje
+przeglądarka. Na razie dotyczy to Strony Głównej; Zaplecze i Kiosk mają jeden wygląd.
 
 ## Znane ograniczenia
 

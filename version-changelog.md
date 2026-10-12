@@ -4,6 +4,20 @@ Nowe wpisy dopisujemy na górze.
 
 ---
 
+## v0.1.6.1 — 2026-10-12
+
+Tryb dzień / noc na Stronie Głównej.
+
+- **Przełącznik ☀️/🌙** na dole paska bocznego (ikona z projektu theme-toggles, MIT). Wybór zapamiętuje przeglądarka; domyślnie noc.
+- **Wygląd w plikach CSS:** zmiany z edytora 🎨 zapisują się do `config/custom-d.css` (dzień) albo `config/custom-n.css` (noc). Wygląd startowy zostaje w `styles.css`.
+- **Wybór trybu na górze edytora** — edytor wie, który plik zmienia; „Zapisz wygląd” zapisuje plik wybranego trybu, „Wygląd startowy trybu” go usuwa.
+- **Wygląd startowy dnia i nocy** w `custom-defaults/custom-d.css` i `custom-n.css` — dopracowane kolory, niższe kafelki, spokojniejsze ramki.
+- Nowe kontrolki: kolor tekstu, kolor tekstu pomocniczego, tekst na przyciskach w kolorze akcentu.
+- **Naprawione:** „Anuluj” w edytorze strony zostawiał niezapisane zmiany na ekranie do przeładowania.
+- Zgodność: dotychczasowy zapis wyglądu (`theme.json`) działa w trybie noc do pierwszego zapisu nocy, potem zostaje jako `theme.json.old`.
+
+---
+
 ## v0.1.6 — 2026-10-12
 
 Wygląd startowy i naprawiony edytor wyglądu Zaplecza.

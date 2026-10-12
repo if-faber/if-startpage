@@ -1012,6 +1012,178 @@ app.put("/api/dashboard/theme", (req, res) => {
   res.json({ success: true, theme });
 });
 
+// ─── Wygląd strony: tryb dzień / noc (custom-d.css, custom-n.css) ────────────
+//
+// Wygląd startowy jest w www/styles.css (w obrazie, nie zmieniamy go).
+// Zmiany z edytora 🎨 trafiają do dwóch zwykłych plików CSS w CONFIG_DIR:
+//   custom-d.css — tryb dzień,  custom-n.css — tryb noc.
+// Pliki zawierają tylko właściwości, dla których edytor ma kontrolki.
+// Gdy pliku nie ma, strona używa pliku domyślnego z www/custom-defaults/.
+
+const CUSTOM_MODES = { d: "dzień", n: "noc" };
+const CUSTOM_DEFAULTS_DIR = path.join(WWW_DIR, "custom-defaults");
+
+// Zmienne, które edytor może zapisać, z opisem do komentarza w pliku.
+const CUSTOM_CSS_VARS = {
+  "--accent": "Akcent",
+  "--accent-alt": "Akcent 2",
+  "--accent-soft": "Akcent — tło przycisków (z akcentu)",
+  "--glow-start": "Poświata tła (z akcentu)",
+  "--glow-end": "Poświata tła (z akcentu 2)",
+  "--on-accent": "Tekst na przyciskach w kolorze akcentu",
+  "--text": "Kolor tekstu",
+  "--muted": "Kolor tekstu pomocniczego",
+  "--page-bg": "Tło strony",
+  "--surface-base-rgb": "Kolor motywu",
+  "--panel-strong": "Kolor przycisku menu i powiadomień (z koloru motywu)",
+  "--background-image": "Obraz tła",
+  "--background-image-opacity": "Widoczność obrazu",
+  "--background-image-blur": "Rozmycie obrazu",
+  "--background-image-dim": "Przyciemnienie tła",
+  "--title-color": "Kolor nazwy serwisu",
+  "--title-size": "Wielkość nazwy serwisu",
+  "--title-shadow": "Cień nazwy serwisu",
+  "--title-shadow-blur": "Cień nazwy serwisu (rozmycie)",
+  "--subtitle-color": "Kolor sloganu",
+  "--subtitle-size": "Wielkość sloganu",
+  "--subtitle-shadow": "Cień sloganu",
+  "--subtitle-shadow-blur": "Cień sloganu (rozmycie)",
+  "--logo-size": "Rozmiar logo",
+  "--page-title-size": "Wielkość tytułu strony",
+  "--page-title-shadow": "Cień tytułu strony",
+  "--page-title-shadow-blur": "Cień tytułu strony (rozmycie)",
+  "--sidebar-panel-rgb": "Kolor tła menu",
+  "--sidebar-panel-alpha": "Krycie menu",
+  "--sidebar-width": "Szerokość menu",
+  "--sidebar-toggle-color": "Kolor ikony menu",
+  "--sidebar-toggle-size": "Wielkość ikony menu",
+  "--font-menu": "Czcionka menu",
+  "--font-card": "Czcionka kafelków",
+  "--font-description": "Czcionka opisów",
+  "--tile-panel-rgb": "Kolor kafelków",
+  "--tile-panel-alpha": "Krycie kafelków",
+  "--tile-height": "Wysokość kafelków",
+  "--admin-panel-rgb": "Kolor kart statusu",
+  "--admin-panel-alpha": "Krycie kart statusu",
+  "--border-alpha": "Obramowanie kart",
+  "--line": "Kolor linii i ramek (z koloru tekstu)",
+  "--card-radius": "Zaokrąglenie kart",
+  "--card-gap": "Odstęp kart",
+  "--glass-blur": "Rozmycie szkła",
+  "--glass-saturation": "Nasycenie szkła",
+  "--modal-bg-rgb": "Kolor okien",
+  "--modal-alpha": "Krycie okien",
+  "--modal-glass-blur": "Rozmycie okien",
+  "--modal-radius": "Zaokrąglenie okien",
+  "--modal-backdrop-alpha": "Przyciemnienie pod oknem",
+  "--modal-backdrop-blur": "Rozmycie pod oknem"
+};
+
+function customCssPath(mode) {
+  return path.join(CONFIG_DIR, `custom-${mode}.css`);
+}
+
+function isSafeCssValue(name, value) {
+  if (!value || value.length > 300) return false;
+  if (/[;{}<>\\]/.test(value)) return false;
+  if (/url\(/i.test(value)) {
+    if (name !== "--background-image") return false;
+    return /^url\("(\/uploads\/[\w.-]+(\?v=\d+)?|\.?\/images\/background\.jpg)"\)$/.test(value);
+  }
+  return true;
+}
+
+function buildCustomCss(mode, vars) {
+  const lines = Object.keys(CUSTOM_CSS_VARS)
+    .filter((name) => vars[name] != null)
+    .map((name) => `  ${name}: ${vars[name]}; /* ${CUSTOM_CSS_VARS[name]} */`);
+  const scheme = mode === "d" ? "  color-scheme: light;\n" : "  color-scheme: dark;\n";
+  return `/* IF-startpage — wygląd strony, tryb: ${CUSTOM_MODES[mode].toUpperCase()} (custom-${mode}.css)
+   Ten plik zapisuje edytor wyglądu (🎨). Możesz go też poprawić ręcznie —
+   ale kolejny zapis z edytora nadpisze cały plik.
+   Wygląd startowy jest w styles.css; tu są tylko zmiany. Usuń plik,
+   żeby wrócić do wyglądu startowego tego trybu. */
+
+html[data-mode="${mode}"] body {
+${scheme}${lines.join("\n")}
+}
+`;
+}
+
+// Odczyt zmiennych z pliku (także poprawionego ręcznie) — tylko znane i bezpieczne.
+function parseCustomCss(text) {
+  const vars = {};
+  const re = /(--[a-z0-9-]+)\s*:\s*([^;]+);/gi;
+  let match;
+  while ((match = re.exec(String(text || "")))) {
+    const name = match[1].toLowerCase();
+    const value = match[2].trim();
+    if (CUSTOM_CSS_VARS[name] && isSafeCssValue(name, value)) vars[name] = value;
+  }
+  return vars;
+}
+
+// Pliki CSS trybów: najpierw wersja użytkownika z CONFIG_DIR, inaczej domyślna.
+app.get("/custom/:file", (req, res) => {
+  const match = /^custom-(d|n)\.css$/.exec(req.params.file);
+  if (!match) return res.status(404).end();
+  const userFile = customCssPath(match[1]);
+  const defaultFile = path.join(CUSTOM_DEFAULTS_DIR, `custom-${match[1]}.css`);
+  res.setHeader("Cache-Control", "no-cache");
+  res.type("text/css");
+  if (fs.existsSync(userFile)) return res.send(fs.readFileSync(userFile, "utf8"));
+  if (fs.existsSync(defaultFile)) return res.send(fs.readFileSync(defaultFile, "utf8"));
+  res.send("");
+});
+
+// Czy użytkownik ma już własne pliki trybów (strona używa tego do zgodności ze starym theme.json).
+app.get("/api/dashboard/custom-css", (req, res) => {
+  res.json({
+    d: fs.existsSync(customCssPath("d")),
+    n: fs.existsSync(customCssPath("n")),
+    legacyTheme: fs.existsSync(THEME_FILE)
+  });
+});
+
+app.put("/api/dashboard/custom-css", requirePin, (req, res) => {
+  const mode = req.body?.mode;
+  if (!CUSTOM_MODES[mode]) {
+    return res.status(400).json({ error: "Nieznany tryb (dozwolone: d, n)." });
+  }
+
+  if (req.body?.reset) {
+    if (fs.existsSync(customCssPath(mode))) fs.unlinkSync(customCssPath(mode));
+    return res.json({ success: true, mode, reset: true });
+  }
+
+  const input = req.body?.vars && typeof req.body.vars === "object" ? req.body.vars : {};
+  const vars = {};
+  for (const [name, raw] of Object.entries(input)) {
+    const value = normalizeText(raw);
+    if (CUSTOM_CSS_VARS[name] && isSafeCssValue(name, value)) vars[name] = value;
+  }
+
+  const backgroundData = normalizeText(req.body?.backgroundData);
+  try {
+    if (backgroundData) {
+      const url = saveUploadedImage(backgroundData, `background-custom-${mode}`, "Niepoprawny format obrazu tła.");
+      vars["--background-image"] = `url("${url}")`;
+    }
+  } catch (error) {
+    return res.status(400).json({ error: error.message });
+  }
+
+  ensureConfigDir(customCssPath(mode));
+  fs.writeFileSync(customCssPath(mode), buildCustomCss(mode, vars), "utf8");
+
+  // Stary zapis wyglądu (theme.json) przestaje być potrzebny po pierwszym zapisie trybu noc.
+  if (mode === "n" && fs.existsSync(THEME_FILE)) {
+    fs.renameSync(THEME_FILE, `${THEME_FILE}.old`);
+  }
+
+  res.json({ success: true, mode, vars });
+});
+
 // Klucze motywu Zaplecza, które przyjmujemy (zgodne z tab-admin-theme.js).
 const ADMIN_THEME_KEYS = [
   "accent", "accentAlt", "surfaceColor", "bg", "fontMenu", "fontCard", "fontDescription",

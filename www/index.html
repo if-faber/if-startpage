@@ -9,7 +9,14 @@
     <link rel="icon" type="image/png" sizes="16x16" href="./images/favicon-16.png?v=nas2">
     <link rel="icon" href="./images/favicon.ico?v=nas2">
     <link rel="manifest" href="./images/manifest.webmanifest?v=nas2">
+    <script>
+      // Tryb dzień/noc ustawiony przed wyświetleniem strony (bez mignięcia).
+      try { document.documentElement.dataset.mode = localStorage.getItem("ifs.mode") === "d" ? "d" : "n"; }
+      catch (e) { document.documentElement.dataset.mode = "n"; }
+    </script>
     <link rel="stylesheet" href="./styles.css">
+    <link rel="stylesheet" id="customCss-d" href="/custom/custom-d.css">
+    <link rel="stylesheet" id="customCss-n" href="/custom/custom-n.css">
     <link rel="stylesheet" href="./mods/top/top.css">
     <script src="./mods/top/top.js" defer></script>
     <script src="./app.js" defer></script>

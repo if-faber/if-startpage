@@ -167,6 +167,7 @@ function appShell() {
         <div class="sidebar-actions">
           <div class="sidebar-icon-menu">
             <button type="button" class="sidebar-icon-btn" id="sidebarIconAlerts" title="Centrum Powiadomień i Alertów">🔔<span class="sidebar-alert-badge" id="sidebarAlertBadge" style="display:none;">0</span></button>
+            <button type="button" class="sidebar-icon-btn" id="sidebarIconMode" title="Tryb dzień / noc" aria-label="Przełącz tryb dzień / noc">${modeToggleIcon()}</button>
             <button type="button" class="sidebar-icon-btn" id="sidebarIconTheme" title="Edytor wyglądu (CSS)">🎨</button>
             <a href="./mods/admin/" class="sidebar-icon-btn" id="sidebarIconAdmin" title="Zaplecze Administratora (CMS)">🛠️</a>
             <button type="button" class="sidebar-icon-btn" id="sidebarIconLock" title="Zablokuj sesję">🔒</button>
@@ -244,6 +245,15 @@ function appShell() {
           <div><span class="eyebrow">Zaplecze</span><h2>Wygląd i Style CSS</h2></div>
           <button type="button" data-close aria-label="Zamknij">×</button>
         </header>
+        <div class="appearance-mode-bar">
+          <label>Edytujesz wygląd dla trybu
+            <select id="themeEditMode">
+              <option value="d">☀️ Dzień (custom-d.css)</option>
+              <option value="n">🌙 Noc (custom-n.css)</option>
+            </select>
+          </label>
+          <p>Zmiany widać od razu. „Zapisz wygląd” zapisuje plik wybranego trybu. „Anuluj” odrzuca niezapisane zmiany.</p>
+        </div>
         <div class="appearance-sections">
           <!-- 1. Ogólne i tło -->
           <section class="appearance-section">
@@ -253,7 +263,10 @@ function appShell() {
               <label>Akcent 2<input id="themeAccentAlt" type="color"></label>
               <label>Tło strony<input id="themeBg" type="color"></label>
               <label>Kolor motywu<input id="themeSurfaceColor" type="color"></label>
-              <label>Obraz tła<select id="themeBackgroundImage"><option value="">Wyłączony</option><option value="default">./images/background.jpg</option><option value="custom">Własny upload (zachód słońca)</option></select></label>
+              <label>Kolor tekstu<input id="themeTextColor" type="color"></label>
+              <label>Kolor tekstu pomocniczego<input id="themeMutedColor" type="color"></label>
+              <label>Tekst na przyciskach w kolorze akcentu<input id="themeOnAccentColor" type="color"></label>
+              <label>Obraz tła<select id="themeBackgroundImage"><option value="">Wyłączony</option><option value="default">./images/background.jpg</option><option value="custom">Własny obraz</option></select></label>
               <label>Upload tła<input id="themeBackgroundUpload" type="file" accept="image/png,image/jpeg,image/webp"></label>
               <label>Przyciemnienie tła<input id="themeBackgroundDim" type="range" min="0" max="85" step="1"><span></span></label>
               <label>Blur obrazu<input id="themeBackgroundBlur" type="range" min="0" max="40" step="1"><span></span></label>
@@ -322,7 +335,7 @@ function appShell() {
             </div>
           </section>
         </div>
-        <menu><button id="resetAppearance" type="button">Reset</button><button type="button" data-close>Anuluj</button><button class="primary">Zapisz wygląd</button></menu>
+        <menu><button id="resetAppearance" type="button">Wygląd startowy trybu</button><button type="button" data-close>Anuluj</button><button class="primary">Zapisz wygląd</button></menu>
       </form>
     </dialog>
     <dialog id="alertsQuickModal" class="wide-dialog">
@@ -384,38 +397,43 @@ function bindShell() {
   document.querySelector("#pinForm")?.addEventListener("submit", unlockAdminPanel);
   document.querySelector("#settingsForm")?.addEventListener("submit", saveDashboardSettings);
   document.querySelector("#appearanceForm")?.addEventListener("submit", saveThemeSettings);
-  document.querySelector("#appearanceForm")?.addEventListener("input", (event) => {
-    if (event.target && event.target.matches("input[type=range]")) {
-      updateRangeValue(event.target);
-    }
-    const liveTheme = collectTheme();
-    applyTheme(liveTheme);
-  });
-  document.querySelector("#appearanceForm")?.addEventListener("change", (event) => {
-    if (event.target && event.target.matches("input[type=range]")) {
-      updateRangeValue(event.target);
-    }
-    const liveTheme = collectTheme();
-    applyTheme(liveTheme);
-  });
+  const onAppearanceEdit = (event) => {
+    if (!event.target || event.target.id === "themeEditMode" || event.target.id === "themeBackgroundUpload") return;
+    if (event.target.matches("input[type=range]")) updateRangeValue(event.target);
+    state.appearanceDirty = true;
+    previewTheme();
+  };
+  document.querySelector("#appearanceForm")?.addEventListener("input", onAppearanceEdit);
+  document.querySelector("#appearanceForm")?.addEventListener("change", onAppearanceEdit);
   document.querySelector("#themeBackgroundUpload")?.addEventListener("change", async (event) => {
     const file = event.target.files?.[0];
-    if (file) {
-      try {
-        const dataUrl = await readFileAsDataUrl(file);
-        const bgSelect = document.querySelector("#themeBackgroundImage");
-        if (bgSelect) bgSelect.value = "custom";
-        if (!state.theme) state.theme = {};
-        state.theme.backgroundUrl = dataUrl;
-        state.theme.backgroundImage = "custom";
-        const liveTheme = collectTheme();
-        liveTheme.backgroundImage = "custom";
-        liveTheme.backgroundUrl = dataUrl;
-        applyTheme(liveTheme);
-      } catch (err) {
-        console.error("Błąd odczytu pliku tła:", err);
-      }
+    if (!file) return;
+    try {
+      state.pendingBackground = await readFileAsDataUrl(file);
+      const bgSelect = document.querySelector("#themeBackgroundImage");
+      if (bgSelect) bgSelect.value = "custom";
+      state.appearanceDirty = true;
+      previewTheme();
+    } catch (err) {
+      showToast("Nie udało się odczytać pliku tła.");
     }
+  });
+  document.querySelector("#themeEditMode")?.addEventListener("change", (event) => {
+    const mode = event.target.value;
+    if (state.appearanceDirty && !confirm("Masz niezapisane zmiany. Przełączyć tryb i je odrzucić?")) {
+      event.target.value = currentMode();
+      return;
+    }
+    discardThemePreview();
+    setMode(mode);
+    openAppearancePanel();
+  });
+  document.querySelector("#appearanceDialog")?.addEventListener("close", () => {
+    // Zamknięcie bez zapisu = powrót do tego, co jest w plikach custom-d/n.css.
+    discardThemePreview();
+  });
+  document.querySelector("#sidebarIconMode")?.addEventListener("click", () => {
+    setMode(currentMode() === "n" ? "d" : "n");
   });
   document.querySelector("#resetAppearance")?.addEventListener("click", resetThemeSettings);
   document.querySelector("#sectionCreateForm")?.addEventListener("submit", saveSection);
@@ -745,7 +763,18 @@ function applyDashboardSettings(settings) {
 function openAppearancePanel() {
   const backgroundCss = cssValue("--background-image");
   const backgroundImageValue = backgroundCss.includes("background-custom") ? "custom" : backgroundCss.includes("background.jpg") ? "default" : "";
+  state.appearanceDirty = false;
+  state.pendingBackground = null;
+  const bgMatch = backgroundCss.match(/url\(["']?([^"')]+)["']?\)/);
+  state.currentBackgroundUrl = bgMatch && !bgMatch[1].startsWith("data:") ? bgMatch[1] : "";
+  const modeSelect = document.querySelector("#themeEditMode");
+  if (modeSelect) modeSelect.value = currentMode();
+  const uploadInput = document.querySelector("#themeBackgroundUpload");
+  if (uploadInput) uploadInput.value = "";
   const fields = {
+    themeTextColor: rgbToHex(cssValue("--text")),
+    themeMutedColor: rgbToHex(cssValue("--muted")),
+    themeOnAccentColor: rgbToHex(cssValue("--on-accent") || "#052016"),
     themeAccent: rgbToHex(cssValue("--accent")),
     themeAccentAlt: rgbToHex(cssValue("--accent-alt")),
     themeSurfaceColor: rgbToHex(`rgb(${cssValue("--surface-base-rgb").replaceAll(" ", ", ")})`),
@@ -795,7 +824,8 @@ function openAppearancePanel() {
       updateRangeValue(input);
     }
   });
-  document.querySelector("#appearanceDialog").showModal();
+  const dialog = document.querySelector("#appearanceDialog");
+  if (!dialog.open) dialog.showModal();
 }
 
 function updateRangeValue(input) {
@@ -808,6 +838,9 @@ function updateRangeValue(input) {
 
 function collectTheme() {
   return {
+    text: document.querySelector("#themeTextColor").value,
+    muted: document.querySelector("#themeMutedColor").value,
+    onAccent: document.querySelector("#themeOnAccentColor").value,
     accent: document.querySelector("#themeAccent").value,
     accentAlt: document.querySelector("#themeAccentAlt").value,
     surfaceColor: document.querySelector("#themeSurfaceColor").value,
@@ -852,142 +885,238 @@ function collectTheme() {
   };
 }
 
+// ─── Tryb dzień / noc ─────────────────────────────────────────────────────────
+// Wygląd startowy: styles.css. Zmiany z edytora: /custom/custom-d.css (dzień)
+// i /custom/custom-n.css (noc). Oba pliki są wczytane w <head>; o tym, który
+// działa, decyduje atrybut data-mode na <html>. Wybór trybu pamięta przeglądarka.
+
+const MODE_STORAGE_KEY = "ifs.mode";
+
+function currentMode() {
+  return document.documentElement.dataset.mode === "d" ? "d" : "n";
+}
+
+function setMode(mode) {
+  const next = mode === "d" ? "d" : "n";
+  document.documentElement.dataset.mode = next;
+  try { localStorage.setItem(MODE_STORAGE_KEY, next); } catch {}
+  const button = document.querySelector("#sidebarIconMode .theme-toggle");
+  button?.classList.toggle("theme-toggle--toggled", next === "n");
+  applyLegacyThemeIfNeeded();
+}
+
+// Ikona przełącznika: „theme-toggles” (Alfie Jones, MIT) — wariant classic.
+function modeToggleIcon() {
+  const toggled = currentMode() === "n" ? " theme-toggle--toggled" : "";
+  return `<span class="theme-toggle${toggled}" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" width="1em" height="1em" fill="currentColor" stroke-linecap="round" class="theme-toggle__classic" viewBox="0 0 32 32"><clipPath id="theme-toggle__classic__cutout"><path d="M0-5h30a1 1 0 0 0 9 13v24H0Z" /></clipPath><g clip-path="url(#theme-toggle__classic__cutout)"><circle cx="16" cy="16" r="9.34" /><g stroke="currentColor" stroke-width="1.5"><path d="M16 5.5v-4" /><path d="M16 30.5v-4" /><path d="M1.5 16h4" /><path d="M26.5 16h4" /><path d="m23.4 8.6 2.8-2.8" /><path d="m5.7 26.3 2.9-2.9" /><path d="m5.8 5.8 2.8 2.8" /><path d="m23.4 23.4 2.9 2.9" /></g></g></svg></span>`;
+}
+
+// Odświeża plik CSS trybu po zapisie (pomija pamięć podręczną przeglądarki).
+function reloadModeCss(mode) {
+  const link = document.querySelector(`#customCss-${mode}`);
+  if (link) link.href = `/custom/custom-${mode}.css?v=${Date.now()}`;
+}
+
+// Zmienne CSS, którymi steruje edytor — wszystkie, żeby podgląd dało się w całości zdjąć.
+const THEME_VARS = [
+  "--accent", "--accent-alt", "--accent-soft", "--glow-start", "--glow-end", "--on-accent", "--text", "--muted",
+  "--page-bg", "--surface-base-rgb", "--panel-strong", "--background-image", "--background-image-opacity", "--background-image-blur",
+  "--background-image-dim", "--title-color", "--title-size", "--title-shadow", "--title-shadow-blur", "--subtitle-color",
+  "--subtitle-size", "--subtitle-shadow", "--subtitle-shadow-blur", "--logo-size", "--page-title-size", "--page-title-shadow",
+  "--page-title-shadow-blur", "--sidebar-panel-rgb", "--sidebar-panel-alpha", "--sidebar-width", "--sidebar-toggle-color",
+  "--sidebar-toggle-size", "--font-menu", "--font-card", "--font-description", "--tile-panel-rgb", "--tile-panel-alpha",
+  "--tile-height", "--admin-panel-rgb", "--admin-panel-alpha", "--border-alpha", "--line", "--card-radius", "--card-gap",
+  "--glass-blur", "--glass-saturation", "--modal-bg-rgb", "--modal-alpha", "--modal-glass-blur", "--modal-radius",
+  "--modal-backdrop-alpha", "--modal-backdrop-blur"
+];
+
+const cssPx = (value) => (String(value).endsWith("px") ? String(value) : `${parseInt(value, 10) || 0}px`);
+
+// Ustawienia z edytora (lub stary theme.json) → zmienne CSS.
+function themeToVars(theme) {
+  const vars = {};
+  const set = (name, value) => { if (value != null && value !== "") vars[name] = String(value); };
+
+  set("--text", theme.text);
+  set("--muted", theme.muted);
+  set("--on-accent", theme.onAccent);
+  if (theme.accent) {
+    set("--accent", theme.accent);
+    set("--accent-soft", `color-mix(in srgb, ${theme.accent} 16%, transparent)`);
+    set("--glow-start", `color-mix(in srgb, ${theme.accent} 12%, transparent)`);
+  }
+  if (theme.accentAlt) {
+    set("--accent-alt", theme.accentAlt);
+    set("--glow-end", `color-mix(in srgb, ${theme.accentAlt} 10%, transparent)`);
+  }
+  set("--page-bg", theme.bg);
+  if (theme.surfaceColor) {
+    set("--surface-base-rgb", hexToRgb(theme.surfaceColor));
+    // --panel-strong jest liczone w :root, więc trzeba je podać razem z kolorem motywu.
+    set("--panel-strong", `rgb(${hexToRgb(theme.surfaceColor)} / 0.94)`);
+  }
+
+  let backgroundUrl = "";
+  if (theme.backgroundImage === "default") backgroundUrl = "/images/background.jpg";
+  if (theme.backgroundImage === "custom") backgroundUrl = theme.backgroundUrl || "";
+  if (backgroundUrl) {
+    set("--background-image", `url("${backgroundUrl}")`);
+    set("--background-image-opacity", theme.backgroundOpacity || "0.55");
+    set("--background-image-blur", cssPx(theme.backgroundBlur || "10px"));
+    set("--background-image-dim", theme.backgroundDim || "0.34");
+  } else {
+    set("--background-image", "none");
+    set("--background-image-opacity", "0");
+    set("--background-image-blur", "0px");
+    set("--background-image-dim", "0");
+  }
+
+  set("--title-color", theme.titleColor);
+  if (theme.titleSize) set("--title-size", cssPx(theme.titleSize));
+  if (theme.titleShadowBlur != null && theme.titleShadowBlur !== "") {
+    const blur = parseInt(theme.titleShadowBlur, 10) || 0;
+    set("--title-shadow", blur > 0 ? `0 2px ${blur}px rgba(0,0,0,0.85)` : "none");
+    set("--title-shadow-blur", `${blur}px`);
+  }
+  set("--subtitle-color", theme.subtitleColor);
+  if (theme.subtitleSize) set("--subtitle-size", cssPx(theme.subtitleSize));
+  if (theme.subtitleShadowBlur != null && theme.subtitleShadowBlur !== "") {
+    const blur = parseInt(theme.subtitleShadowBlur, 10) || 0;
+    set("--subtitle-shadow", blur > 0 ? `0 1px ${blur}px rgba(0,0,0,0.75)` : "none");
+    set("--subtitle-shadow-blur", `${blur}px`);
+  }
+  if (theme.logoSize) set("--logo-size", cssPx(theme.logoSize));
+  if (theme.pageTitleSize) set("--page-title-size", cssPx(theme.pageTitleSize));
+  if (theme.pageTitleShadowBlur != null && theme.pageTitleShadowBlur !== "") {
+    const blur = parseInt(theme.pageTitleShadowBlur, 10) || 0;
+    set("--page-title-shadow", blur > 0 ? `0 2px ${blur}px rgba(0,0,0,0.85)` : "none");
+    set("--page-title-shadow-blur", `${blur}px`);
+  }
+
+  if (theme.sidebarPanelColor) set("--sidebar-panel-rgb", hexToRgb(theme.sidebarPanelColor));
+  set("--sidebar-panel-alpha", theme.sidebarPanelAlpha);
+  if (theme.sidebarWidth) set("--sidebar-width", cssPx(theme.sidebarWidth));
+  set("--sidebar-toggle-color", theme.sidebarToggleColor);
+  if (theme.sidebarToggleSize) set("--sidebar-toggle-size", cssPx(theme.sidebarToggleSize));
+  if (theme.fontMenu) set("--font-menu", fontStack(theme.fontMenu));
+  if (theme.fontCard) set("--font-card", fontStack(theme.fontCard));
+  if (theme.fontDescription) set("--font-description", fontStack(theme.fontDescription));
+
+  if (theme.panelColor) set("--tile-panel-rgb", hexToRgb(theme.panelColor));
+  set("--tile-panel-alpha", theme.panelAlpha);
+  if (theme.tileHeight) set("--tile-height", cssPx(theme.tileHeight));
+  if (theme.adminPanelColor) set("--admin-panel-rgb", hexToRgb(theme.adminPanelColor));
+  set("--admin-panel-alpha", theme.adminPanelAlpha);
+  if (theme.borderAlpha) {
+    set("--border-alpha", theme.borderAlpha);
+    // Linie i ramki mają kolor tekstu — dzięki temu działają i na jasnym, i na ciemnym tle.
+    const lineRgb = theme.text ? hexToRgb(theme.text) : "255 255 255";
+    set("--line", `rgb(${lineRgb} / ${theme.borderAlpha})`);
+  }
+  if (theme.cardRadius) set("--card-radius", cssPx(theme.cardRadius));
+  if (theme.cardGap) set("--card-gap", cssPx(theme.cardGap));
+  if (theme.glassBlur) set("--glass-blur", cssPx(theme.glassBlur));
+  set("--glass-saturation", theme.glassSaturation);
+
+  if (theme.modalBg) set("--modal-bg-rgb", hexToRgb(theme.modalBg));
+  set("--modal-alpha", theme.modalAlpha);
+  if (theme.modalGlassBlur) set("--modal-glass-blur", cssPx(theme.modalGlassBlur));
+  if (theme.modalRadius) set("--modal-radius", cssPx(theme.modalRadius));
+  set("--modal-backdrop-alpha", theme.modalBackdropAlpha);
+  if (theme.modalBackdropBlur) set("--modal-backdrop-blur", cssPx(theme.modalBackdropBlur));
+  return vars;
+}
+
+function setThemeVars(vars) {
+  const root = document.body || document.documentElement;
+  Object.entries(vars).forEach(([name, value]) => root.style.setProperty(name, value));
+}
+
+function clearTheme() {
+  const root = document.body || document.documentElement;
+  THEME_VARS.forEach((name) => root.style.removeProperty(name));
+}
+
+// Dla zgodności: stary zapis wyglądu (theme.json) działa w trybie noc,
+// dopóki nie powstanie custom-n.css.
+function applyTheme(theme) {
+  setThemeVars(themeToVars(theme || {}));
+}
+
+function applyLegacyThemeIfNeeded() {
+  if (document.querySelector("#appearanceDialog")?.open) return;
+  clearTheme();
+  if (state.legacyTheme && currentMode() === "n") applyTheme(state.legacyTheme);
+}
+
+// Podgląd na żywo w edytorze — style tymczasowe, zdejmowane przy Anuluj/zapisie.
+function previewTheme() {
+  const theme = collectTheme();
+  if (theme.backgroundImage === "custom") theme.backgroundUrl = state.pendingBackground || state.currentBackgroundUrl || "";
+  clearTheme();
+  setThemeVars(themeToVars(theme));
+}
+
+function discardThemePreview() {
+  state.appearanceDirty = false;
+  state.pendingBackground = null;
+  clearTheme();
+  if (state.legacyTheme && currentMode() === "n") applyTheme(state.legacyTheme);
+}
+
 async function saveThemeSettings(event) {
   event.preventDefault();
+  const mode = document.querySelector("#themeEditMode")?.value === "d" ? "d" : "n";
   const theme = collectTheme();
-  const backgroundFile = document.querySelector("#themeBackgroundUpload").files[0];
-  const backgroundData = backgroundFile ? await readFileAsDataUrl(backgroundFile) : null;
+  if (theme.backgroundImage === "custom") theme.backgroundUrl = state.currentBackgroundUrl || "";
+  const vars = themeToVars(theme);
+  if (theme.backgroundImage === "custom" && !theme.backgroundUrl && !state.pendingBackground) {
+    showToast("Wybierz plik obrazu albo inny obraz tła.");
+    return;
+  }
   try {
-    const data = await request(`${dashboardConfig.apiUrl}/api/dashboard/theme`, {
+    await request(`${dashboardConfig.apiUrl}/api/dashboard/custom-css`, {
       method: "PUT",
-      body: JSON.stringify({ ...theme, backgroundData })
+      body: JSON.stringify({ mode, vars, backgroundData: state.pendingBackground || null })
     });
-    state.theme = data.theme || {};
-    applyTheme(state.theme);
+    if (mode === "n") state.legacyTheme = null;
+    reloadModeCss(mode);
     document.querySelector("#appearanceDialog").close();
-    showToast("Wygląd zapisany.");
+    showToast(mode === "d" ? "Zapisano wygląd dnia (custom-d.css)." : "Zapisano wygląd nocy (custom-n.css).");
   } catch (error) {
     showToast(error.message);
   }
 }
 
 async function resetThemeSettings() {
-  if (!confirm("Przywrócić domyślny wygląd?")) return;
+  const mode = document.querySelector("#themeEditMode")?.value === "d" ? "d" : "n";
+  const label = mode === "d" ? "dnia" : "nocy";
+  if (!confirm(`Przywrócić wygląd startowy ${label}? Twoje zmiany dla tego trybu zostaną usunięte.`)) return;
   try {
-    await request(`${dashboardConfig.apiUrl}/api/dashboard/theme`, {
+    await request(`${dashboardConfig.apiUrl}/api/dashboard/custom-css`, {
       method: "PUT",
-      body: JSON.stringify({ reset: true })
+      body: JSON.stringify({ mode, reset: true })
     });
-    state.theme = {};
-    clearTheme();
+    if (mode === "n") state.legacyTheme = null;
+    reloadModeCss(mode);
     document.querySelector("#appearanceDialog").close();
-    showToast("Przywrócono domyślny wygląd.");
+    showToast(`Przywrócono wygląd startowy ${label}.`);
   } catch (error) {
     showToast(error.message);
   }
 }
 
 async function loadThemeSettings() {
+  state.legacyTheme = null;
   try {
-    const data = await request(`${dashboardConfig.apiUrl}/api/dashboard/theme`);
-    state.theme = data.theme || {};
-    applyTheme(data.theme || {});
-  } catch {
-    state.theme = {};
-    applyTheme({});
-  }
-}
-
-function applyTheme(theme) {
-  const root = document.body || document.documentElement;
-  const map = {
-    accent: "--accent",
-    accentAlt: "--accent-alt",
-    bg: "--page-bg",
-    sidebarWidth: "--sidebar-width",
-    titleSize: "--title-size",
-    cardRadius: "--card-radius",
-    cardGap: "--card-gap",
-    tileHeight: "--tile-height",
-    logoSize: "--logo-size",
-    glassBlur: "--glass-blur",
-    glassSaturation: "--glass-saturation"
-  };
-  Object.entries(map).forEach(([key, cssVar]) => {
-    if (theme[key]) {
-      let val = theme[key];
-      if (["sidebarWidth", "titleSize", "cardRadius", "cardGap", "tileHeight", "logoSize", "glassBlur"].includes(key)) {
-        val = String(val).endsWith("px") ? val : `${val}px`;
-      }
-      root.style.setProperty(cssVar, val);
+    const status = await request(`${dashboardConfig.apiUrl}/api/dashboard/custom-css`);
+    if (!status.n && status.legacyTheme) {
+      const data = await request(`${dashboardConfig.apiUrl}/api/dashboard/theme`);
+      const legacy = data.theme || {};
+      if (Object.keys(legacy).length) state.legacyTheme = legacy;
     }
-  });
-  if (theme.titleColor) root.style.setProperty("--title-color", theme.titleColor);
-  if (theme.titleShadowBlur != null && theme.titleShadowBlur !== "") {
-    const blur = parseInt(theme.titleShadowBlur, 10) || 0;
-    root.style.setProperty("--title-shadow", blur > 0 ? `0 2px ${blur}px rgba(0,0,0,0.85)` : "none");
-    root.style.setProperty("--title-shadow-blur", `${blur}px`);
-  }
-  if (theme.subtitleSize) root.style.setProperty("--subtitle-size", String(theme.subtitleSize).endsWith("px") ? theme.subtitleSize : `${theme.subtitleSize}px`);
-  if (theme.subtitleColor) root.style.setProperty("--subtitle-color", theme.subtitleColor);
-  if (theme.subtitleShadowBlur != null && theme.subtitleShadowBlur !== "") {
-    const blur = parseInt(theme.subtitleShadowBlur, 10) || 0;
-    root.style.setProperty("--subtitle-shadow", blur > 0 ? `0 1px ${blur}px rgba(0,0,0,0.75)` : "none");
-    root.style.setProperty("--subtitle-shadow-blur", `${blur}px`);
-  }
-  if (theme.pageTitleSize) root.style.setProperty("--page-title-size", String(theme.pageTitleSize).endsWith("px") ? theme.pageTitleSize : `${theme.pageTitleSize}px`);
-  if (theme.pageTitleShadowBlur != null && theme.pageTitleShadowBlur !== "") {
-    const blur = parseInt(theme.pageTitleShadowBlur, 10) || 0;
-    root.style.setProperty("--page-title-shadow", blur > 0 ? `0 2px ${blur}px rgba(0,0,0,0.85)` : "none");
-    root.style.setProperty("--page-title-shadow-blur", `${blur}px`);
-  }
-  const backgroundUrl = theme.backgroundImage === "custom" ? (theme.backgroundUrl || "./images/background-custom.jpg") : "./images/background.jpg";
-  const hasBackgroundImage = ["default", "custom"].includes(theme.backgroundImage);
-  root.style.setProperty("--background-image", hasBackgroundImage ? `url("${backgroundUrl}")` : "none");
-  root.style.setProperty("--background-image-opacity", hasBackgroundImage ? (theme.backgroundOpacity || "0.55") : "0");
-  root.style.setProperty("--background-image-blur", hasBackgroundImage ? (theme.backgroundBlur || "10px") : "0px");
-  root.style.setProperty("--background-image-dim", hasBackgroundImage ? (theme.backgroundDim || "0.34") : "0");
-  if (theme.accent) {
-    root.style.setProperty("--accent-soft", `color-mix(in srgb, ${theme.accent} 16%, transparent)`);
-    root.style.setProperty("--glow-start", `color-mix(in srgb, ${theme.accent} 12%, transparent)`);
-  }
-  if (theme.accentAlt) {
-    root.style.setProperty("--glow-end", `color-mix(in srgb, ${theme.accentAlt} 10%, transparent)`);
-  }
-  if (theme.surfaceColor) {
-    root.style.setProperty("--surface-base-rgb", hexToRgb(theme.surfaceColor));
-  }
-  if (theme.sidebarPanelColor) root.style.setProperty("--sidebar-panel-rgb", hexToRgb(theme.sidebarPanelColor));
-  if (theme.sidebarPanelAlpha) root.style.setProperty("--sidebar-panel-alpha", theme.sidebarPanelAlpha);
-  if (theme.sidebarToggleColor) root.style.setProperty("--sidebar-toggle-color", theme.sidebarToggleColor);
-  if (theme.sidebarToggleSize) root.style.setProperty("--sidebar-toggle-size", String(theme.sidebarToggleSize).endsWith("px") ? theme.sidebarToggleSize : `${theme.sidebarToggleSize}px`);
-  if (theme.fontMenu) root.style.setProperty("--font-menu", fontStack(theme.fontMenu));
-  if (theme.fontCard) root.style.setProperty("--font-card", fontStack(theme.fontCard));
-  if (theme.fontDescription) root.style.setProperty("--font-description", fontStack(theme.fontDescription));
-  if (theme.bg) {
-    root.style.setProperty("--glow-start", "transparent");
-    root.style.setProperty("--glow-end", "transparent");
-  }
-  if (theme.panelColor) root.style.setProperty("--tile-panel-rgb", hexToRgb(theme.panelColor));
-  if (theme.panelAlpha) root.style.setProperty("--tile-panel-alpha", theme.panelAlpha);
-  if (theme.adminPanelColor) root.style.setProperty("--admin-panel-rgb", hexToRgb(theme.adminPanelColor));
-  if (theme.adminPanelAlpha) root.style.setProperty("--admin-panel-alpha", theme.adminPanelAlpha);
-  if (theme.borderAlpha) {
-    root.style.setProperty("--border-alpha", theme.borderAlpha);
-    const lineRgb = root.classList.contains("theme-guard") ? "255 214 222" : "255 255 255";
-    root.style.setProperty("--line", `rgb(${lineRgb} / ${theme.borderAlpha})`);
-  }
-  if (theme.modalBg) root.style.setProperty("--modal-bg-rgb", hexToRgb(theme.modalBg));
-  if (theme.modalAlpha) root.style.setProperty("--modal-alpha", theme.modalAlpha);
-  if (theme.modalGlassBlur) root.style.setProperty("--modal-glass-blur", String(theme.modalGlassBlur).endsWith("px") ? theme.modalGlassBlur : `${theme.modalGlassBlur}px`);
-  if (theme.modalBackdropBlur) root.style.setProperty("--modal-backdrop-blur", String(theme.modalBackdropBlur).endsWith("px") ? theme.modalBackdropBlur : `${theme.modalBackdropBlur}px`);
-  if (theme.modalBackdropAlpha) root.style.setProperty("--modal-backdrop-alpha", theme.modalBackdropAlpha);
-  if (theme.modalRadius) root.style.setProperty("--modal-radius", String(theme.modalRadius).endsWith("px") ? theme.modalRadius : `${theme.modalRadius}px`);
-}
-
-function clearTheme() {
-  ["--accent", "--accent-alt", "--surface-base-rgb", "--sidebar-panel-rgb", "--sidebar-panel-alpha", "--sidebar-toggle-color", "--sidebar-toggle-size", "--font-menu", "--font-card", "--font-description", "--page-bg", "--background-image", "--background-image-opacity", "--background-image-blur", "--background-image-dim", "--sidebar-width", "--title-size", "--title-color", "--title-shadow", "--title-shadow-blur", "--subtitle-size", "--subtitle-color", "--subtitle-shadow", "--subtitle-shadow-blur", "--page-title-size", "--page-title-shadow", "--page-title-shadow-blur", "--card-radius", "--card-gap", "--tile-height", "--logo-size", "--accent-soft", "--glow-start", "--glow-end", "--tile-panel-rgb", "--tile-panel-alpha", "--admin-panel-rgb", "--admin-panel-alpha", "--glass-blur", "--glass-saturation", "--border-alpha", "--line", "--modal-bg-rgb", "--modal-alpha", "--modal-glass-blur", "--modal-backdrop-blur", "--modal-backdrop-alpha", "--modal-radius"]
-    .forEach((name) => (document.body || document.documentElement)?.style.removeProperty(name));
+  } catch {}
+  applyLegacyThemeIfNeeded();
 }
 
 function cssValue(name) {

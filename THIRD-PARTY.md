@@ -9,6 +9,11 @@ Ikony usług (np. Immich, Home Assistant, Jellyfin) pochodzą z projektu
 Logotypy są znakami towarowymi swoich właścicieli i służą wyłącznie do
 oznaczenia kafelków prowadzących do tych usług.
 
+## Przełącznik dzień / noc
+
+Ikona przełącznika trybu (wariant „classic”) pochodzi z projektu
+[theme-toggles](https://toggles.dev) (Alfie Jones), licencja MIT.
+
 ## Biblioteki
 
 - [Express](https://expressjs.com/) — licencja MIT.
