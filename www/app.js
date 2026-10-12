@@ -10,6 +10,7 @@ const state = {
   data: null,
   theme: {},
   activeSectionId: null,
+  activePageId: (() => { try { return localStorage.getItem("ifs.page") || "home"; } catch { return "home"; } })(),
   view: "links",
   query: "",
   systemStatsTimer: null,
@@ -137,10 +138,16 @@ async function reloadData() {
   state.data = {
     title: dashboardConfig.title,
     subtitle: dashboardConfig.subtitle,
+    pages: (response.pages && response.pages.length ? response.pages : [{ id: "home", name: "Home" }]).map((page) => ({
+      id: page.id,
+      name: page.name
+    })),
     sections: (response.sections || []).map((section) => ({
       id: section.id,
       name: section.name,
+      pageId: section.pageId || "home",
       links: (section.groups || []).flatMap((group) => group.items || []).map((item) => ({
+        sectionId: section.id,
         id: item.id,
         name: item.name,
         url: item.url,
@@ -150,8 +157,12 @@ async function reloadData() {
       }))
     }))
   };
-  if (!state.activeSectionId || !state.data.sections.some((item) => item.id === state.activeSectionId)) {
-    state.activeSectionId = state.data.sections[0]?.id || null;
+  if (!state.data.pages.some((page) => page.id === state.activePageId)) {
+    state.activePageId = "home";
+  }
+  const pageSections = sectionsOfPage(state.activePageId);
+  if (!pageSections.some((item) => item.id === state.activeSectionId)) {
+    state.activeSectionId = pageSections[0]?.id || null;
   }
 }
 
@@ -166,15 +177,15 @@ function appShell() {
         <nav id="navigation"></nav>
         <div class="sidebar-actions">
           <div class="sidebar-menu" id="sidebarMenu" role="menu" hidden>
-            <button type="button" role="menuitem" data-menu-action="appearance">🎨 Wygląd (na żywo)</button>
-            <button type="button" role="menuitem" data-menu-action="sections">✏️ Sekcje i kafelki</button>
-            <a href="./mods/admin/" role="menuitem">🛠️ Zaplecze</a>
+            <button type="button" role="menuitem" data-menu-action="appearance">${uiIcon("appearance", 18)} Wygląd (na żywo)</button>
+            <button type="button" role="menuitem" data-menu-action="sections">${uiIcon("edit", 18)} Strona i sekcje</button>
+            <a href="./mods/admin/" role="menuitem">${uiIcon("admin", 18)} Zaplecze</a>
             <div class="sidebar-menu-sep" role="separator"></div>
-            <button type="button" role="menuitem" data-menu-action="lock" id="sidebarMenuLock">🔒 Zablokuj edycję</button>
+            <button type="button" role="menuitem" data-menu-action="lock" id="sidebarMenuLock">${uiIcon("lock", 18)} <span>Zablokuj edycję</span></button>
           </div>
           <div class="sidebar-tools">
             <button type="button" class="sidebar-icon-btn" id="sidebarIconMode" title="Tryb dzień / noc" aria-label="Przełącz tryb dzień / noc">${modeToggleIcon()}</button>
-            <button type="button" class="sidebar-icon-btn" id="sidebarMenuButton" title="Ustawienia" aria-label="Ustawienia" aria-haspopup="menu" aria-expanded="false">⚙️</button>
+            <button type="button" class="sidebar-icon-btn" id="sidebarMenuButton" title="Ustawienia" aria-label="Ustawienia" aria-haspopup="menu" aria-expanded="false">${uiIcon("settings", 20)}</button>
           </div>
           <div class="sidebar-footer">created by <strong>Idea Forge</strong></div>
         </div>
@@ -194,7 +205,7 @@ function appShell() {
             <div class="header-stat is-loading"><span>RAM</span><strong>--</strong></div>
           </div>
           <div class="toolbar-actions" id="toolbarActions"></div>
-          <button type="button" class="sidebar-icon-btn header-bell" id="sidebarIconAlerts" title="Powiadomienia i alerty" aria-label="Powiadomienia i alerty">🔔<span class="sidebar-alert-badge" id="sidebarAlertBadge" style="display:none;">0</span></button>
+          <button type="button" class="sidebar-icon-btn header-bell" id="sidebarIconAlerts" title="Powiadomienia i alerty" aria-label="Powiadomienia i alerty">${uiIcon("alerts", 20)}<span class="sidebar-alert-badge" id="sidebarAlertBadge" style="display:none;">0</span></button>
         </header>
         <div id="headerAlert" class="header-alert-box" style="display: none;"></div>
         <section id="content"></section>
@@ -381,9 +392,10 @@ function appShell() {
     <dialog id="sectionsDialog" class="wide-dialog">
       <div class="modal-panel">
         <header class="modal-heading">
-          <div><span class="eyebrow">Zaplecze</span><h2>Sekcje</h2></div>
+          <div><span class="eyebrow">Edycja</span><h2>Strona i sekcje</h2></div>
           <button type="button" data-close aria-label="Zamknij">×</button>
         </header>
+        <div class="page-editor" id="pageEditor"></div>
         <form id="sectionCreateForm" class="inline-form">
           <label>Nowa sekcja<input id="sectionName" required placeholder="Nazwa sekcji"></label>
           <button class="primary" type="submit">Dodaj</button>
@@ -449,13 +461,8 @@ function bindShell() {
   document.querySelector("#systemStatsWidget")?.addEventListener("click", () => {
     // Bez modala: kliknięcie widżetu przenosi na Status Serwera i rozwija
     // panel „Szczegółowa Diagnostyka (Top)”.
-    state.view = "status";
+    state.view = "top";
     render();
-    const details = document.querySelector("#topAccordion");
-    if (details) {
-      details.open = true;
-      details.scrollIntoView({ behavior: "smooth", block: "start" });
-    }
   });
   // Menu ⚙️ na dole paska bocznego (otwiera się w górę).
   const menu = document.querySelector("#sidebarMenu");
@@ -471,7 +478,7 @@ function bindShell() {
     menu.hidden = !opening;
     menuButton.setAttribute("aria-expanded", String(opening));
     const lock = document.querySelector("#sidebarMenuLock");
-    if (lock) lock.textContent = getStoredAdminPin() ? "🔒 Zablokuj edycję" : "🔓 Odblokuj edycję";
+    if (lock) lock.innerHTML = getStoredAdminPin() ? `${uiIcon("lock", 18)} <span>Zablokuj edycję</span>` : `${uiIcon("unlock", 18)} <span>Odblokuj edycję</span>`;
   });
   document.addEventListener("click", (event) => {
     if (menu && !menu.hidden && !menu.contains(event.target)) closeMenu();
@@ -524,45 +531,100 @@ function toggleSidebar() {
 
 function render() {
   renderNavigation();
-  if (state.view === "admin") renderAdmin();
-  else if (state.view === "status") renderServerStatus();
+  if (state.view === "admin" || state.view === "status") renderServerStatus();
+  else if (state.view === "top") renderTopPage();
+  else if (state.view === "tools") renderToolsPage();
+  else if (state.view === "alerts") renderAlertsPage();
   else renderLinks();
   syncSystemStatsPolling();
+}
+
+// Stałe strony serwera — pod kreską w menu.
+const SERVER_VIEWS = [
+  { view: "status", label: "Status serwera", icon: "status" },
+  { view: "top", label: "Top (procesy)", icon: "top" },
+  { view: "tools", label: "Narzędzia", icon: "tools" },
+  { view: "alerts", label: "Alerty", icon: "alerts" }
+];
+
+function sectionsOfPage(pageId) {
+  return (state.data?.sections || []).filter((section) => section.pageId === pageId);
+}
+
+function activePage() {
+  return state.data.pages.find((page) => page.id === state.activePageId) || state.data.pages[0];
+}
+
+function setActivePage(pageId) {
+  state.activePageId = pageId;
+  try { localStorage.setItem("ifs.page", pageId); } catch {}
+  state.activeSectionId = sectionsOfPage(pageId)[0]?.id || null;
+  state.view = "links";
+  state.query = "";
+  render();
+}
+
+// Przycisk „lizak”: okrągła główka z ikoną + patyczek z nazwą (jak w Kiosku).
+function lollipopButton({ icon, label, active, badge = "" }) {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "lolli";
+  button.dataset.active = String(Boolean(active));
+  button.innerHTML = `<span class="lolli-head">${uiIcon(icon, 18)}</span><span class="lolli-stem"><span>${escapeHtml(label)}</span>${badge ? `<small>${escapeHtml(badge)}</small>` : ""}</span>`;
+  return button;
 }
 
 function renderNavigation() {
   const nav = document.querySelector("#navigation");
   nav.innerHTML = "";
-  state.data.sections.forEach((section) => {
-    const row = document.createElement("div");
-    row.className = "nav-row";
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = "nav-button";
-    button.dataset.active = String(state.view === "links" && section.id === state.activeSectionId);
-    button.innerHTML = `<span>${escapeHtml(section.name)}</span><small>${section.links.length}</small>`;
-    button.addEventListener("click", () => {
-      state.view = "links";
-      state.activeSectionId = section.id;
-      render();
+
+  state.data.pages.forEach((page) => {
+    const count = sectionsOfPage(page.id).reduce((sum, section) => sum + section.links.length, 0);
+    const button = lollipopButton({
+      icon: page.id === "home" ? "house" : "page",
+      label: page.name,
+      active: state.view === "links" && page.id === state.activePageId,
+      badge: count ? String(count) : ""
     });
-    row.append(button);
-    nav.appendChild(row);
+    button.addEventListener("click", () => setActivePage(page.id));
+    nav.appendChild(button);
   });
+
+  const addPage = document.createElement("button");
+  addPage.type = "button";
+  addPage.className = "nav-add";
+  addPage.innerHTML = `${uiIcon("plus", 16)}<span>Dodaj stronę</span>`;
+  addPage.addEventListener("click", () => withAdminPin(addPagePrompt));
+  nav.appendChild(addPage);
+
   const separator = document.createElement("div");
   separator.className = "nav-separator";
   nav.appendChild(separator);
 
-  const statusBtn = document.createElement("button");
-  statusBtn.type = "button";
-  statusBtn.className = "nav-button";
-  statusBtn.dataset.active = String(state.view === "status");
-  statusBtn.innerHTML = "<span>Status Serwera</span>";
-  statusBtn.addEventListener("click", () => {
-    state.view = "status";
-    render();
+  SERVER_VIEWS.forEach((item) => {
+    const button = lollipopButton({ icon: item.icon, label: item.label, active: state.view === item.view });
+    button.addEventListener("click", () => {
+      state.view = item.view;
+      render();
+    });
+    nav.appendChild(button);
   });
-  nav.appendChild(statusBtn);
+}
+
+async function addPagePrompt() {
+  const name = (prompt("Nazwa nowej strony (np. Ulubione, Zakupy):") || "").trim();
+  if (!name) return;
+  try {
+    const data = await request(`${dashboardConfig.apiUrl}/api/services/page`, {
+      method: "POST",
+      body: JSON.stringify({ name })
+    });
+    await reloadData();
+    setActivePage(data.page.id);
+    showToast(`Dodano stronę „${name}”.`);
+  } catch (error) {
+    showToast(error.message);
+  }
 }
 
 function activeSection() {
@@ -571,16 +633,18 @@ function activeSection() {
 
 function renderLinks() {
   stopStatusTopDiagnostics();
-  const section = activeSection();
-  document.querySelector("#viewTitle").textContent = section?.name || "Witaj!";
+  const page = activePage();
+  const sections = sectionsOfPage(page.id);
+  document.querySelector("#viewTitle").textContent = page.name;
   document.querySelector("#toolbarActions").innerHTML = `
     <input id="search" type="search" value="${escapeHtml(state.query)}" placeholder="Szukaj linku...">
   `;
   document.querySelector("#content").innerHTML = `
-    <div class="link-grid" id="linkGrid"></div>
+    <div class="page-sections" id="pageSections"></div>
     <div class="content-actions">
+      <button id="editPage" type="button">${uiIcon("edit", 16)} Strona i sekcje</button>
       <button id="addSection" type="button">+ Dodaj sekcję</button>
-      ${section ? '<button id="addLink" class="primary" type="button">+ Dodaj link</button>' : ""}
+      ${sections.length ? '<button id="addLink" class="primary" type="button">+ Dodaj link</button>' : ""}
     </div>
   `;
   document.querySelector("#search").addEventListener("input", (event) => {
@@ -592,46 +656,60 @@ function renderLinks() {
     openSectionsPanel();
     document.querySelector("#sectionName")?.focus();
   }));
+  document.querySelector("#editPage")?.addEventListener("click", () => withAdminPin(openSectionsPanel));
   renderLinkCards();
 }
 
+function linkIconHtml(link) {
+  if (/^https?:\/\//i.test(link.icon)) return `<img src="${escapeHtml(link.icon)}" alt="">`;
+  if (/\.(svg|png|jpe?g|webp|gif|ico)$/i.test(link.icon)) return `<img src="./icons/${escapeHtml(link.icon.replace(/^[/\\]+/, ""))}" alt="">`;
+  return escapeHtml(link.icon || link.name.slice(0, 1).toUpperCase());
+}
+
+function buildLinkCard(link) {
+  const card = document.createElement("article");
+  card.className = "link-card";
+  card.innerHTML = `
+    <button class="link-main" type="button">
+      <span class="link-icon">${linkIconHtml(link)}</span>
+      <span class="link-copy"><strong>${escapeHtml(link.name)}</strong><span>${escapeHtml(link.description || link.url)}</span></span>
+      <span class="open-mark">↗</span>
+    </button>
+    <div class="card-actions"><button data-edit type="button" aria-label="Edytuj link" title="Edytuj">✎</button><button data-delete type="button" aria-label="Usuń link" title="Usuń">🗑</button></div>
+  `;
+  card.querySelector(".link-main").addEventListener("click", () => openLink(link));
+  card.querySelector("[data-edit]").addEventListener("click", () => withAdminPin(() => openLinkDialog(link)));
+  card.querySelector("[data-delete]").addEventListener("click", () => withAdminPin(() => deleteLink(link)));
+  card.querySelector(".link-icon img")?.addEventListener("error", (event) => {
+    event.currentTarget.replaceWith(document.createTextNode(link.name.slice(0, 1).toUpperCase()));
+  });
+  return card;
+}
+
 function renderLinkCards() {
-  const section = activeSection();
-  const grid = document.querySelector("#linkGrid");
-  if (!section) {
-    grid.innerHTML = '<div class="empty"><p style="margin:0">Nie ma jeszcze żadnych kafelków.<br>Kliknij <strong>+ Dodaj sekcję</strong> na dole, a potem dodaj w niej pierwsze linki.</p></div>';
+  const target = document.querySelector("#pageSections");
+  if (!target) return;
+  const sections = sectionsOfPage(state.activePageId);
+  if (!sections.length) {
+    target.innerHTML = '<div class="empty"><p style="margin:0">Na tej stronie nie ma jeszcze kafelków.<br>Kliknij <strong>+ Dodaj sekcję</strong> na dole, a potem dodaj w niej pierwsze linki.</p></div>';
     return;
   }
   const query = state.query.trim().toLowerCase();
-  const links = section.links.filter((link) => `${link.name} ${link.url} ${link.description}`.toLowerCase().includes(query));
-  grid.innerHTML = "";
-  for (const link of links) {
-    const card = document.createElement("article");
-    card.className = "link-card";
-    const icon = /^https?:\/\//i.test(link.icon)
-      ? `<img src="${escapeHtml(link.icon)}" alt="">`
-      : /\.(svg|png|jpe?g|webp|gif|ico)$/i.test(link.icon)
-        ? `<img src="./icons/${escapeHtml(link.icon.replace(/^[/\\]+/, ""))}" alt="">`
-        : escapeHtml(link.icon || link.name.slice(0, 1).toUpperCase());
-    card.innerHTML = `
-      <button class="link-main" type="button">
-        <span class="link-icon">${icon}</span>
-        <span class="link-copy"><strong>${escapeHtml(link.name)}</strong><span>${escapeHtml(link.description || link.url)}</span></span>
-        <span class="open-mark">↗</span>
-      </button>
-      <div class="card-actions"><button data-edit type="button" aria-label="Edytuj link" title="Edytuj">✎</button><button data-delete type="button" aria-label="Usuń link" title="Usuń">🗑</button></div>
-    `;
-    card.querySelector(".link-main").addEventListener("click", () => openLink(link));
-    card.querySelector("[data-edit]").addEventListener("click", () => openLinkDialog(link));
-    card.querySelector("[data-delete]").addEventListener("click", () => deleteLink(link));
-    card.querySelector(".link-icon img")?.addEventListener("error", (event) => {
-      event.currentTarget.replaceWith(document.createTextNode(link.name.slice(0, 1).toUpperCase()));
-    });
-    grid.appendChild(card);
-  }
-  if (!links.length) {
-    grid.innerHTML = '<div class="empty">Brak kafelków w tej sekcji.</div>';
-  }
+  target.innerHTML = "";
+  let shown = 0;
+  sections.forEach((section) => {
+    const links = section.links.filter((link) => `${link.name} ${link.url} ${link.description}`.toLowerCase().includes(query));
+    if (query && !links.length) return;
+    const block = document.createElement("section");
+    block.className = "page-section";
+    block.innerHTML = `<h2 class="page-section-title">${escapeHtml(section.name)}</h2><div class="link-grid"></div>`;
+    const grid = block.querySelector(".link-grid");
+    links.forEach((link) => grid.appendChild(buildLinkCard(link)));
+    if (!links.length) grid.innerHTML = '<div class="empty empty-small">Pusta sekcja — dodaj link przyciskiem na dole.</div>';
+    shown += links.length;
+    target.appendChild(block);
+  });
+  if (query && !shown) target.innerHTML = '<div class="empty">Nic nie znaleziono.</div>';
 }
 
 function openLink(link) {
@@ -660,8 +738,9 @@ function openLinkDialog(link = null) {
   state.editingLink = link;
   const dialog = document.querySelector("#linkDialog");
   const sectionSelect = document.querySelector("#linkSection");
-  sectionSelect.innerHTML = state.data.sections.map((section) => `<option value="${section.id}">${escapeHtml(section.name)}</option>`).join("");
-  sectionSelect.value = state.activeSectionId;
+  const pageSections = sectionsOfPage(state.activePageId);
+  sectionSelect.innerHTML = pageSections.map((section) => `<option value="${section.id}">${escapeHtml(section.name)}</option>`).join("");
+  sectionSelect.value = link?.sectionId || state.activeSectionId || pageSections[0]?.id || "";
   document.querySelector("#linkDialogTitle").textContent = link ? "Edytuj link" : "Nowy link";
   document.querySelector("#linkName").value = link?.name || "";
   document.querySelector("#linkUrl").value = link?.url || "";
@@ -1203,10 +1282,54 @@ function openSectionsPanel() {
   document.querySelector("#sectionsDialog").showModal();
 }
 
+function renderPageEditor() {
+  const target = document.querySelector("#pageEditor");
+  if (!target) return;
+  const page = activePage();
+  const pages = state.data.pages;
+  const index = pages.findIndex((item) => item.id === page.id);
+  const isHome = page.id === "home";
+  target.innerHTML = `
+    <label>Nazwa strony<input id="pageNameInput" value="${escapeHtml(page.name)}" maxlength="60"></label>
+    <div class="section-editor-actions">
+      ${isHome ? "" : `<button type="button" id="pageUp"${index <= 1 ? " disabled" : ""} title="Wyżej w menu">↑</button><button type="button" id="pageDown"${index === pages.length - 1 ? " disabled" : ""} title="Niżej w menu">↓</button>`}
+      <button type="button" class="primary" id="pageRename">Zapisz nazwę</button>
+      ${isHome ? "" : '<button type="button" class="danger" id="pageDelete">Usuń stronę</button>'}
+    </div>
+    ${isHome ? '<p class="page-editor-note">Home to strona główna — można zmienić jej nazwę, ale nie można jej usunąć.</p>' : '<p class="page-editor-note">Usunięcie strony nie kasuje kafelków — jej sekcje przejdą na Home.</p>'}
+  `;
+  const call = async (method, url, body, message) => {
+    try {
+      await request(`${dashboardConfig.apiUrl}${url}`, { method, body: body ? JSON.stringify(body) : undefined });
+      await reloadData();
+      render();
+      renderSectionsManager();
+      if (message) showToast(message);
+    } catch (error) {
+      showToast(error.message);
+    }
+  };
+  target.querySelector("#pageRename").addEventListener("click", () => {
+    const name = target.querySelector("#pageNameInput").value.trim();
+    if (!name) return showToast("Podaj nazwę strony.");
+    call("PUT", `/api/services/page/${page.id}`, { name }, "Nazwa strony zmieniona.");
+  });
+  target.querySelector("#pageUp")?.addEventListener("click", () => call("PUT", `/api/services/page/${page.id}/move`, { direction: "up" }));
+  target.querySelector("#pageDown")?.addEventListener("click", () => call("PUT", `/api/services/page/${page.id}/move`, { direction: "down" }));
+  target.querySelector("#pageDelete")?.addEventListener("click", async () => {
+    if (!confirm(`Usunąć stronę „${page.name}”? Jej sekcje i linki przejdą na Home.`)) return;
+    await call("DELETE", `/api/services/page/${page.id}`, null, "Strona usunięta, sekcje przeniesione na Home.");
+    setActivePage("home");
+    document.querySelector("#sectionsDialog")?.close();
+  });
+}
+
 function renderSectionsManager() {
+  renderPageEditor();
   const target = document.querySelector("#sectionManager");
   target.innerHTML = "";
-  state.data.sections.forEach((section, index) => {
+  const sections = sectionsOfPage(state.activePageId);
+  sections.forEach((section, index) => {
     const row = document.createElement("div");
     row.className = "section-editor-row";
     row.innerHTML = `
@@ -1214,7 +1337,7 @@ function renderSectionsManager() {
       <span>${section.links.length} linków</span>
       <div class="section-editor-actions">
         <button class="btn-move-up" type="button"${index === 0 ? " disabled" : ""}>↑</button>
-        <button class="btn-move-down" type="button"${index === state.data.sections.length - 1 ? " disabled" : ""}>↓</button>
+        <button class="btn-move-down" type="button"${index === sections.length - 1 ? " disabled" : ""}>↓</button>
         <button class="primary btn-save-section" type="button">Zapisz</button>
         <button class="danger btn-del-section" type="button">Usuń</button>
       </div>
@@ -1228,8 +1351,8 @@ function renderSectionsManager() {
     row.querySelector(".btn-del-section").addEventListener("click", () => deleteSection(section));
     target.appendChild(row);
   });
-  if (!state.data.sections.length) {
-    target.innerHTML = '<div class="empty">Brak sekcji. Dodaj pierwszą powyżej.</div>';
+  if (!sections.length) {
+    target.innerHTML = '<div class="empty">Na tej stronie nie ma jeszcze sekcji. Dodaj pierwszą powyżej.</div>';
   }
 }
 
@@ -1240,7 +1363,7 @@ async function saveSection(event) {
   try {
     await request(`${dashboardConfig.apiUrl}/api/services/section`, {
       method: "POST",
-      body: JSON.stringify({ name })
+      body: JSON.stringify({ name, pageId: state.activePageId })
     });
     event.target.reset();
     await reloadData();
@@ -1308,62 +1431,67 @@ function stopStatusTopDiagnostics() {
 
 function renderServerStatus() {
   stopStatusTopDiagnostics();
-  document.querySelector("#viewTitle").textContent = "Status Serwera";
+  document.querySelector("#viewTitle").textContent = "Status serwera";
   document.querySelector("#toolbarActions").innerHTML = `
-    <button type="button" class="primary" id="btnRefreshServerStatus">🔄 Odśwież</button>
+    <button type="button" class="primary" id="btnRefreshServerStatus">Odśwież</button>
   `;
   document.querySelector("#content").innerHTML = `
-    <div class="admin-grid">
-      <section class="admin-card system-stats-card">
-        <div class="panel-heading">
-          <div><span class="eyebrow">Monitoring</span><h2>Statystyki systemu</h2></div>
-          <div class="panel-heading-actions">
-            <span id="systemStatsUpdated">Oczekiwanie</span>
-          </div>
-        </div>
-        <div class="cockpit-stats" id="systemStats"><div class="empty">Pobieranie danych…</div></div>
-      </section>
-      <section class="admin-card alerts-status-card">
-        <div class="panel-heading">
-          <div><span class="eyebrow">Diagnostyka</span><h2>🔔 Centrum Alertów</h2></div>
-          <div class="panel-heading-actions"><a href="./mods/admin/?tab=alerts">Pełny widok →</a></div>
-        </div>
-        <div id="serverStatusAlerts" style="display:grid; gap:10px;"><div class="empty">Pobieranie stanu alertów...</div></div>
-      </section>
-      <section class="admin-card ports-card">
-        <div class="panel-heading"><div><span class="eyebrow">Narzędzia</span><h2>Wyszukiwanie i test portów</h2></div></div>
-        <div id="portTool"></div>
-      </section>
-      <section class="admin-card top-accordion-card" style="grid-column: 1 / -1;">
-        <details class="top-accordion" id="topAccordion">
-          <summary class="top-accordion-summary">
-            <span>📊 Szczegółowa Diagnostyka (Top)</span>
-            <span class="top-accordion-chevron">›</span>
-          </summary>
-          <div class="top-accordion-body" id="topAccordionMount"></div>
-        </details>
-      </section>
-    </div>
+    <section class="admin-card system-stats-card">
+      <div class="panel-heading">
+        <div><span class="eyebrow">Monitoring</span><h2>Statystyki systemu</h2></div>
+        <div class="panel-heading-actions"><span id="systemStatsUpdated">Oczekiwanie</span></div>
+      </div>
+      <div class="cockpit-stats" id="systemStats"><div class="empty">Pobieranie danych…</div></div>
+    </section>
+  `;
+  loadSystemStats();
+  document.querySelector("#btnRefreshServerStatus")?.addEventListener("click", loadSystemStats);
+}
+
+function renderTopPage() {
+  stopStatusTopDiagnostics();
+  document.querySelector("#viewTitle").textContent = "Top (procesy)";
+  document.querySelector("#toolbarActions").innerHTML = `
+    <button type="button" class="primary" id="btnRefreshTop">Odśwież</button>
+  `;
+  document.querySelector("#content").innerHTML = `
+    <section class="admin-card"><div id="topPageMount"></div></section>
+  `;
+  statusTopController = TopDiagnostics.mount(document.querySelector("#topPageMount"));
+  statusTopController.start();
+  document.querySelector("#btnRefreshTop")?.addEventListener("click", () => statusTopController?.refresh());
+}
+
+function renderToolsPage() {
+  stopStatusTopDiagnostics();
+  document.querySelector("#viewTitle").textContent = "Narzędzia";
+  document.querySelector("#toolbarActions").innerHTML = "";
+  document.querySelector("#content").innerHTML = `
+    <section class="admin-card ports-card">
+      <div class="panel-heading"><div><span class="eyebrow">Sieć</span><h2>Wyszukiwanie i test portów</h2></div></div>
+      <div id="portTool"></div>
+    </section>
   `;
   renderPortTool();
-  loadSystemStats();
+}
+
+function renderAlertsPage() {
+  stopStatusTopDiagnostics();
+  document.querySelector("#viewTitle").textContent = "Alerty";
+  document.querySelector("#toolbarActions").innerHTML = `
+    <button type="button" class="primary" id="btnRefreshAlerts">Odśwież</button>
+  `;
+  document.querySelector("#content").innerHTML = `
+    <section class="admin-card alerts-status-card">
+      <div class="panel-heading">
+        <div><span class="eyebrow">Diagnostyka</span><h2>Centrum alertów</h2></div>
+        <div class="panel-heading-actions"><a href="./mods/admin/?tab=alerts">Pełny widok w Zapleczu →</a></div>
+      </div>
+      <div id="serverStatusAlerts" style="display:grid; gap:10px;"><div class="empty">Pobieranie stanu alertów...</div></div>
+    </section>
+  `;
   renderAlertsInto("#serverStatusAlerts");
-  document.querySelector("#btnRefreshServerStatus")?.addEventListener("click", () => {
-    loadSystemStats();
-    renderAlertsInto("#serverStatusAlerts");
-    statusTopController?.refresh();
-  });
-  document.querySelector("#topAccordion")?.addEventListener("toggle", (event) => {
-    const details = event.target;
-    if (details.open) {
-      if (!statusTopController) {
-        statusTopController = TopDiagnostics.mount(document.querySelector("#topAccordionMount"));
-      }
-      statusTopController.start();
-    } else {
-      statusTopController?.stop();
-    }
-  });
+  document.querySelector("#btnRefreshAlerts")?.addEventListener("click", () => renderAlertsInto("#serverStatusAlerts"));
 }
 
 function renderAdmin() {

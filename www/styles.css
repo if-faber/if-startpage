@@ -832,3 +832,110 @@ dialog menu { display: flex; justify-content: flex-end; gap: 8px; margin: 4px 0 
 .content-actions button:hover { border-color: color-mix(in srgb, var(--accent) 40%, transparent); }
 .content-actions button.primary { border-color: var(--accent); background: var(--accent); color: var(--on-accent, #052016); font-weight: 800; }
 .content-actions button.primary:hover { background: color-mix(in srgb, var(--accent) 80%, #ffffff); }
+
+/* ==========================================================================
+   Menu stron — przyciski „lizak” (główka z ikoną + patyczek z nazwą)
+   ========================================================================== */
+.ui-icon { flex-shrink: 0; vertical-align: middle; }
+#navigation { gap: 8px; }
+.lolli {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  font-family: var(--font-menu);
+  text-align: left;
+  cursor: pointer;
+}
+.lolli-head {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  flex: 0 0 42px;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  border: 1px solid var(--line);
+  background: rgb(var(--sidebar-panel-rgb) / max(var(--sidebar-panel-alpha), 0.10));
+  color: var(--muted);
+  box-shadow: 0 4px 12px rgb(0 0 0 / 0.18);
+  transition: background .16s ease, color .16s ease, border-color .16s ease, transform .16s ease;
+}
+.lolli-stem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+  height: 34px;
+  margin-left: -16px;
+  padding: 0 14px 0 26px;
+  border: 1px solid var(--line);
+  border-left: 0;
+  border-radius: 0 17px 17px 0;
+  background: rgb(var(--sidebar-panel-rgb) / max(var(--sidebar-panel-alpha), 0.05));
+  font-size: 14px;
+  font-weight: 700;
+  transition: background .16s ease, color .16s ease, border-color .16s ease;
+}
+.lolli-stem span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lolli-stem small { color: var(--accent); font-size: 12px; font-weight: 800; }
+.lolli:hover .lolli-head { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 45%, transparent); transform: scale(1.05); }
+.lolli:hover .lolli-stem { border-color: color-mix(in srgb, var(--accent) 35%, transparent); }
+.lolli[data-active="true"] .lolli-head {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--on-accent, #052016);
+  box-shadow: 0 4px 16px color-mix(in srgb, var(--accent) 35%, transparent);
+}
+.lolli[data-active="true"] .lolli-stem {
+  background: var(--accent-soft);
+  border-color: color-mix(in srgb, var(--accent) 45%, transparent);
+  color: var(--text);
+}
+.nav-add {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 34px;
+  padding: 0 12px;
+  border: 1px dashed var(--line);
+  border-radius: 17px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+}
+.nav-add:hover { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 45%, transparent); }
+#navigation .nav-separator { margin: 8px 4px; }
+
+/* Strona: sekcje jako nagłówki grup kafelków */
+.page-sections { display: grid; gap: 26px; }
+.page-section-title {
+  margin: 0 0 12px;
+  color: var(--muted);
+  font-family: var(--font-description);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.empty-small { min-height: 60px; padding: 12px; font-size: 13px; }
+
+/* Okno „Strona i sekcje” */
+.page-editor { display: grid; gap: 10px; padding: 14px; border: 1px solid var(--line); border-radius: 14px; }
+.page-editor label { display: grid; gap: 6px; font-size: 11px; font-weight: 800; text-transform: uppercase; color: var(--muted); }
+.page-editor-note { margin: 0; font-size: 12px; color: var(--muted); }
+
+/* Ikony w menu ⚙️ i na przyciskach */
+.sidebar-menu button .ui-icon, .sidebar-menu a .ui-icon { color: var(--muted); }
+.sidebar-menu button:hover .ui-icon, .sidebar-menu a:hover .ui-icon { color: var(--accent); }
+.content-actions button { display: inline-flex; align-items: center; gap: 6px; }
+.header-bell, #sidebarMenuButton { color: var(--text); }

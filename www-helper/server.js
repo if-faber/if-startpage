@@ -99,15 +99,30 @@ function loadServices() {
   try {
     const data = JSON.parse(fs.readFileSync(DATA_FILE, "utf8"));
 
-    if (!data.sections || !Array.isArray(data.sections)) {
-      return { sections: [] };
-    }
-
-    return data;
+    return normalizeServices(data);
   } catch (error) {
     console.error("Load services error:", error);
-    return { sections: [] };
+    return normalizeServices({});
   }
+}
+
+// Strony (pages) → sekcje → linki. Strona "home" istnieje zawsze.
+// Starsze pliki bez stron: wszystkie sekcje trafiają na Home.
+const HOME_PAGE_ID = "home";
+
+function normalizeServices(data) {
+  const out = data && typeof data === "object" ? data : {};
+  if (!Array.isArray(out.sections)) out.sections = [];
+  if (!Array.isArray(out.pages)) out.pages = [];
+  out.pages = out.pages.filter((page) => page && page.id && normalizeText(page.name));
+  if (!out.pages.some((page) => page.id === HOME_PAGE_ID)) {
+    out.pages.unshift({ id: HOME_PAGE_ID, name: "Home" });
+  }
+  const pageIds = new Set(out.pages.map((page) => page.id));
+  out.sections.forEach((section) => {
+    if (!section.pageId || !pageIds.has(section.pageId)) section.pageId = HOME_PAGE_ID;
+  });
+  return out;
 }
 
 function backupServices() {
@@ -1343,6 +1358,64 @@ app.put("/api/kiosk/settings", (req, res) => {
   res.json({ success: true, ...saved });
 });
 
+// ─── Strony ──────────────────────────────────────────────────────────────────
+
+app.post("/api/services/page", requirePin, (req, res) => {
+  const data = loadServices();
+  const name = normalizeText(req.body?.name).slice(0, 60);
+  if (!name) return res.status(400).json({ error: "Podaj nazwę strony." });
+  const page = { id: createId(), name };
+  data.pages.push(page);
+  saveServices(data);
+  res.json({ success: true, page, pages: data.pages });
+});
+
+app.put("/api/services/page/:id", requirePin, (req, res) => {
+  const data = loadServices();
+  const page = data.pages.find((item) => item.id === req.params.id);
+  const name = normalizeText(req.body?.name).slice(0, 60);
+  if (!page) return res.status(404).json({ error: "Strona nie istnieje." });
+  if (!name) return res.status(400).json({ error: "Podaj nazwę strony." });
+  page.name = name;
+  saveServices(data);
+  res.json({ success: true, page, pages: data.pages });
+});
+
+app.put("/api/services/page/:id/move", requirePin, (req, res) => {
+  const data = loadServices();
+  const index = data.pages.findIndex((item) => item.id === req.params.id);
+  const direction = normalizeText(req.body?.direction);
+  if (index === -1) return res.status(404).json({ error: "Strona nie istnieje." });
+  if (!["up", "down"].includes(direction)) return res.status(400).json({ error: "Niepoprawny kierunek" });
+  const target = direction === "up" ? index - 1 : index + 1;
+  // Home zostaje zawsze na górze.
+  if (target >= 1 && target < data.pages.length && index >= 1) {
+    [data.pages[index], data.pages[target]] = [data.pages[target], data.pages[index]];
+    saveServices(data);
+  }
+  res.json({ success: true, pages: data.pages });
+});
+
+// Usunięcie strony nie usuwa kafelków — jej sekcje przechodzą na Home.
+app.delete("/api/services/page/:id", requirePin, (req, res) => {
+  if (req.params.id === HOME_PAGE_ID) {
+    return res.status(400).json({ error: "Strony Home nie można usunąć (można zmienić jej nazwę)." });
+  }
+  const data = loadServices();
+  const before = data.pages.length;
+  data.pages = data.pages.filter((item) => item.id !== req.params.id);
+  if (data.pages.length === before) return res.status(404).json({ error: "Strona nie istnieje." });
+  let moved = 0;
+  data.sections.forEach((section) => {
+    if (section.pageId === req.params.id) {
+      section.pageId = HOME_PAGE_ID;
+      moved += 1;
+    }
+  });
+  saveServices(data);
+  res.json({ success: true, pages: data.pages, movedSections: moved });
+});
+
 app.post("/api/services/section", requirePin, (req, res) => {
   const data = loadServices();
   const name = normalizeText(req.body.name);
@@ -1351,9 +1424,13 @@ app.post("/api/services/section", requirePin, (req, res) => {
     return res.status(400).json({ error: "Brak nazwy sekcji" });
   }
 
+  const requestedPage = normalizeText(req.body.pageId);
+  const pageId = data.pages.some((page) => page.id === requestedPage) ? requestedPage : HOME_PAGE_ID;
+
   const section = {
     id: createId(),
     name,
+    pageId,
     groups: [
       {
         name: "Linki",
@@ -1400,9 +1477,16 @@ app.put("/api/services/section/:id/move", requirePin, (req, res) => {
     return res.status(400).json({ error: "Niepoprawny kierunek" });
   }
 
-  const targetIndex = direction === "up" ? sectionIndex - 1 : sectionIndex + 1;
+  // Zamiana z sąsiednią sekcją na tej samej stronie.
+  const pageId = data.sections[sectionIndex].pageId;
+  const samePage = data.sections
+    .map((section, index) => ({ section, index }))
+    .filter((item) => item.section.pageId === pageId)
+    .map((item) => item.index);
+  const position = samePage.indexOf(sectionIndex);
+  const targetIndex = samePage[direction === "up" ? position - 1 : position + 1];
 
-  if (targetIndex < 0 || targetIndex >= data.sections.length) {
+  if (targetIndex === undefined) {
     return res.json({ success: true, sections: data.sections });
   }
 

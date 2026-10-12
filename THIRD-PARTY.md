@@ -14,6 +14,11 @@ oznaczenia kafelków prowadzących do tych usług.
 Ikona przełącznika trybu (wariant „classic”) pochodzi z projektu
 [theme-toggles](https://toggles.dev) (Alfie Jones), licencja MIT.
 
+## Ikony interfejsu
+
+Ikony menu i przycisków (`www/ui-icons.js`) pochodzą z projektu
+[Lucide](https://lucide.dev), licencja ISC (pełna treść licencji w nagłówku pliku).
+
 ## Biblioteki
 
 - [Express](https://expressjs.com/) — licencja MIT.

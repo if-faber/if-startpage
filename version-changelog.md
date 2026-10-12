@@ -4,6 +4,21 @@ Nowe wpisy dopisujemy na górze.
 
 ---
 
+## v0.1.6.3 — 2026-10-12
+
+Strony w menu i ikony zamiast emoji.
+
+- **Strony:** w menu na górze Home i dodane strony. „+ Dodaj stronę” pyta tylko o nazwę, strona od razu pojawia się w menu. Sekcje są nagłówkami grup kafelków na stronie.
+- **Home** można przemianować; nie można go usunąć. Usunięcie innej strony nie kasuje kafelków — jej sekcje przechodzą na Home. Obecne sekcje trafiają automatycznie na Home.
+- **Stałe strony serwera** pod kreską: Status serwera, Top (procesy), Narzędzia (test portów), Alerty — wcześniej wszystko było na jednym widoku.
+- **Przyciski menu w stylu „lizak”** (jak w Kiosku): okrągła główka z ikoną i patyczek z nazwą.
+- **Ikony Lucide** (licencja ISC) zamiast emoji w menu, przy dzwonku i ⚙️.
+- Okno „Strona i sekcje” (przycisk na dole i w menu ⚙️): nazwa strony, kolejność stron, usuwanie, sekcje tej strony.
+- Edycja i usuwanie kafelka bez odblokowania najpierw pyta o PIN.
+- Sekcje dodane w Zapleczu (zakładka Homepage) trafiają na Home.
+
+---
+
 ## v0.1.6.2 — 2026-10-12
 
 Nowa ikona i uporządkowane menu Strony Głównej.
