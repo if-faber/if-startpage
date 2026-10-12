@@ -70,7 +70,14 @@ async function checkOsUpdates() {
     const count = data.count || 0;
     const pkgs = data.packages || [];
 
-    if (count === 0) {
+    if (data.available === false) {
+      const cockpitUrl = `https://${window.location.hostname}:9090`;
+      result.innerHTML = `
+        <div style="padding: 12px 16px; border-radius: 10px; background: rgba(56,189,248,0.1); font-size: 13px; line-height: 1.5;">
+          ℹ️ ${escapeHtml(data.message || "Kontener nie widzi pakietów systemowych serwera.")}
+          <div style="margin-top: 8px;"><a href="${escapeHtml(cockpitUrl)}" target="_blank" rel="noopener">Otwórz Cockpit →</a></div>
+        </div>`;
+    } else if (count === 0) {
       result.innerHTML = `
         <div style="padding: 12px 16px; border-radius: 10px; background: rgba(16,185,129,0.1); color: #10b981; font-size: 13px; font-weight: 500;">
           🟢 Wszystkie pakiety systemowe są aktualne.

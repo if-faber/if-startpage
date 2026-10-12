@@ -86,7 +86,7 @@ function renderAdminThemeTab() {
               <label>Obraz tła
                 <select id="adminThemeBackgroundImage">
                   <option value="">Wyłączony (Tylko kolor tła)</option>
-                  <option value="default">Domyślne tło MyHome (background.jpg)</option>
+                  <option value="default">Domyślne tło (background.jpg)</option>
                   <option value="custom">Własny upload (plik z dysku)</option>
                 </select>
               </label>
@@ -526,7 +526,7 @@ function applyAdminThemeStyles(theme) {
     if (theme.btnBorderWidth) root.style.setProperty("--btn-border-width", theme.btnBorderWidth);
     if (theme.btnBorderColor) root.style.setProperty("--btn-border-color", theme.btnBorderColor);
 
-    // Ujednolicone zmienne Modali z motywu MyHome
+    // Ujednolicone zmienne Modali z motywu IF-startpage
     const modalSource = (typeof state !== "undefined" && state && state.theme) ? state.theme : theme;
     if (modalSource) {
       if (modalSource.modalBg) root.style.setProperty("--modal-bg-rgb", hexToRgbChannels(modalSource.modalBg));

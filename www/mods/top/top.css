@@ -1,5 +1,5 @@
 /* ==========================================================================
-   Moduł Top (www/mods/top/top.css) — W 100% Spójny ze Stylami MyHome
+   Moduł Top (www/mods/top/top.css) — W 100% Spójny ze stylami IF-startpage
    Bez modala/dialogu — panel montowany inline (akordeon / karta w Zapleczu).
    ========================================================================== */
 
@@ -53,7 +53,7 @@
   border-radius: 3px;
 }
 
-/* Karty Sekcji wewnątrz panelu (Zgodne z systemem kart MyHome) */
+/* Karty Sekcji wewnątrz panelu (Zgodne z systemem kart IF-startpage) */
 .top-section-card {
   background: rgba(0, 0, 0, 0.28);
   border: 1px solid var(--line);

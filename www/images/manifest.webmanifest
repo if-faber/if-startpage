@@ -1,6 +1,6 @@
 {
-  "name": "Homelab NAS",
-  "short_name": "NAS",
+  "name": "IF-startpage",
+  "short_name": "Start",
   "icons": [
     {
       "src": "./logo-192.png",

@@ -5,7 +5,7 @@ FROM node:22-bookworm-slim
 # Docker CLI (statyczny binary z oficjalnego obrazu) — do komunikacji z hostowym
 # dockerd przez zamontowany /var/run/docker.sock (Diagnostyka/Top, Status
 # kontenerów w Kiosku, zakładka Aktualizacje).
-COPY --from=docker:cli /usr/local/bin/docker /usr/local/bin/docker
+COPY --from=docker:27-cli /usr/local/bin/docker /usr/local/bin/docker
 
 # procps -> polecenie `top -b -n 1` używane przez /api/system/top (Diagnostyka Serwera).
 RUN apt-get update \

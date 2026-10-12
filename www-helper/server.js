@@ -1,5 +1,5 @@
 const express = require("express");
-const cors = require("cors");
+const crypto = require("crypto");
 const fs = require("fs");
 const path = require("path");
 const net = require("net");
@@ -49,14 +49,18 @@ const DASHBOARD_LOGO_FILE = process.env.DASHBOARD_LOGO_FILE || path.join(WWW_DIR
 const DASHBOARD_BACKGROUND_FILE = process.env.DASHBOARD_BACKGROUND_FILE || path.join(WWW_DIR, "images", "background-custom.jpg");
 const ADMIN_BACKGROUND_FILE = process.env.ADMIN_BACKGROUND_FILE || path.join(WWW_DIR, "images", "background-admin-custom.jpg");
 const BACKUP_DIR = process.env.BACKUP_DIR || path.join(HELPER_DIR, "backups");
-let DASHBOARD_PIN = String(process.env.DASHBOARD_PIN || process.env.ADMIN_PIN || "1311");
+// PIN domyślny, gdy nie ustawiono DASHBOARD_PIN ani nie zmieniono go w UI.
+// Taki sam jak w przykładzie compose.yaml — trzeba go zmienić po instalacji.
+const DEFAULT_PIN = "1234";
 
 // Katalog docker/app/ hosta (stosy Dockge) zamontowany pod tą ścieżką w kontenerze
 // if-startpage — do odczytu i zapisu compose.yaml innych stosów (zakładka Aktualizacje).
 // Wymaga wolumenu "/home/{user}/docker/app:/host-apps" w compose.yaml.
 const HOST_APPS_DIR = process.env.HOST_APPS_DIR || "/host-apps";
 
-app.use(cors());
+// Brak nagłówków CORS celowo: strona i API działają pod tym samym adresem,
+// więc obce strony otwarte w przeglądarce nie mogą wywoływać tego API.
+app.disable("x-powered-by");
 app.use(express.json({ limit: "20mb" }));
 app.use(express.static(WWW_DIR, {
   setHeaders: (res) => {
@@ -263,7 +267,7 @@ function getDashboardPin() {
       if (match && match[1].trim()) return match[1].trim();
     } catch {}
   }
-  return String(process.env.DASHBOARD_PIN || process.env.ADMIN_PIN || "1311").trim();
+  return String(process.env.DASHBOARD_PIN || process.env.ADMIN_PIN || DEFAULT_PIN).trim();
 }
 
 function saveDashboardPin(pin) {
@@ -278,11 +282,67 @@ function saveDashboardPin(pin) {
   process.env.DASHBOARD_PIN = cleanPin;
 }
 
+// Ochrona przed zgadywaniem PIN-u: po 5 błędnych próbach z jednego adresu
+// blokada na 1 minutę, każda kolejna seria podwaja czas (maks. 15 minut).
+const PIN_MAX_FAILS = 5;
+const PIN_BASE_LOCK_MS = 60 * 1000;
+const PIN_MAX_LOCK_MS = 15 * 60 * 1000;
+const pinAttempts = new Map();
+
+function clientKey(req) {
+  return String(req.ip || req.socket?.remoteAddress || "unknown");
+}
+
+function pinLockRemainingMs(req) {
+  const entry = pinAttempts.get(clientKey(req));
+  if (!entry || !entry.lockedUntil) return 0;
+  return Math.max(0, entry.lockedUntil - Date.now());
+}
+
+function registerPinResult(req, ok) {
+  const key = clientKey(req);
+  if (ok) {
+    pinAttempts.delete(key);
+    return;
+  }
+  const entry = pinAttempts.get(key) || { fails: 0, locks: 0, lockedUntil: 0 };
+  entry.fails += 1;
+  if (entry.fails >= PIN_MAX_FAILS) {
+    entry.locks += 1;
+    entry.fails = 0;
+    entry.lockedUntil = Date.now() + Math.min(PIN_MAX_LOCK_MS, PIN_BASE_LOCK_MS * 2 ** (entry.locks - 1));
+  }
+  pinAttempts.set(key, entry);
+}
+
+function pinsEqual(a, b) {
+  const bufA = crypto.createHash("sha256").update(String(a)).digest();
+  const bufB = crypto.createHash("sha256").update(String(b)).digest();
+  return crypto.timingSafeEqual(bufA, bufB);
+}
+
 function hasValidPin(req) {
+  if (pinLockRemainingMs(req) > 0) return false;
   const provided = String(req.body?.pin || req.get("x-admin-pin") || "").trim();
   if (!provided) return false;
-  const currentPin = getDashboardPin();
-  return provided === currentPin;
+  const ok = pinsEqual(provided, getDashboardPin());
+  registerPinResult(req, ok);
+  return ok;
+}
+
+// Middleware dla endpointów, które coś zmieniają albo pokazują wrażliwe dane.
+function requirePin(req, res, next) {
+  const remaining = pinLockRemainingMs(req);
+  if (remaining > 0) {
+    return res.status(429).json({
+      ok: false,
+      error: `Za dużo błędnych prób PIN-u. Spróbuj za ${Math.ceil(remaining / 1000)} s.`
+    });
+  }
+  if (!hasValidPin(req)) {
+    return res.status(403).json({ ok: false, error: "Niepoprawny PIN" });
+  }
+  next();
 }
 
 function isValidPort(port) {
@@ -359,15 +419,34 @@ async function fetchJson(url, options = {}) {
 
 // ─── Sprawdzanie wersji obrazów Docker (tylko wersje stabilne) ────────────────
 
-// Kontenery pomijane przy sprawdzaniu wersji (np. myhome buduje się z własnego
-// prywatnego rejestru Gitea, więc "najnowsza wersja" nie ma tu zastosowania).
-const DOCKER_VERSION_EXCLUDE = new Set(["myhome"]);
+// Kontenery pomijane przy sprawdzaniu wersji, np. obrazy budowane lokalnie,
+// dla których "najnowsza wersja" nie ma sensu. Lista po przecinku w zmiennej
+// DOCKER_VERSION_EXCLUDE, np. "moj-kontener,inny-kontener".
+const DOCKER_VERSION_EXCLUDE = new Set(
+  String(process.env.DOCKER_VERSION_EXCLUDE || "")
+    .split(",")
+    .map((name) => name.trim())
+    .filter(Boolean)
+);
 
 // Wyjątki, gdy nazwa kontenera nie pokrywa się z nazwą folderu stosu i/lub
 // kluczem serwisu w compose.yaml (konwencja domyślna: stack === service === nazwa kontenera).
-const DOCKER_STACK_OVERRIDES = {
-  wordpress_db: { stack: "wordpress", service: "db" }
-};
+// Opcjonalnie w zmiennej DOCKER_STACK_OVERRIDES jako JSON, np.
+// {"wordpress_db":{"stack":"wordpress","service":"db"}}
+const DOCKER_STACK_OVERRIDES = (() => {
+  try {
+    const parsed = JSON.parse(process.env.DOCKER_STACK_OVERRIDES || "{}");
+    return parsed && typeof parsed === "object" ? parsed : {};
+  } catch {
+    console.error("DOCKER_STACK_OVERRIDES: niepoprawny JSON — pomijam.");
+    return {};
+  }
+})();
+
+// Nazwa stosu/serwisu trafia do ścieżki pliku — tylko bezpieczne znaki.
+function isSafeName(value) {
+  return /^[a-zA-Z0-9][a-zA-Z0-9_.-]*$/.test(String(value || "")) && !String(value).includes("..");
+}
 
 function resolveStackAndService(containerName) {
   return DOCKER_STACK_OVERRIDES[containerName] || { stack: containerName, service: containerName };
@@ -889,11 +968,7 @@ app.get("/api/services", (req, res) => {
   res.json(loadServices());
 });
 
-app.post("/api/admin/unlock", (req, res) => {
-  if (!hasValidPin(req)) {
-    return res.status(403).json({ error: "Niepoprawny PIN" });
-  }
-
+app.post("/api/admin/unlock", requirePin, (req, res) => {
   res.json({ success: true });
 });
 
@@ -912,6 +987,10 @@ app.put("/api/dashboard/settings", (req, res) => {
 
   if (logoData) {
     settings.logo = saveDashboardLogo(logoData);
+  }
+
+  if (newPin && newPin.length < 4) {
+    return res.status(400).json({ error: "Nowy PIN musi mieć co najmniej 4 znaki." });
   }
 
   saveDashboardSettings(settings);
@@ -1071,7 +1150,7 @@ app.put("/api/kiosk/settings", (req, res) => {
   res.json({ success: true, ...saved });
 });
 
-app.post("/api/services/section", (req, res) => {
+app.post("/api/services/section", requirePin, (req, res) => {
   const data = loadServices();
   const name = normalizeText(req.body.name);
 
@@ -1096,7 +1175,7 @@ app.post("/api/services/section", (req, res) => {
   res.json({ success: true, section });
 });
 
-app.put("/api/services/section/:id", (req, res) => {
+app.put("/api/services/section/:id", requirePin, (req, res) => {
   const data = loadServices();
   const section = data.sections.find(item => item.id === req.params.id);
   const name = normalizeText(req.body.name);
@@ -1115,7 +1194,7 @@ app.put("/api/services/section/:id", (req, res) => {
   res.json({ success: true, section });
 });
 
-app.put("/api/services/section/:id/move", (req, res) => {
+app.put("/api/services/section/:id/move", requirePin, (req, res) => {
   const data = loadServices();
   const sectionIndex = data.sections.findIndex(section => section.id === req.params.id);
   const direction = normalizeText(req.body.direction);
@@ -1143,7 +1222,7 @@ app.put("/api/services/section/:id/move", (req, res) => {
   res.json({ success: true, sections: data.sections });
 });
 
-app.put("/api/services/link/:id/move", (req, res) => {
+app.put("/api/services/link/:id/move", requirePin, (req, res) => {
   const data = loadServices();
   const linkId = req.params.id;
   const direction = normalizeText(req.body.direction);
@@ -1181,7 +1260,7 @@ app.put("/api/services/link/:id/move", (req, res) => {
   res.json({ success: true, sections: data.sections });
 });
 
-app.post("/api/services/link", (req, res) => {
+app.post("/api/services/link", requirePin, (req, res) => {
   const data = loadServices();
 
   const sectionId = normalizeText(req.body.sectionId);
@@ -1229,7 +1308,7 @@ app.post("/api/services/link", (req, res) => {
   res.json({ success: true });
 });
 
-app.put("/api/services/link/:id", (req, res) => {
+app.put("/api/services/link/:id", requirePin, (req, res) => {
   const data = loadServices();
 
   const linkId = req.params.id;
@@ -1299,7 +1378,7 @@ app.put("/api/services/link/:id", (req, res) => {
   res.json({ success: true });
 });
 
-app.delete("/api/services/section/:id", (req, res) => {
+app.delete("/api/services/section/:id", requirePin, (req, res) => {
   const data = loadServices();
 
   data.sections = data.sections.filter(section => section.id !== req.params.id);
@@ -1309,7 +1388,7 @@ app.delete("/api/services/section/:id", (req, res) => {
   res.json({ success: true });
 });
 
-app.delete("/api/services/link/:id", (req, res) => {
+app.delete("/api/services/link/:id", requirePin, (req, res) => {
   const data = loadServices();
 
   data.sections.forEach(section => {
@@ -1327,7 +1406,7 @@ app.delete("/api/services/link/:id", (req, res) => {
   res.json({ success: true });
 });
 
-app.post("/api/ports/check", async (req, res) => {
+app.post("/api/ports/check", requirePin, async (req, res) => {
   const host = normalizeText(req.body.host);
   const port = Number(req.body.port);
 
@@ -1456,11 +1535,7 @@ app.get("/api/docker/versions", async (req, res) => {
   }
 });
 
-app.post("/api/docker/update-compose", (req, res) => {
-  if (!hasValidPin(req)) {
-    return res.status(403).json({ ok: false, message: "Niepoprawny PIN" });
-  }
-
+app.post("/api/docker/update-compose", requirePin, (req, res) => {
   try {
     const container = normalizeText(req.body?.container);
     const newTag = normalizeText(req.body?.tag);
@@ -1474,6 +1549,9 @@ app.post("/api/docker/update-compose", (req, res) => {
     }
 
     const { stack, service } = resolveStackAndService(container);
+    if (!isSafeName(stack) || !isSafeName(service)) {
+      return res.status(400).json({ ok: false, message: "Niepoprawna nazwa kontenera lub stosu." });
+    }
     const composePath = path.join(HOST_APPS_DIR, stack, "compose.yaml");
 
     if (!fs.existsSync(composePath)) {
@@ -1536,7 +1614,7 @@ app.post("/api/docker/update-compose", (req, res) => {
   }
 });
 
-app.get("/api/docker/container/:name/logs", async (req, res) => {
+app.get("/api/docker/container/:name/logs", requirePin, async (req, res) => {
   try {
     const name = String(req.params.name).replaceAll(/[^a-zA-Z0-9_.-]/g, "");
     const { stdout, stderr } = await execFileAsync("docker", [
@@ -1689,33 +1767,16 @@ app.get("/api/alerts/summary", async (req, res) => {
   }
 });
 
-app.get("/api/system/updates", async (req, res) => {
-  try {
-    let packages = [];
-    try {
-      const { stdout } = await execFileAsync("apt", ["list", "--upgradable"], {
-        env: { ...process.env, LANG: "C", LC_ALL: "C" },
-        timeout: 15000
-      });
-      packages = stdout
-        .split("\n")
-        .filter(line => line.includes("/") && line.includes("[upgradable"))
-        .map(line => {
-          const parts = line.split(" ");
-          const namePart = parts[0] || "";
-          const name = namePart.split("/")[0];
-          const newVersion = parts[1] || "";
-          const archPart = parts[2] || "";
-          return { name, newVersion, arch: archPart };
-        })
-        .filter(p => p.name);
-    } catch {
-      // apt niedostępne (np. kontener bez apt) — zwróć pustą listę
-    }
-    res.json({ ok: true, count: packages.length, packages });
-  } catch (error) {
-    res.status(500).json({ ok: false, error: error.message, count: 0, packages: [] });
-  }
+// Pakiety systemowe hosta: kontener widzi tylko własne pakiety (obraz Node.js),
+// a nie pakiety serwera, więc ich nie sprawdzamy — odsyłamy do Cockpit.
+app.get("/api/system/updates", (req, res) => {
+  res.json({
+    ok: true,
+    available: false,
+    count: 0,
+    packages: [],
+    message: "Kontener nie widzi pakietów systemowych serwera. Aktualizacje Debiana sprawdzisz w Cockpit (port 9090)."
+  });
 });
 
 app.listen(PORT, "0.0.0.0", () => {

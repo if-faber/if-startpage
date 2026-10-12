@@ -1,4 +1,4 @@
-// tab-modules.js — Zakładka "Moduły": hub z kafelkami modułów MyHome (mods/admin)
+// tab-modules.js — Zakładka "Moduły": hub z kafelkami modułów IF-startpage (mods/admin)
 // Wprowadzone w v0.4.2. Każdy kafelek to nakładka na usługę self-hosted, opisana
 // w Claude-Docs/WIZJA-ARCHITEKTURA-MYHOME.md. Kliknięcie kafelka otwiera pełne
 // ustawienia danego modułu (istniejący routing switchTab), z przyciskiem powrotu.
@@ -27,7 +27,7 @@ function renderModulesHubTab() {
   return `
     <div class="admin-tab-container">
       <section class="admin-section-card">
-        <h2>🧩 Moduły MyHome</h2>
+        <h2>🧩 Moduły</h2>
         <p class="settings-note">Nakładki na usługi self-hosted, dopracowane pod kątem prostoty dla domowników. Wybierz moduł, aby zmienić jego ustawienia.</p>
         <div class="modules-hub-grid" style="margin-top: 18px;">
           ${tiles}

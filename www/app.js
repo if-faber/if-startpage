@@ -1,8 +1,8 @@
 const dashboard = document.documentElement.dataset.dashboard;
 const dashboardConfig = {
   apiUrl: window.location.origin,
-  title: "Homelab NAS",
-  subtitle: "Usługi, narzędzia i administracja serwera NAS",
+  title: "Serwer domowy",
+  subtitle: "Usługi, narzędzia i administracja serwera",
   logo: "./images/logo.png",
   defaultHost: window.location.hostname || "localhost"
 };
@@ -80,7 +80,7 @@ function fontValueFromStack(value) {
 
 const PORT_HINTS = {
   system: { label: "System & Sieć", range: "2000-2099", typicalPorts: [2022, 2080, 2443], description: "Usługi bazowe i sieciowe" },
-  dashboard: { label: "Dashboard & Aplikacje", range: "3000-3099", typicalPorts: [3000, 3010, 3100], description: "Gitea Web, MyHome Helper, Homebox" },
+  dashboard: { label: "Dashboard & Aplikacje", range: "3000-3099", typicalPorts: [3000, 3010, 3100], description: "Gitea Web, IF-startpage, Homebox" },
   media: { label: "Media & Galeria", range: "4000-4099", typicalPorts: [4000, 4080, 2283], description: "Immich, strumieniowanie, odtwarzacze" },
   administracja: { label: "Administracja & Narzędzia", range: "5000-5099", typicalPorts: [5000, 5001, 5090], description: "Gitea Registry, Dockge, Cockpit" },
   monitoring: { label: "Monitoring & ESP", range: "6000-6099", typicalPorts: [6052, 6090, 6100], description: "ESPHome, telemetria, sensory" },
@@ -1480,7 +1480,7 @@ async function init() {
   } catch (error) {
     document.querySelector("#app").innerHTML = `
       <div class="startup-error">
-        <strong>Nie udało się uruchomić Homelab NAS</strong>
+        <strong>Nie udało się uruchomić strony startowej</strong>
         <span>${escapeHtml(error.message)}</span>
       </div>
     `;

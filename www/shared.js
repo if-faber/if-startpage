@@ -1,4 +1,4 @@
-// shared.js — Wspólne narzędzia i funkcje pomocnicze dla MyHome
+// shared.js — Wspólne narzędzia i funkcje pomocnicze dla IF-startpage
 
 const fontOptions = [
   ["system", "System font"],

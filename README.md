@@ -1,148 +1,121 @@
 # IF-startpage
 
-Samodzielna, lekka strona startowa domowego serwera — Strona Główna (SPA),
-Zaplecze administracyjne z funkcjami systemowymi i Kiosk statusu serwera.
-Część pakietu **IdeaForge** dla serwerów domowych.
+Samodzielna, lekka strona startowa domowego serwera: Strona Główna z kafelkami usług,
+Zaplecze administracyjne chronione PIN-em i Kiosk statusu serwera.
+Część pakietu **Idea Forge** dla serwerów domowych.
 
-> **Nazewnictwo:** robocza nazwa podczas wydzielania z `myhome` to była
-> „Homepage" — zmieniona na `IF-startpage`, żeby uniknąć podszywania się
-> pod istniejący, znany projekt open source o tej samej nazwie
-> (gethomepage.dev) oraz inne dashboardy tej niszy (Homarr, Heimdall,
-> Dashy, Homer, Flame).
+> **Nazwa:** projekt nazywa się `IF-startpage`, a nie „Homepage”, żeby nie mylić go
+> z istniejącym projektem open source o tej nazwie (gethomepage.dev) ani z innymi
+> dashboardami tej niszy (Homarr, Heimdall, Dashy, Homer, Flame).
 
-## Ścisła relacja z IF-home-server
+## Relacja z IF-home-server
 
-**`IF-startpage` nie jest projektem w pełni oderwanym od reszty pakietu
-IdeaForge — jest ściśle powiązana z instalatorem
-[`IF-home-server`](https://github.com/if-faber/IF-home-server).**
-`IF-home-server` stawia bazowy system serwera domowego (Cockpit, Samba,
-serwer druku, Dockge), a `IF-startpage` jest jego stroną startową —
-punktem wejścia, z którego korzysta się z tego, co instalator postawił.
-Razem tworzą kompletny pakiet: strona startowa + panel administracyjny +
-udostępnianie plików + serwer druku.
+`IF-startpage` jest stroną startową serwera postawionego instalatorem
+[`IF-home-server`](https://github.com/if-faber/IF-home-server) (Cockpit, Samba,
+serwer druku, Dockge). Razem tworzą pakiet: strona startowa + panel administracyjny
++ udostępnianie plików + serwer druku.
 
-Da się uruchomić `IF-startpage` samodzielnie, na dowolnym Dockerze, bez
-`IF-home-server` — ale docelowe, zamierzone środowisko dla tego projektu to
-serwer postawiony przez `IF-home-server`. Zależność jest jednokierunkowa:
-`IF-startpage` nie wymaga niczego z `IF-home-server` do działania (brak
-twardych zależności w kodzie), ale filozofia, konwencje (struktura
-`docker/app/` + `docker/app-data/`, zarządzanie stosami przez Dockge) i
-docelowy kontekst użycia są wspólne i celowo spójne.
+Da się ją uruchomić samodzielnie na dowolnym Dockerze — w kodzie nie ma zależności
+od `IF-home-server`. Wspólne są konwencje: katalogi `docker/app/` i `docker/app-data/`
+oraz zarządzanie stosami przez Dockge.
 
 ## Funkcje
 
-- **Strona Główna** — kafelki linków w stylu Glassmorphism, motyw dzień/noc,
-  chowany sidebar.
-- **Zaplecze** (CMS, chronione PIN-em) — zakładki systemowe:
-  - Centrum Alertów (stan kontenerów, sprzęt)
-  - Diagnostyka Serwera / Top (CPU, RAM, dyski, sieć, procesy) — panel
-    inline, bez okien modalnych
-  - Statystyki Live (ten sam silnik diagnostyki, jako osobna zakładka)
-  - Aktualizacje (pakiety systemowe apt + wersje kontenerów Docker —
-    odczytuje i podmienia tag wersji bezpośrednio w `compose.yaml` innych
-    stosów, patrz wymagany wolumen `/host-apps` niżej)
-  - Helper & System, Wygląd Zaplecza (edytor CSS)
-- **Kiosk statusu serwera** — 4 zakładki: Status serwera (z rozwijanym
-  panelem szczegółowej diagnostyki), Live (podgląd zużycia per-kontener w
-  stylu `ctop`, natywnie, bez iframe), Status kontenerów, Radio.
+- **Strona Główna** — kafelki linków w sekcjach, motyw dzień/noc, chowany pasek boczny,
+  widżet CPU/RAM/temperatury w nagłówku.
+- **Zaplecze** (chronione PIN-em):
+  - Centrum Alertów — stan kontenerów, temperatura, RAM, dyski, logi kontenerów,
+  - Diagnostyka Serwera (Top) i Statystyki Live — CPU, RAM, dyski, sieć, procesy,
+  - Aktualizacje kontenerów — porównuje wersje obrazów z najnowszymi stabilnymi
+    i podmienia tag wersji w `compose.yaml` wybranego stosu,
+  - Helper & System, edytor wyglądu, ustawienia Kiosku.
+- **Kiosk statusu serwera** — Status serwera, Live (zużycie per kontener),
+  Status kontenerów, Radio.
 
 ## Wymagania
 
-- Docker + Docker Compose (zalecane zarządzanie stosem przez
-  [Dockge](https://github.com/louislam/dockge), zgodnie z konwencją
-  pakietu IdeaForge — zobacz `IF-home-server`).
-- Zamontowany `/var/run/docker.sock` — potrzebny do Diagnostyki/Top,
-  Statusu kontenerów i zakładki Aktualizacje (kontener ma wgląd w Dockera
-  hosta).
-- Zamontowany katalog `docker/app/` hosta jako `/host-apps` (**wymagane**
-  przez zakładkę Aktualizacje — bez tego wolumenu podmiana wersji
-  kontenera w UI zwróci błąd 404, bo backend nie znajdzie pliku
-  `compose.yaml` stosu, który ma zaktualizować).
+- Docker z Docker Compose (zalecane zarządzanie przez Dockge — zobacz `IF-home-server`).
+- Zamontowany `/var/run/docker.sock` — dla Diagnostyki, Statusu kontenerów i Aktualizacji.
+- Zamontowany katalog `docker/app/` hosta jako `/host-apps` — dla zakładki Aktualizacje
+  (bez niego zmiana wersji kontenera zwróci błąd 404).
 
-> **Uwaga:** dostęp do `docker.sock` i zapis do `docker/app/` daje kontenerowi praktycznie pełną kontrolę nad serwerem. Ustaw silny `DASHBOARD_PIN` i nie wystawiaj zaplecza do internetu.
+## Bezpieczeństwo — przeczytaj przed instalacją
+
+Dostęp do `docker.sock` i zapis do `docker/app/` daje kontenerowi praktycznie pełną
+kontrolę nad serwerem. Dlatego:
+
+- **Zmień PIN** z domyślnego `1234` — w `compose.yaml` przed pierwszym uruchomieniem
+  albo w Zapleczu (Helper & System). PIN ustawiony w Zapleczu ma pierwszeństwo przed
+  tym z `compose.yaml`.
+- **Nie wystawiaj strony do internetu.** Jest przeznaczona do sieci domowej
+  (z zewnątrz — przez VPN).
+- Po 5 błędnych próbach PIN-u z jednego adresu Zaplecze blokuje się na minutę,
+  przy kolejnych seriach coraz dłużej (maks. 15 minut).
+- Bez PIN-u działa tylko podgląd: kafelki, statystyki serwera, lista kontenerów
+  i alerty (tego potrzebuje Kiosk). Edycja kafelków, logi kontenerów, sprawdzanie
+  portów i zmiany ustawień wymagają PIN-u.
 
 ## Obraz kontenera
 
-`IF-startpage` to gotowy obraz kontenera — nie buduje się go lokalnie przy
-każdej instalacji. Obraz jest budowany i publikowany automatycznie przez
-**GitHub Actions** (`.github/workflows/docker-publish.yml`) przy każdym
-tagu wersji (`vX.Y.Z`) i wypychany do **GitHub Container Registry**:
+Obraz jest budowany automatycznie przez GitHub Actions
+(`.github/workflows/docker-publish.yml`) przy każdym tagu wersji `vX.Y.Z`
+i publikowany w GitHub Container Registry:
 
-```
+```text
 ghcr.io/if-faber/if-startpage:vX.Y.Z
 ghcr.io/if-faber/if-startpage:latest
 ```
 
-Publiczny, wersjonowany obraz — do pobrania skądkolwiek (nie tylko z sieci
-domowej), zgodnie z tym, że `IF-startpage` jest częścią publicznego pakietu
-IdeaForge. Wdrożenie odbywa się przez [Dockge](https://github.com/louislam/dockge),
-zgodnie z konwencją dwufolderową pakietu (`docker/app/` + `docker/app-data/`,
-zobacz `IF-home-server`).
-
 ## Uruchomienie
 
-**Zanim wdrożysz ten stos przez Dockge**, utwórz najpierw foldery na dane
-trwałe i nadaj uprawnienia (poniżej i w przykładzie compose.yaml zamień
-`TWOJA-NAZWA-UZYTKOWNIKA` na swoją prawdziwą nazwę użytkownika — sprawdź
-komendą `echo $HOME`, np. `/home/marek`):
+W komendach i w `compose.yaml` poniżej:
 
-```
-mkdir -p ~/docker/app-data/if-startpage/config
-mkdir -p ~/docker/app-data/if-startpage/backups
-sudo chown -R $(whoami):$(whoami) ~/docker/app-data/if-startpage
-```
+`{user}` — twoja nazwa użytkownika (sprawdzisz ją komendą `whoami`)
 
-W pliku `compose.yaml` używaj **pełnych ścieżek** (`/home/<Twoja-nazwa>/...`),
-a nie ścieżek względnych (`../../app-data/...`) — pełne ścieżki zawsze
-wskazują na właściwe miejsce, niezależnie od tego, jak Dockge akurat widzi
-swój katalog stosów (patrz sekcja "Jak bezpiecznie dodać nowy kontener
-(stos) przez Dockge" w README `IF-home-server`):
+1. Utwórz foldery na dane trwałe:
 
-```yaml
-services:
-  if-startpage:
-    image: ghcr.io/if-faber/if-startpage:v0.1.4
-    container_name: if-startpage
-    restart: unless-stopped
-    ports:
-      - "80:3010"
-    environment:
-      - DASHBOARD_PIN=1234   # ZMIEŃ przed wystawieniem serwera poza zaufaną sieć domową
-      - APP_BASE_DIR=/app
-      - CONFIG_DIR=/app/config
-      - WWW_DIR=/app/www
-      - HELPER_DIR=/app/www-helper
-      - BACKUP_DIR=/app/backups
-      - HOST_APPS_DIR=/host-apps
-    volumes:
-      # Konwencja dwufolderowa: ten plik leży w docker/app/if-startpage/,
-      # dane trwałe w docker/app-data/if-startpage/. UŻYWAJ PEŁNEJ ŚCIEŻKI
-      # zaczynającej się od /home/<nazwa-uzytkownika>/, NIE ../../ — patrz
-      # wyżej dlaczego.
-      - /home/TWOJA-NAZWA-UZYTKOWNIKA/docker/app-data/if-startpage/config:/app/config
-      - /home/TWOJA-NAZWA-UZYTKOWNIKA/docker/app-data/if-startpage/backups:/app/backups
-      # Wymagane przez zakładkę Aktualizacje (patrz "Wymagania" wyżej).
-      - /home/TWOJA-NAZWA-UZYTKOWNIKA/docker/app:/host-apps
-      - /var/run/docker.sock:/var/run/docker.sock
-```
+   ```bash
+   mkdir -p /home/{user}/docker/app-data/if-startpage/config
+   mkdir -p /home/{user}/docker/app-data/if-startpage/backups
+   ```
 
-## Relacja z IF-MyHome
+2. W Dockge utwórz nowy stos `if-startpage` i wklej zawartość pliku
+   [`compose.yaml`](compose.yaml) z tego repo.
+3. Zamień w nim każde `{user}` na swoją nazwę użytkownika i ustaw własny `DASHBOARD_PIN`.
+4. Wdróż stos. Strona będzie pod adresem `http://adres-serwera/`.
 
-`IF-startpage` jest też obrazem bazowym dla pełnej, rodzinnej wersji
-pakietu: `IF-MyHome` buduje się na nim (multi-stage Docker build,
-`FROM ... AS base`) i dokłada moduły rodzinne (Kiosk Kuchenny, Karteczki,
-Homedocs). Poprawka w kodzie bazowym trafia do obu produktów przy
-najbliższym buildzie `IF-MyHome`.
+Pełne ścieżki (`/home/{user}/...`) zamiast względnych (`../../...`) zawsze wskazują
+właściwe miejsce, niezależnie od tego, jak Dockge widzi swój katalog stosów.
+
+### Ustawienia opcjonalne (zmienne środowiskowe)
+
+- `DOCKER_VERSION_EXCLUDE` — kontenery pomijane przy sprawdzaniu wersji, po przecinku
+  (np. obrazy budowane lokalnie).
+- `DOCKER_STACK_OVERRIDES` — gdy nazwa kontenera różni się od nazwy stosu lub serwisu,
+  w formacie JSON, np. `{"wordpress_db":{"stack":"wordpress","service":"db"}}`.
+
+## Znane ograniczenia
+
+- **Aktualizacje pakietów systemowych (apt)** nie są sprawdzane z wnętrza kontenera —
+  kontener nie widzi pakietów serwera. Zakładka odsyła do Cockpit (port 9090).
+- **Dyski** w Diagnostyce pokazują to, co widzi kontener — zwykle dysk systemowy.
 
 ## Dokumentacja i pytania
 
-Pełna dokumentacja (krok po kroku, ze zdjęciami) jest w przygotowaniu. Projekt wciąż się rozwija, a nowe pomysły i rozwiązania nieco opóźniają jej wydanie. Coś jest niejasne albo nie działa? Zapytaj lub zgłoś błąd w [Issues](https://github.com/if-faber/IF-startpage/issues). Odpowiadam zwykle raz w tygodniu.
+Pełna dokumentacja krok po kroku, ze zdjęciami, jest w przygotowaniu.
+Coś jest niejasne albo nie działa? Zgłoś to w [Issues](../../issues).
+Odpowiadam zwykle raz w tygodniu.
+
+## Podziękowania
+
+Ikony usług pochodzą z projektu
+[dashboard-icons](https://github.com/homarr-labs/dashboard-icons).
+Szczegóły i licencje materiałów osób trzecich: [THIRD-PARTY.md](THIRD-PARTY.md).
 
 ## Licencja
 
-MIT — zobacz [LICENSE](./LICENSE).
+MIT — zobacz [LICENSE](LICENSE).
 
-## Status
+## Historia zmian
 
-Kod na bieżąco rozwijany — pełna historia zmian w
-[`version-changelog.md`](./version-changelog.md).
+[version-changelog.md](version-changelog.md)

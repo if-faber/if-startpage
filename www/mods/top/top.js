@@ -1,6 +1,6 @@
 /* ==========================================================================
    Autorski Moduł www/mods/top/top.js — Glassmorphism Server Diagnostics
-   W 100% zintegrowany ze stylami i motywem MyHome
+   W 100% zintegrowany ze stylami i motywem IF-startpage
 
    Silnik diagnostyki jest reużywalny: window.TopDiagnostics.mount(root)
    montuje panel (nagłówek + ciało + stopka Pauza/Odśwież) w dowolnym

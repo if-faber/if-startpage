@@ -1,4 +1,4 @@
-// secure.js — Logowanie i autoryzacja Zaplecza MyHome (mods/admin)
+// secure.js — Logowanie i autoryzacja Zaplecza IF-startpage (mods/admin)
 
 async function unlockAdmin(e) {
   if (e && e.preventDefault) e.preventDefault();

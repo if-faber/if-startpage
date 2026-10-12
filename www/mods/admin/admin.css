@@ -1,5 +1,5 @@
 /* ==========================================================================
-   Autorski Moduł Zaplecza MyHome: www/mods/admin/admin.css
+   Autorski Moduł Zaplecza IF-startpage: www/mods/admin/admin.css
    Glassmorphism Admin Dashboard Theme & Components
    ========================================================================== */
 
@@ -15,7 +15,7 @@ select:-webkit-autofill {
   transition: background-color 5000s ease-in-out 0s;
 }
 
-/* Ekran Blokady PIN (W 100% ujednolicony z oknami modalnymi MyHome) */
+/* Ekran Blokady PIN (W 100% ujednolicony z oknami modalnymi IF-startpage) */
 .admin-lock-screen {
   display: flex;
   justify-content: center;

@@ -1,26 +1,31 @@
+# IF-startpage — przykładowy compose.yaml do wdrożenia przez Dockge.
+#
+# Zanim wdrożysz: zamień każde {user} na swoją nazwę użytkownika.
+# {user} — twoja nazwa użytkownika (sprawdzisz ją komendą: whoami)
+#
+# Konwencja dwufolderowa pakietu Idea Forge:
+#   ten plik leży w   /home/{user}/docker/app/if-startpage/compose.yaml
+#   dane trwałe w     /home/{user}/docker/app-data/if-startpage/
+# Używamy pełnych ścieżek — zawsze wskazują właściwe miejsce, niezależnie
+# od tego, jak Dockge widzi swój katalog stosów.
 services:
   if-startpage:
-    image: ghcr.io/if-faber/if-startpage:v0.1.4
+    image: ghcr.io/if-faber/if-startpage:v0.1.5
     container_name: if-startpage
     restart: unless-stopped
     ports:
       - "80:3010"
     environment:
-      - DASHBOARD_PIN=1234   # ZMIEN przed wystawieniem serwera poza zaufana siec domowa
-      - APP_BASE_DIR=/app
+      # ZMIEŃ przed pierwszym uruchomieniem. Później PIN zmienisz też w Zapleczu.
+      - DASHBOARD_PIN=1234
       - CONFIG_DIR=/app/config
-      - WWW_DIR=/app/www
-      - HELPER_DIR=/app/www-helper
       - BACKUP_DIR=/app/backups
       - HOST_APPS_DIR=/host-apps
     volumes:
-      # Zgodnie z konwencja dwufolderowa repo IF-home-server: ten plik lezy w
-      # docker/app/if-startpage/, dane trwale w ../../app-data/if-startpage/.
-      - ../../app-data/if-startpage/config:/app/config
-      - ../../app-data/if-startpage/backups:/app/backups
-      # Wymagane przez zakladke "Aktualizacje" w Zapleczu - odczytuje I ZAPISUJE
-      # tagi wersji w compose.yaml innych stosow (docker/app/<stos>/compose.yaml).
-      # Musi wskazywac na caly docker/app/, nie tylko na wlasny podfolder.
-      - ../../app:/host-apps
-      # Diagnostyka/Top, Status kontenerow, Aktualizacje - wglad w Dockera hosta.
+      - /home/{user}/docker/app-data/if-startpage/config:/app/config
+      - /home/{user}/docker/app-data/if-startpage/backups:/app/backups
+      # Zakładka Aktualizacje: odczyt i zapis tagów wersji w compose.yaml
+      # innych stosów — dlatego cały katalog docker/app/, nie tylko ten stos.
+      - /home/{user}/docker/app:/host-apps
+      # Diagnostyka, Status kontenerów, Aktualizacje — wgląd w Dockera hosta.
       - /var/run/docker.sock:/var/run/docker.sock

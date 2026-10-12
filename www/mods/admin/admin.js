@@ -1,4 +1,4 @@
-// admin.js — Główne Zaplecze Administracyjne MyHome (Router i Inicjalizacja: mods/admin)
+// admin.js — Główne Zaplecze Administracyjne IF-startpage (Router i Inicjalizacja: mods/admin)
 
 const state = {
   adminPin: null,
