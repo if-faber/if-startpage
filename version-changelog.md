@@ -4,6 +4,20 @@ Nowe wpisy dopisujemy na górze.
 
 ---
 
+## v0.1.6.2 — 2026-10-12
+
+Nowa ikona i uporządkowane menu Strony Głównej.
+
+- **Ikona IF-startpage** (dom z kafelkami w kolorach Idea Forge): logo w nagłówku, favicon, ikona na telefonie. Źródło: `www/images/if-startpage.svg`.
+- **Menu na dole paska bocznego:** zamiast pięciu ikon bez podpisów — przełącznik ☀️/🌙 i jeden przycisk ⚙️ z rozwijanym menu z podpisami: Wygląd (na żywo), Sekcje i kafelki, Zaplecze, Zablokuj/Odblokuj edycję.
+- **Dzwonek alertów** przeniesiony do nagłówka, obok wyszukiwarki.
+- **Stopka** „created by Idea Forge” pod menu.
+- **Przyciski „+ Dodaj sekcję” i „+ Dodaj link”** zawsze na samym dole widoku (przyklejone do dołu przy przewijaniu). Bez odblokowanej edycji najpierw pytają o PIN.
+- Podpowiedź na pustej stronie wskazuje przycisk „+ Dodaj sekcję”.
+- Naprawione: manifest aplikacji odsyłał do nieistniejącego pliku `logo-512.png`.
+
+---
+
 ## v0.1.6.1 — 2026-10-12
 
 Tryb dzień / noc na Stronie Głównej.

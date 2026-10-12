@@ -22,7 +22,8 @@ oraz zarządzanie stosami przez Dockge.
 ## Funkcje
 
 - **Strona Główna** — kafelki linków w sekcjach, tryb dzień/noc (przełącznik ☀️/🌙 na dole
-  paska bocznego), chowany pasek boczny, widżet CPU/RAM/temperatury w nagłówku.
+  paska bocznego), menu ⚙️ (wygląd na żywo, sekcje i kafelki, Zaplecze, blokada edycji),
+  chowany pasek boczny, widżet CPU/RAM/temperatury i dzwonek alertów w nagłówku.
 - **Zaplecze** (chronione PIN-em):
   - Centrum Alertów — stan kontenerów, temperatura, RAM, dyski, logi kontenerów,
   - Diagnostyka Serwera (Top) i Statystyki Live — CPU, RAM, dyski, sieć, procesy,

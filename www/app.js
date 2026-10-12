@@ -165,13 +165,18 @@ function appShell() {
         </div>
         <nav id="navigation"></nav>
         <div class="sidebar-actions">
-          <div class="sidebar-icon-menu">
-            <button type="button" class="sidebar-icon-btn" id="sidebarIconAlerts" title="Centrum Powiadomień i Alertów">🔔<span class="sidebar-alert-badge" id="sidebarAlertBadge" style="display:none;">0</span></button>
-            <button type="button" class="sidebar-icon-btn" id="sidebarIconMode" title="Tryb dzień / noc" aria-label="Przełącz tryb dzień / noc">${modeToggleIcon()}</button>
-            <button type="button" class="sidebar-icon-btn" id="sidebarIconTheme" title="Edytor wyglądu (CSS)">🎨</button>
-            <a href="./mods/admin/" class="sidebar-icon-btn" id="sidebarIconAdmin" title="Zaplecze Administratora (CMS)">🛠️</a>
-            <button type="button" class="sidebar-icon-btn" id="sidebarIconLock" title="Zablokuj sesję">🔒</button>
+          <div class="sidebar-menu" id="sidebarMenu" role="menu" hidden>
+            <button type="button" role="menuitem" data-menu-action="appearance">🎨 Wygląd (na żywo)</button>
+            <button type="button" role="menuitem" data-menu-action="sections">✏️ Sekcje i kafelki</button>
+            <a href="./mods/admin/" role="menuitem">🛠️ Zaplecze</a>
+            <div class="sidebar-menu-sep" role="separator"></div>
+            <button type="button" role="menuitem" data-menu-action="lock" id="sidebarMenuLock">🔒 Zablokuj edycję</button>
           </div>
+          <div class="sidebar-tools">
+            <button type="button" class="sidebar-icon-btn" id="sidebarIconMode" title="Tryb dzień / noc" aria-label="Przełącz tryb dzień / noc">${modeToggleIcon()}</button>
+            <button type="button" class="sidebar-icon-btn" id="sidebarMenuButton" title="Ustawienia" aria-label="Ustawienia" aria-haspopup="menu" aria-expanded="false">⚙️</button>
+          </div>
+          <div class="sidebar-footer">created by <strong>Idea Forge</strong></div>
         </div>
       </aside>
       <main class="main">
@@ -189,6 +194,7 @@ function appShell() {
             <div class="header-stat is-loading"><span>RAM</span><strong>--</strong></div>
           </div>
           <div class="toolbar-actions" id="toolbarActions"></div>
+          <button type="button" class="sidebar-icon-btn header-bell" id="sidebarIconAlerts" title="Powiadomienia i alerty" aria-label="Powiadomienia i alerty">🔔<span class="sidebar-alert-badge" id="sidebarAlertBadge" style="display:none;">0</span></button>
         </header>
         <div id="headerAlert" class="header-alert-box" style="display: none;"></div>
         <section id="content"></section>
@@ -451,20 +457,45 @@ function bindShell() {
       details.scrollIntoView({ behavior: "smooth", block: "start" });
     }
   });
-  document.querySelector("#sidebarIconTheme")?.addEventListener("click", () => {
-    const pin = getStoredAdminPin();
-    if (!pin) {
-      requestAdminPin("appearance");
-    } else {
-      openAppearancePanel();
-    }
+  // Menu ⚙️ na dole paska bocznego (otwiera się w górę).
+  const menu = document.querySelector("#sidebarMenu");
+  const menuButton = document.querySelector("#sidebarMenuButton");
+  const closeMenu = () => {
+    if (!menu || menu.hidden) return;
+    menu.hidden = true;
+    menuButton?.setAttribute("aria-expanded", "false");
+  };
+  menuButton?.addEventListener("click", (event) => {
+    event.stopPropagation();
+    const opening = menu.hidden;
+    menu.hidden = !opening;
+    menuButton.setAttribute("aria-expanded", String(opening));
+    const lock = document.querySelector("#sidebarMenuLock");
+    if (lock) lock.textContent = getStoredAdminPin() ? "🔒 Zablokuj edycję" : "🔓 Odblokuj edycję";
   });
-  document.querySelector("#sidebarIconLock")?.addEventListener("click", () => {
-    clearStoredAdminPin();
-    showToast("Sesja została zablokowana 🔒");
-    if (state.view === "admin") {
-      state.view = "links";
-      render();
+  document.addEventListener("click", (event) => {
+    if (menu && !menu.hidden && !menu.contains(event.target)) closeMenu();
+  });
+  document.addEventListener("keydown", (event) => { if (event.key === "Escape") closeMenu(); });
+  menu?.addEventListener("click", (event) => {
+    const action = event.target.closest("[data-menu-action]")?.dataset.menuAction;
+    if (!action) return;
+    closeMenu();
+    if (action === "appearance") {
+      if (getStoredAdminPin()) openAppearancePanel(); else requestAdminPin("appearance");
+    } else if (action === "sections") {
+      if (getStoredAdminPin()) openSectionsPanel(); else requestAdminPin("sections");
+    } else if (action === "lock") {
+      if (getStoredAdminPin()) {
+        clearStoredAdminPin();
+        showToast("Edycja zablokowana 🔒");
+        if (state.view === "admin") {
+          state.view = "links";
+          render();
+        }
+      } else {
+        requestAdminPin(null);
+      }
     }
   });
   document.addEventListener("visibilitychange", syncSystemStatsPolling);
@@ -547,13 +578,20 @@ function renderLinks() {
   `;
   document.querySelector("#content").innerHTML = `
     <div class="link-grid" id="linkGrid"></div>
-    ${section ? '<div class="section-footer"><button id="addLink" class="primary" type="button">+ Dodaj link</button></div>' : ""}
+    <div class="content-actions">
+      <button id="addSection" type="button">+ Dodaj sekcję</button>
+      ${section ? '<button id="addLink" class="primary" type="button">+ Dodaj link</button>' : ""}
+    </div>
   `;
   document.querySelector("#search").addEventListener("input", (event) => {
     state.query = event.target.value;
     renderLinkCards();
   });
-  document.querySelector("#addLink")?.addEventListener("click", () => openLinkDialog());
+  document.querySelector("#addLink")?.addEventListener("click", () => withAdminPin(() => openLinkDialog()));
+  document.querySelector("#addSection")?.addEventListener("click", () => withAdminPin(() => {
+    openSectionsPanel();
+    document.querySelector("#sectionName")?.focus();
+  }));
   renderLinkCards();
 }
 
@@ -561,7 +599,7 @@ function renderLinkCards() {
   const section = activeSection();
   const grid = document.querySelector("#linkGrid");
   if (!section) {
-    grid.innerHTML = '<div class="empty"><p style="margin:0">Nie ma jeszcze żadnych kafelków.<br>Wejdź do Zaplecza (🛠️ na dole paska bocznego), zakładka <strong>Homepage</strong>, i dodaj pierwszą sekcję.</p></div>';
+    grid.innerHTML = '<div class="empty"><p style="margin:0">Nie ma jeszcze żadnych kafelków.<br>Kliknij <strong>+ Dodaj sekcję</strong> na dole, a potem dodaj w niej pierwsze linki.</p></div>';
     return;
   }
   const query = state.query.trim().toLowerCase();
@@ -675,6 +713,16 @@ async function deleteLink(link) {
   }
 }
 
+// Uruchamia akcję od razu, jeśli edycja jest odblokowana; inaczej najpierw pyta o PIN.
+function withAdminPin(action) {
+  if (getStoredAdminPin()) {
+    action();
+    return;
+  }
+  state.pendingAction = action;
+  requestAdminPin("action");
+}
+
 function requestAdminPin(panel) {
   state.pendingAdminPanel = panel;
   document.querySelector("#adminPinInput").value = "";
@@ -695,6 +743,11 @@ async function unlockAdminPanel(event) {
     if (state.pendingAdminPanel === "settings") openSettingsPanel();
     else if (state.pendingAdminPanel === "appearance") openAppearancePanel();
     else if (state.pendingAdminPanel === "sections") openSectionsPanel();
+    else if (state.pendingAdminPanel === "action" && typeof state.pendingAction === "function") {
+      const action = state.pendingAction;
+      state.pendingAction = null;
+      action();
+    }
     else if (state.pendingAdminPanel === "admin-view") {
       state.view = "admin";
       render();

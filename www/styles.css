@@ -733,3 +733,102 @@ dialog menu { display: flex; justify-content: flex-end; gap: 8px; margin: 4px 0 
 .appearance-mode-bar label { display: grid; gap: 6px; font-size: 12px; font-weight: 800; text-transform: uppercase; color: var(--text); }
 .appearance-mode-bar select { min-height: 40px; font-size: 15px; font-weight: 700; }
 .appearance-mode-bar p { margin: 0; font-size: 12px; color: var(--muted); }
+
+/* ==========================================================================
+   Pasek boczny: przełącznik trybu + menu ⚙️ + stopka (układ „jeden przycisk”)
+   ========================================================================== */
+.sidebar-actions { position: relative; display: grid; gap: 10px; }
+.sidebar-tools { display: flex; justify-content: center; gap: 10px; }
+.sidebar-tools .sidebar-icon-btn { width: 44px; max-width: 44px; font-size: 18px; }
+.sidebar-actions .sidebar-tools button { justify-content: center; }
+
+.sidebar-menu {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: calc(100% - 4px);
+  display: grid;
+  gap: 2px;
+  padding: 6px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--panel-strong);
+  box-shadow: 0 16px 36px rgb(0 0 0 / 0.35);
+  z-index: 30;
+}
+.sidebar-menu[hidden] { display: none; }
+.sidebar-actions .sidebar-menu button,
+.sidebar-menu a {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+  width: 100%;
+  min-height: 40px;
+  padding: 0 12px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--text);
+  font-family: var(--font-menu);
+  font-size: 14px;
+  text-align: left;
+  text-decoration: none;
+  box-shadow: none;
+  transform: none;
+}
+.sidebar-actions .sidebar-menu button:hover,
+.sidebar-menu a:hover {
+  border-color: transparent;
+  background: var(--accent-soft);
+  color: var(--accent);
+  box-shadow: none;
+  transform: none;
+}
+.sidebar-menu-sep { height: 1px; margin: 4px 6px; background: var(--line); }
+
+.sidebar-footer {
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 11px;
+  text-align: center;
+  letter-spacing: 0.02em;
+}
+.sidebar-footer strong { color: #ff8a2a; font-weight: 800; }
+
+/* Dzwonek alertów w nagłówku */
+.header-bell { width: 44px; max-width: 44px; flex: 0 0 44px; font-size: 18px; align-self: flex-start; }
+
+/* Przyciski „Dodaj sekcję” / „Dodaj link” — zawsze na samym dole widoku */
+.main { display: flex; flex-direction: column; min-height: 100vh; }
+#content { display: flex; flex-direction: column; flex: 1; }
+.content-actions {
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: auto;
+  padding: 18px 0 4px;
+}
+.content-actions::before {
+  content: "";
+  position: absolute;
+  inset: 0 calc(-1 * var(--page-pad-x)) calc(-1 * var(--page-pad-y));
+  z-index: -1;
+  background: linear-gradient(to top, var(--page-bg) 55%, transparent);
+  pointer-events: none;
+}
+.content-actions button {
+  min-height: 42px;
+  padding: 0 16px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: rgb(var(--admin-panel-rgb) / max(var(--admin-panel-alpha), 0.16));
+  color: var(--text);
+  font-weight: 700;
+}
+.content-actions button:hover { border-color: color-mix(in srgb, var(--accent) 40%, transparent); }
+.content-actions button.primary { border-color: var(--accent); background: var(--accent); color: var(--on-accent, #052016); font-weight: 800; }
+.content-actions button.primary:hover { background: color-mix(in srgb, var(--accent) 80%, #ffffff); }
