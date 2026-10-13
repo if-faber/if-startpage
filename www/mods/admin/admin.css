@@ -647,3 +647,25 @@ dialog menu {
 }
 .admin-sidebar .sidebar-tools .admin-logout-btn { color: var(--danger, #ef7777); }
 .admin-sidebar .sidebar-tools .admin-logout-btn:hover { background: color-mix(in srgb, var(--danger, #ef7777) 18%, transparent); color: var(--danger, #ef7777); }
+
+/* Aktualizacje — rodzaje wersji, uwagi, przyciski */
+.upd-tag { display: inline-block; margin-left: 4px; padding: 1px 7px; border-radius: 999px; background: color-mix(in srgb, var(--text) 8%, transparent); color: var(--muted); font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; }
+.upd-tag-ok { background: color-mix(in srgb, #10b981 18%, transparent); color: #10b981; }
+.upd-tag-warn { background: color-mix(in srgb, #f59e0b 18%, transparent); color: #d97706; }
+.upd-patch { font-weight: 700; }
+.upd-major { margin-top: 4px; color: #d97706; font-weight: 700; }
+.upd-local { color: var(--muted); font-style: italic; }
+.upd-link { display: inline-flex; align-items: center; gap: 3px; margin-top: 4px; color: var(--accent); font-size: 11px; text-decoration: none; }
+.upd-link:hover { text-decoration: underline; }
+.upd-note { margin-top: 4px; max-width: 260px; color: var(--muted); font-size: 11px; font-weight: 500; line-height: 1.35; }
+.upd-buttons { display: flex; flex-wrap: wrap; gap: 6px; }
+.admin-app-version { font-weight: 700; color: var(--accent); }
+
+/* Aktualizacje Debiana (lista z pliku od serwera) */
+.sys-upd-box { padding: 12px 16px; border-radius: 10px; background: color-mix(in srgb, #3b82f6 12%, transparent); font-size: 13px; line-height: 1.5; }
+.sys-upd-ok { padding: 12px 16px; border-radius: 10px; background: color-mix(in srgb, #10b981 12%, transparent); color: #10b981; font-size: 13px; font-weight: 600; }
+.sys-upd-warn { padding: 10px 14px; border-radius: 10px; background: color-mix(in srgb, #f59e0b 14%, transparent); font-size: 13px; font-weight: 600; }
+.sys-upd-stale { margin-bottom: 8px; color: #d97706; font-size: 12px; font-weight: 600; }
+.sys-upd-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.sys-upd-table th { padding: 6px 10px; border-bottom: 1px solid var(--line); color: var(--muted); font-size: 11px; font-weight: 800; text-align: left; text-transform: uppercase; }
+.sys-upd-table td { padding: 6px 10px; border-bottom: 1px solid var(--line); }

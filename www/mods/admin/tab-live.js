@@ -11,7 +11,7 @@ function renderLiveTab() {
         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 12px;">
           <div>
             <h2>${uiIcon("status", 22)} Statystyki Live</h2>
-            <p class="settings-note">Szczegółowa diagnostyka serwera na żywo — obciążenie CPU per rdzeń, temperatury, pamięć RAM, dyski, ruch sieciowy, procesy hosta i kontenery Docker. Dane odświeżają się automatycznie co 2,5 s.</p>
+            <p class="settings-note">Szczegółowa diagnostyka serwera na żywo — obciążenie CPU per rdzeń, temperatury, pamięć RAM, dyski, ruch sieciowy, procesy kontenera IF-startpage i kontenery Docker. Dane odświeżają się automatycznie co 2,5 s.</p>
           </div>
         </div>
         <div id="liveStatsMount"></div>

@@ -448,14 +448,20 @@ function renderIncidents(alerts) {
 
   container.innerHTML = alerts.map((a) => {
     const isCritical = a.severity === "critical";
+    const isInfo = a.severity === "info";
+    const level = isCritical ? "critical" : isInfo ? "info" : "warning";
+    // Informacja o aktualizacjach prowadzi do zakładki Aktualizacje, nie do logów.
+    const action = a.type === "updates"
+      ? `<button type="button" class="incident-bar-btn" onclick="switchTab('updates')">${uiIcon("package", 14)} Aktualizacje</button>`
+      : a.resource ? `<button type="button" class="incident-bar-btn" onclick="showContainerLogs('${escapeHtml(a.resource)}')">${uiIcon("logs", 14)} Logi</button>` : "";
     return `
-      <div class="incident-bar ${isCritical ? "critical" : "warning"}">
-        <span class="incident-bar-icon">${uiIcon(isCritical ? "siren" : "warning", 24)}</span>
+      <div class="incident-bar ${level}">
+        <span class="incident-bar-icon">${uiIcon(isCritical ? "siren" : isInfo ? "package" : "warning", 24)}</span>
         <div class="incident-bar-text">
           <strong>${escapeHtml(a.title)}</strong>
           <span>${escapeHtml(a.message)}</span>
         </div>
-        ${a.resource ? `<button type="button" class="incident-bar-btn" onclick="showContainerLogs('${escapeHtml(a.resource)}')">${uiIcon("logs", 14)} Logi</button>` : ""}
+        ${action}
       </div>
     `;
   }).join("");

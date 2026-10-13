@@ -87,8 +87,19 @@ function renderNavIcons() {
   });
 }
 
+// Wersja IF-startpage pod nazwą „Zaplecze” (numer obrazu; obraz lokalny = „tester”).
+function loadAppVersion() {
+  request("/api/app/version").then((data) => {
+    const el = document.querySelector("#adminAppVersion");
+    if (!el || !data?.version) return;
+    el.textContent = data.local ? `· tester (${data.version})` : `· ${data.version}`;
+    el.title = data.local ? "Obraz lokalny (wersja robocza) — kod z folderu src/" : "Wersja IF-startpage (numer obrazu)";
+  }).catch(() => {});
+}
+
 function init() {
   renderNavIcons();
+  loadAppVersion();
   if (typeof bindAdminModeToggle === "function") bindAdminModeToggle();
   const pinInput = document.querySelector("#adminPinInput");
   if (pinInput) {

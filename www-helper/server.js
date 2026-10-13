@@ -512,14 +512,13 @@ function parseImageRef(image) {
   return { host: null, repository };
 }
 
-async function fetchDockerHubStableTag(repository) {
+async function fetchDockerHubStableTags(repository) {
   const url = `https://hub.docker.com/v2/repositories/${repository}/tags?page_size=100&ordering=last_updated`;
   const response = await fetch(url, { signal: AbortSignal.timeout(6000) });
   if (!response.ok) throw new Error(`Docker Hub HTTP ${response.status}`);
   const data = await response.json();
   const tags = (data.results || []).map(t => t.name).filter(isStableTag);
-  tags.sort(compareVersionTags);
-  return tags.length ? tags[tags.length - 1] : null;
+  return tags.sort(compareVersionTags);
 }
 
 async function fetchOciRegistryToken(host, repository) {
@@ -541,7 +540,7 @@ async function fetchOciRegistryToken(host, repository) {
   return tokenData.token || tokenData.access_token || null;
 }
 
-async function fetchOciStableTag(host, repository) {
+async function fetchOciStableTags(host, repository) {
   const token = await fetchOciRegistryToken(host, repository);
   const headers = token ? { Authorization: `Bearer ${token}` } : {};
   const res = await fetch(`https://${host}/v2/${repository}/tags/list`, {
@@ -551,19 +550,114 @@ async function fetchOciStableTag(host, repository) {
   if (!res.ok) throw new Error(`Registry HTTP ${res.status}`);
   const data = await res.json();
   const tags = (data.tags || []).filter(isStableTag);
-  tags.sort(compareVersionTags);
-  return tags.length ? tags[tags.length - 1] : null;
+  return tags.sort(compareVersionTags);
 }
 
-async function fetchLatestStableTag(image) {
+// ─── Sprawdzanie wersji: raz dziennie (wynik w config/versions-cache.json) albo „Sprawdź teraz” ───
+const VERSIONS_CACHE_FILE = path.join(CONFIG_DIR, "versions-cache.json");
+const VERSIONS_CACHE_MS = 24 * 60 * 60 * 1000;
+
+function imageWithoutTag(image) {
   const { host, repository } = parseImageRef(image);
+  return host ? `${host}/${repository}` : repository;
+}
+
+function loadVersionsCache() {
   try {
-    if (host) return await fetchOciStableTag(host, repository);
-    return await fetchDockerHubStableTag(repository);
-  } catch (error) {
-    console.error(`Sprawdzanie najnowszej wersji nie powiodło się dla ${image}:`, error.message);
-    return null;
+    const data = JSON.parse(fs.readFileSync(VERSIONS_CACHE_FILE, "utf8"));
+    return data && typeof data.images === "object" ? data : { images: {} };
+  } catch {
+    return { images: {} };
   }
+}
+
+function saveVersionsCache(cache) {
+  try {
+    ensureConfigDir(VERSIONS_CACHE_FILE);
+    fs.writeFileSync(VERSIONS_CACHE_FILE, JSON.stringify(cache, null, 2), "utf8");
+  } catch (error) {
+    console.error("Zapis versions-cache.json nie powiódł się:", error.message);
+  }
+}
+
+// Lista stabilnych wersji obrazu (z pamięci, jeśli świeża — chyba że force).
+async function getStableTags(image, { force = false } = {}) {
+  const key = imageWithoutTag(image);
+  const cache = loadVersionsCache();
+  const entry = cache.images[key];
+  if (!force && entry && Date.now() - entry.checkedAt < VERSIONS_CACHE_MS) return entry;
+  const { host, repository } = parseImageRef(image);
+  let tags = null;
+  let error = null;
+  try {
+    tags = host ? await fetchOciStableTags(host, repository) : await fetchDockerHubStableTags(repository);
+  } catch (err) {
+    error = err.message;
+    console.error(`Sprawdzanie wersji nie powiodło się dla ${image}:`, err.message);
+  }
+  const fresh = { tags, error, checkedAt: Date.now() };
+  cache.images[key] = fresh;
+  saveVersionsCache(cache);
+  return fresh;
+}
+
+// Obraz lokalny = zbudowany na serwerze, nigdy nie pobrany z rejestru (brak RepoDigests).
+async function isLocalImage(image) {
+  try {
+    const { stdout } = await execFileAsync("docker", ["image", "inspect", image, "--format", "{{json .RepoDigests}}"], { timeout: 3000 });
+    const digests = JSON.parse(stdout.trim() || "[]");
+    return !Array.isArray(digests) || digests.length === 0;
+  } catch {
+    return false;
+  }
+}
+
+// „Linia” wersji: przy wersjach 1+ — główna.podrzędna (11.8), przy 0.x — 0.podrzędna (0.1).
+// Poprawka = nowsza wersja w tej samej linii; nowa główna wersja = nowsza w innej linii.
+function versionLine(tag) {
+  const parts = String(tag).replace(/^v/, "").split(".").map(Number);
+  return `${parts[0] || 0}.${parts[1] || 0}`;
+}
+
+function classifyUpdates(installed, tags) {
+  if (!installed || !Array.isArray(tags) || !tags.length) return { latestStable: tags?.length ? tags[tags.length - 1] : null, latestPatch: null, latestMajor: null };
+  const newer = tags.filter((tag) => compareVersionTags(tag, installed) > 0);
+  const line = versionLine(installed);
+  const patches = newer.filter((tag) => versionLine(tag) === line);
+  const majors = newer.filter((tag) => versionLine(tag) !== line);
+  return {
+    latestStable: tags[tags.length - 1],
+    latestPatch: patches.length ? patches[patches.length - 1] : null,
+    latestMajor: majors.length ? majors[majors.length - 1] : null
+  };
+}
+
+// „Co nowego”: lista zmian / strona obrazu.
+function changelogUrl(image) {
+  const { host, repository } = parseImageRef(image);
+  if (host === "ghcr.io") {
+    const [owner, name] = repository.split("/");
+    if (owner === "if-faber") return `https://github.com/if-faber/${name}/blob/main/version-changelog.md`;
+    return `https://github.com/${owner}/${name}/releases`;
+  }
+  if (!host) {
+    return repository.startsWith("library/")
+      ? `https://hub.docker.com/_/${repository.slice(8)}`
+      : `https://hub.docker.com/r/${repository}`;
+  }
+  return null;
+}
+
+// Uwagi przy wybranych obrazach (pokazywane pod nazwą kontenera).
+function imageNote(image) {
+  const { host, repository } = parseImageRef(image);
+  if (!host && repository === "library/wordpress") {
+    return "Sam WordPress, wtyczki i motywy aktualizujesz w panelu WordPressa (Kokpit → Aktualizacje). Nowy obraz zmienia tylko PHP i serwer Apache.";
+  }
+  if (!host && (repository === "library/mariadb" || repository === "library/mysql" || repository === "library/postgres")) {
+    return "Baza danych — przed nową główną wersją zrób kopię bazy.";
+  }
+  return "";
 }
 
 async function getInstalledVersionLabel(containerName) {
@@ -2003,50 +2097,115 @@ app.get("/api/docker/containers", async (req, res) => {
   }
 });
 
+// Wersje działających kontenerów (zakładka Aktualizacje, sprawdzanie raz dziennie, dzwonek).
+async function collectVersions({ force = false } = {}) {
+  const { stdout } = await execFileAsync("docker", [
+    "ps",
+    "--format",
+    '{"name":"{{.Names}}","image":"{{.Image}}"}'
+  ], { timeout: 4000 });
+
+  const running = stdout
+    .trim()
+    .split("\n")
+    .filter(Boolean)
+    .map((line) => {
+      try { return JSON.parse(line); } catch { return null; }
+    })
+    .filter(Boolean)
+    .filter((c) => !DOCKER_VERSION_EXCLUDE.has(c.name));
+
+  return Promise.all(running.map(async (c) => {
+    const { stack, service } = resolveStackAndService(c.name);
+    const lastSegment = c.image.split("/").pop();
+    const installedTag = lastSegment.includes(":") ? lastSegment.split(":").pop() : "latest";
+    const [installedLabel, local] = await Promise.all([getInstalledVersionLabel(c.name), isLocalImage(c.image)]);
+    const installedVersion = installedLabel || (isStableTag(installedTag) ? installedTag : null);
+    const base = {
+      container: c.name,
+      stack,
+      service,
+      image: c.image,
+      installedTag,
+      installedVersion,
+      local,
+      note: imageNote(c.image),
+      changelogUrl: local ? null : changelogUrl(c.image),
+      backups: listComposeBackups(stack).length
+    };
+    // Obraz lokalny (np. wersja testowa) — nie ma czego szukać w rejestrach.
+    if (local) return { ...base, latestStable: null, latestPatch: null, latestMajor: null, checkedAt: null };
+    const found = await getStableTags(c.image, { force });
+    return { ...base, ...classifyUpdates(installedVersion, found.tags), checkedAt: found.checkedAt, checkError: found.error || null };
+  }));
+}
+
 app.get("/api/docker/versions", async (req, res) => {
   try {
-    const { stdout } = await execFileAsync("docker", [
-      "ps",
-      "--format",
-      '{"name":"{{.Names}}","image":"{{.Image}}"}'
-    ], { timeout: 4000 });
-
-    const running = stdout
-      .trim()
-      .split("\n")
-      .filter(Boolean)
-      .map((line) => {
-        try { return JSON.parse(line); } catch { return null; }
-      })
-      .filter(Boolean)
-      .filter((c) => !DOCKER_VERSION_EXCLUDE.has(c.name));
-
-    const versions = await Promise.all(running.map(async (c) => {
-      const { stack, service } = resolveStackAndService(c.name);
-      const installedTag = c.image.includes(":") ? c.image.split(":").pop() : "latest";
-
-      const [installedLabel, latestStable] = await Promise.all([
-        getInstalledVersionLabel(c.name),
-        fetchLatestStableTag(c.image)
-      ]);
-
-      return {
-        container: c.name,
-        stack,
-        service,
-        image: c.image,
-        installedTag,
-        installedVersion: installedLabel || (isStableTag(installedTag) ? installedTag : null),
-        latestStable
-      };
-    }));
-
+    const versions = await collectVersions({ force: req.query.refresh === "1" });
     res.set("cache-control", "no-store");
     res.json({ ok: true, versions });
   } catch (error) {
     res.status(500).json({ ok: false, versions: [], message: error.message });
   }
 });
+
+// Sprawdzanie raz dziennie w tle (pierwsze 2 minuty po starcie, potem co 24 h).
+setTimeout(() => collectVersions({ force: true }).catch(() => {}), 2 * 60 * 1000);
+setInterval(() => collectVersions({ force: true }).catch(() => {}), VERSIONS_CACHE_MS);
+
+// ─── Kopie compose: docker/app/<aplikacja>/backup/compose.yaml.<data>, ostatnie 5 ───
+const COMPOSE_BACKUPS_KEEP = 5;
+
+function composeBackupDir(stack) {
+  return path.join(HOST_APPS_DIR, stack, "backup");
+}
+
+function listComposeBackups(stack) {
+  if (!isSafeName(stack)) return [];
+  try {
+    return fs.readdirSync(composeBackupDir(stack))
+      .filter((name) => /^compose\.yaml\.\d{8}-\d{6}$/.test(name))
+      .sort();
+  } catch {
+    return [];
+  }
+}
+
+// Właściciel jak folderu stosu (nie root) — kopie da się normalnie oglądać i usuwać na serwerze.
+function chownLike(target, reference) {
+  try {
+    const ref = fs.statSync(reference);
+    fs.chownSync(target, ref.uid, ref.gid);
+  } catch {}
+}
+
+function backupStamp(date = new Date()) {
+  const pad = (n) => String(n).padStart(2, "0");
+  return `${date.getFullYear()}${pad(date.getMonth() + 1)}${pad(date.getDate())}-${pad(date.getHours())}${pad(date.getMinutes())}${pad(date.getSeconds())}`;
+}
+
+function backupCompose(stack, composePath) {
+  const dir = composeBackupDir(stack);
+  const stackDir = path.dirname(composePath);
+  fs.mkdirSync(dir, { recursive: true });
+  chownLike(dir, stackDir);
+  // Stare kopie „compose.yaml.bak-<ms>” obok compose.yaml przenosimy do backup/.
+  for (const name of fs.readdirSync(stackDir)) {
+    const legacy = name.match(/^compose\.yaml\.bak-(\d+)$/);
+    if (!legacy) continue;
+    const target = path.join(dir, `compose.yaml.${backupStamp(new Date(Number(legacy[1])))}`);
+    if (!fs.existsSync(target)) fs.renameSync(path.join(stackDir, name), target);
+  }
+  const target = path.join(dir, `compose.yaml.${backupStamp()}`);
+  fs.copyFileSync(composePath, target);
+  chownLike(target, composePath);
+  const all = listComposeBackups(stack);
+  for (const old of all.slice(0, Math.max(0, all.length - COMPOSE_BACKUPS_KEEP))) {
+    fs.unlinkSync(path.join(dir, old));
+  }
+  return target;
+}
 
 app.post("/api/docker/update-compose", requirePin, (req, res) => {
   try {
@@ -2115,12 +2274,35 @@ app.post("/api/docker/update-compose", requirePin, (req, res) => {
       });
     }
 
-    fs.copyFileSync(composePath, `${composePath}.bak-${Date.now()}`);
+    backupCompose(stack, composePath);
     fs.writeFileSync(composePath, newLines.join("\n"), "utf8");
 
     res.json({
       ok: true,
       message: `Zapisano tag "${newTag}" w ${stack}/compose.yaml (serwis "${service}"). Restart stosu w Dockge, żeby zastosować zmianę.`
+    });
+  } catch (error) {
+    res.status(500).json({ ok: false, message: error.message });
+  }
+});
+
+// „Cofnij” — przywraca compose.yaml z ostatniej kopii (kopia znika, więc kolejne „Cofnij” idzie dalej wstecz).
+app.post("/api/docker/compose-restore", requirePin, (req, res) => {
+  try {
+    const container = normalizeText(req.body?.container);
+    const { stack } = resolveStackAndService(container);
+    if (!isSafeName(stack)) return res.status(400).json({ ok: false, message: "Niepoprawna nazwa stosu." });
+    const composePath = path.join(HOST_APPS_DIR, stack, "compose.yaml");
+    const backups = listComposeBackups(stack);
+    if (!backups.length) return res.status(404).json({ ok: false, message: `Brak kopii compose.yaml dla „${stack}”.` });
+    const latest = path.join(composeBackupDir(stack), backups[backups.length - 1]);
+    const restored = fs.readFileSync(latest, "utf8");
+    const imageLine = (restored.match(/^\s*image:\s*(\S+)/m) || [])[1] || "";
+    fs.writeFileSync(composePath, restored, "utf8");
+    fs.unlinkSync(latest);
+    res.json({
+      ok: true,
+      message: `Przywrócono compose.yaml stosu „${stack}” z kopii ${backups[backups.length - 1].slice(13)}${imageLine ? ` (obraz ${imageLine})` : ""}. Zrób „Aktualizuj” w Dockge, żeby uruchomić tę wersję.`
     });
   } catch (error) {
     res.status(500).json({ ok: false, message: error.message });
@@ -2281,7 +2463,7 @@ app.get("/api/alerts/summary", async (req, res) => {
         "ps",
         "-a",
         "--format",
-        '{"id":"{{.ID}}","name":"{{.Names}}","state":"{{.State}}","status":"{{.Status}}"}'
+        '{"id":"{{.ID}}","name":"{{.Names}}","image":"{{.Image}}","state":"{{.State}}","status":"{{.Status}}"}'
       ], { timeout: 4000 });
       containers = stdout
         .trim()
@@ -2374,6 +2556,49 @@ app.get("/api/alerts/summary", async (req, res) => {
       console.error("Alerts summary stats error:", statsErr);
     }
 
+    // Dostępne aktualizacje — informacja w dzwonku (nie alarm), z zapamiętanego sprawdzania.
+    try {
+      const cache = loadVersionsCache();
+      const withUpdates = [];
+      for (const c of containers.filter((item) => String(item.state).toLowerCase() === "running")) {
+        const image = c.image || "";
+        if (!image) continue;
+        const entry = cache.images[imageWithoutTag(image)];
+        if (!entry || !Array.isArray(entry.tags)) continue;
+        const lastSegment = image.split("/").pop();
+        const installed = lastSegment.includes(":") ? lastSegment.split(":").pop() : null;
+        const found = classifyUpdates(isStableTag(installed) ? installed : null, entry.tags);
+        if (found.latestPatch || found.latestMajor) withUpdates.push(c.name);
+      }
+      if (withUpdates.length) {
+        alerts.push({
+          id: "updates-available",
+          type: "updates",
+          severity: "info",
+          title: `Dostępne aktualizacje: ${withUpdates.length}`,
+          message: withUpdates.join(", "),
+          resource: "updates",
+          timestamp: new Date().toISOString()
+        });
+      }
+    } catch {}
+
+    // Aktualizacje Debiana (z pliku od serwera) — informacja w dzwonku.
+    const systemUpdates = readSystemUpdates();
+    if (systemUpdates.available && systemUpdates.count) {
+      alerts.push({
+        id: "system-updates-available",
+        type: "updates",
+        severity: "info",
+        title: `Aktualizacje systemu: ${systemUpdates.count}`,
+        message: systemUpdates.securityCount
+          ? `W tym bezpieczeństwa: ${systemUpdates.securityCount}. Instalacja w Cockpit.`
+          : "Instalacja w Cockpit.",
+        resource: "system",
+        timestamp: new Date().toISOString()
+      });
+    }
+
     const criticalCount = alerts.filter((a) => a.severity === "critical").length;
     const warningCount = alerts.filter((a) => a.severity === "warning").length;
 
@@ -2408,18 +2633,68 @@ app.get("/api/alerts/summary", async (req, res) => {
   }
 });
 
-// Pakiety systemowe hosta: kontener widzi tylko własne pakiety (obraz Node.js),
-// a nie pakiety serwera, więc ich nie sprawdzamy — odsyłamy do Cockpit.
+// Pakiety systemowe serwera: kontener ich nie widzi, dlatego serwer raz dziennie zapisuje listę
+// do config/system-updates.json (skrypt extras/system-updates/if-system-updates + zadanie systemd).
+// IF-startpage tylko ją czyta; instalacja aktualizacji — w Cockpit.
+const SYSTEM_UPDATES_FILE = path.join(CONFIG_DIR, "system-updates.json");
+
+function readSystemUpdates() {
+  try {
+    const data = JSON.parse(fs.readFileSync(SYSTEM_UPDATES_FILE, "utf8"));
+    const packages = Array.isArray(data.packages) ? data.packages.map((p) => ({
+      name: normalizeText(p.name),
+      current: normalizeText(p.current),
+      available: normalizeText(p.available),
+      security: p.security === true
+    })).filter((p) => p.name) : [];
+    const checkedAt = Date.parse(data.checkedAt) || null;
+    return {
+      available: true,
+      checkedAt,
+      // Starsze niż 2 dni = zadanie na serwerze chyba nie działa.
+      stale: checkedAt ? Date.now() - checkedAt > 2 * 24 * 60 * 60 * 1000 : true,
+      count: packages.length,
+      securityCount: packages.filter((p) => p.security).length,
+      packages
+    };
+  } catch {
+    return { available: false, count: 0, securityCount: 0, packages: [] };
+  }
+}
+
 app.get("/api/system/updates", (req, res) => {
+  const info = readSystemUpdates();
+  res.set("cache-control", "no-store");
   res.json({
     ok: true,
-    available: false,
-    count: 0,
-    packages: [],
-    message: "Kontener nie widzi pakietów systemowych serwera. Aktualizacje Debiana sprawdzisz w Cockpit (port 9090)."
+    ...info,
+    message: info.available ? "" : "Serwer nie zapisuje jeszcze listy aktualizacji. Instrukcja: README → „Aktualizacje Debiana”. Do tego czasu aktualizacje sprawdzisz w Cockpit (port 9090)."
   });
 });
 
-app.listen(PORT, "0.0.0.0", () => {
+// Wersja IF-startpage (Zaplecze): numer z obrazu tego kontenera; obraz lokalny = „tester”.
+app.get("/api/app/version", async (req, res) => {
+  try {
+    const { stdout } = await execFileAsync("docker", ["inspect", os.hostname(), "--format", "{{.Config.Image}}"], { timeout: 3000 });
+    const image = stdout.trim();
+    const lastSegment = image.split("/").pop();
+    const tag = lastSegment.includes(":") ? lastSegment.split(":").pop() : "";
+    res.json({ version: isStableTag(tag) ? tag : tag || null, local: await isLocalImage(image) });
+  } catch {
+    res.json({ version: null, local: false });
+  }
+});
+
+const server = app.listen(PORT, "0.0.0.0", () => {
   console.log(`WWW Helper running on port ${PORT}`);
 });
+
+// Grzeczne wyłączanie: przy restarcie/aktualizacji Docker wysyła SIGTERM. Bez obsługi
+// czekał 10 s i zabijał proces („exited with code 137”). Teraz kończymy od razu.
+function shutdown(signal) {
+  console.log(`${signal} — zamykanie serwera.`);
+  server.close(() => process.exit(0));
+  setTimeout(() => process.exit(0), 3000).unref();
+}
+process.on("SIGTERM", () => shutdown("SIGTERM"));
+process.on("SIGINT", () => shutdown("SIGINT"));

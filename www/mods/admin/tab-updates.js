@@ -13,16 +13,16 @@ function renderUpdatesTab() {
         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 12px;">
           <div>
             <h2>${uiIcon("terminal", 22)} Pakiety systemowe (Debian apt)</h2>
-            <p class="settings-note">Informacja o oczekujących aktualizacjach systemu. Aktualizacje wykonujesz przez Cockpit.</p>
+            <p class="settings-note">Oczekujące aktualizacje Debiana. Listę zapisuje serwer raz dziennie (zadanie „if-system-updates”), instalujesz je w Cockpit.</p>
           </div>
           <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
-            <button type="button" class="button primary" id="btnCheckOsUpdates">${uiIcon("search", 16)} Sprawdź aktualizacje</button>
+            <button type="button" class="button primary" id="btnCheckOsUpdates">${uiIcon("search", 16)} Pokaż listę</button>
             <a href="${escapeHtml(cockpitUrl)}" target="_blank" class="button" style="font-size: 13px;">${uiIcon("monitor", 16)} Otwórz Cockpit ${uiIcon("external", 14)}</a>
           </div>
         </div>
 
         <div id="osUpdatesResult" style="margin-top: 10px;">
-          <div class="empty" style="font-size: 13px;">Kliknij „Sprawdź aktualizacje" aby pobrać listę pakietów.</div>
+          <div class="empty" style="font-size: 13px;">Wczytywanie listy pakietów...</div>
         </div>
       </section>
 
@@ -32,10 +32,11 @@ function renderUpdatesTab() {
         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 12px;">
           <div>
             <h2>${uiIcon("container", 22)} Kontenery Docker</h2>
-            <p class="settings-note">Zainstalowana i najnowsza stabilna wersja każdego kontenera (bez beta/rc/dev). Nowe kontenery pojawiają się tu automatycznie. Zapis nowego tagu do compose.yaml nie restartuje sam — restart/aktualizację zawsze robisz ręcznie w Dockge.</p>
+            <p class="settings-note">Zainstalowana i najnowsza stabilna wersja każdego kontenera (bez beta/rc/dev). Wersje sprawdzane są raz dziennie — „Sprawdź teraz” pyta od razu. „Aktualizuj compose” zapisuje tylko nowy numer wersji (z kopią pliku, „Cofnij” wraca do poprzedniej); aktualizację uruchamiasz w Dockge i tam widzisz jej przebieg.</p>
+            <p class="settings-note" id="containersCheckedAt" style="margin-top: 4px;"></p>
           </div>
           <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
-            <button type="button" class="button primary" id="btnRefreshContainers">${uiIcon("refresh", 16)} Odśwież</button>
+            <button type="button" class="button primary" id="btnRefreshContainers">${uiIcon("refresh", 16)} Sprawdź teraz</button>
             <a href="${escapeHtml(dockgeUrl)}" target="_blank" class="button" style="font-size: 13px;">${uiIcon("package", 16)} Otwórz Dockge ${uiIcon("external", 14)}</a>
           </div>
         </div>
@@ -51,7 +52,8 @@ function renderUpdatesTab() {
 
 function bindUpdatesEvents() {
   document.querySelector("#btnCheckOsUpdates")?.addEventListener("click", checkOsUpdates);
-  document.querySelector("#btnRefreshContainers")?.addEventListener("click", loadContainers);
+  checkOsUpdates();
+  document.querySelector("#btnRefreshContainers")?.addEventListener("click", () => loadContainers({ force: true }));
   loadContainers();
 }
 
@@ -63,38 +65,47 @@ async function checkOsUpdates() {
   if (!btn || !result) return;
 
   btn.disabled = true;
-  result.innerHTML = `<div class="empty" style="font-size:13px;">Sprawdzanie pakietów...</div>`;
+  result.innerHTML = `<div class="empty" style="font-size:13px;">Wczytywanie listy pakietów...</div>`;
+  const cockpitUrl = `https://${window.location.hostname}:9090`;
 
   try {
     const data = await request("/api/system/updates");
-    const count = data.count || 0;
     const pkgs = data.packages || [];
+    const checked = data.checkedAt ? `Lista z serwera: ${new Date(data.checkedAt).toLocaleString("pl-PL")} (serwer sprawdza raz dziennie).` : "";
+    const stale = data.stale ? `<div class="sys-upd-stale">${uiIcon("warning", 14)} Lista ma ponad 2 dni — zadanie „if-system-updates” na serwerze chyba nie działa.</div>` : "";
 
-    if (data.available === false) {
-      const cockpitUrl = `https://${window.location.hostname}:9090`;
+    if (!data.available) {
       result.innerHTML = `
-        <div style="padding: 12px 16px; border-radius: 10px; background: rgba(56,189,248,0.1); font-size: 13px; line-height: 1.5;">
-          ℹ️ ${escapeHtml(data.message || "Kontener nie widzi pakietów systemowych serwera.")}
+        <div class="sys-upd-box">
+          ${uiIcon("info", 16)} ${escapeHtml(data.message || "Serwer nie zapisuje jeszcze listy aktualizacji.")}
           <div style="margin-top: 8px;"><a href="${escapeHtml(cockpitUrl)}" target="_blank" rel="noopener">Otwórz Cockpit →</a></div>
         </div>`;
-    } else if (count === 0) {
+    } else if (!pkgs.length) {
       result.innerHTML = `
-        <div style="padding: 12px 16px; border-radius: 10px; background: rgba(16,185,129,0.1); color: #10b981; font-size: 13px; font-weight: 500;">
-          ${uiIcon("ok", 16)} Wszystkie pakiety systemowe są aktualne.
-        </div>`;
+        <div class="sys-upd-ok">${uiIcon("ok", 16)} Wszystkie pakiety systemowe są aktualne.</div>
+        <p class="settings-note" style="margin-top:6px;">${escapeHtml(checked)}</p>${stale}`;
     } else {
+      const count = pkgs.length;
+      const sec = data.securityCount || 0;
       result.innerHTML = `
-        <div style="padding: 10px 14px; border-radius: 10px; background: rgba(239,119,119,0.1); color: var(--danger); font-size: 13px; font-weight: 500; margin-bottom: 12px;">
-          ${uiIcon("warning", 16)} ${count} pakiet${count === 1 ? "" : count < 5 ? "i" : "ów"} do aktualizacji. Użyj Cockpit → Software Updates.
+        <div class="sys-upd-warn">
+          ${uiIcon("warning", 16)} ${count} pakiet${count === 1 ? "" : count < 5 ? "y" : "ów"} do aktualizacji${sec ? `, w tym ${sec} bezpieczeństwa` : ""}.
+          Zainstalujesz je w Cockpit → Aktualizacje oprogramowania.
+          <a href="${escapeHtml(cockpitUrl)}" target="_blank" rel="noopener" style="margin-left:6px;">Otwórz Cockpit →</a>
         </div>
-        <div style="display: grid; gap: 6px;">
-          ${pkgs.map(p => `
-            <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 14px; border: 1px solid var(--line); border-radius: 8px; background: rgba(0,0,0,0.2); font-size: 13px;">
-              <strong>${escapeHtml(p.name)}</strong>
-              <span style="background: rgba(239,119,119,0.2); color: #ef7777; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: bold;">${escapeHtml(p.newVersion)}</span>
-            </div>
-          `).join("")}
-        </div>`;
+        <p class="settings-note" style="margin:6px 0 8px;">${escapeHtml(checked)}</p>${stale}
+        <table class="sys-upd-table">
+          <thead><tr><th>Pakiet</th><th>Zainstalowana</th><th>Nowa</th><th></th></tr></thead>
+          <tbody>
+            ${pkgs.map((p) => `
+              <tr>
+                <td><strong>${escapeHtml(p.name)}</strong></td>
+                <td>${escapeHtml(p.current)}</td>
+                <td>${escapeHtml(p.available)}</td>
+                <td>${p.security ? '<span class="upd-tag upd-tag-warn">bezpieczeństwo</span>' : ""}</td>
+              </tr>`).join("")}
+          </tbody>
+        </table>`;
     }
   } catch (error) {
     result.innerHTML = `<div class="empty" style="color: var(--danger); font-size: 13px;">Błąd: ${escapeHtml(error.message)}</div>`;
@@ -116,21 +127,29 @@ function compareTagsClient(a, b) {
   return 0;
 }
 
-async function loadContainers() {
+async function loadContainers({ force = false } = {}) {
   const btn = document.querySelector("#btnRefreshContainers");
   const result = document.querySelector("#containersResult");
   if (!result) return;
 
   if (btn) btn.disabled = true;
-  result.innerHTML = `<div class="empty" style="font-size:13px;">Sprawdzanie wersji kontenerów...</div>`;
+  result.innerHTML = `<div class="empty" style="font-size:13px;">${force ? "Sprawdzanie wersji w rejestrach..." : "Wczytywanie wersji kontenerów..."}</div>`;
 
   try {
-    const data = await request("/api/docker/versions");
+    const data = await request(`/api/docker/versions${force ? "?refresh=1" : ""}`);
     const versions = data.versions || [];
 
     if (!versions.length) {
       result.innerHTML = `<div class="empty" style="font-size:13px;">Brak kontenerów Docker.</div>`;
       return;
+    }
+
+    const checked = versions.map((v) => v.checkedAt).filter(Boolean);
+    const checkedLabel = document.querySelector("#containersCheckedAt");
+    if (checkedLabel) {
+      checkedLabel.textContent = checked.length
+        ? `Ostatnie sprawdzenie: ${new Date(Math.min(...checked)).toLocaleString("pl-PL")}`
+        : "";
     }
 
     const settings = state.settings || {};
@@ -139,23 +158,42 @@ async function loadContainers() {
 
     const rows = versions.map((v) => {
       const installed = escapeHtml(v.installedVersion || v.installedTag || "—");
-      const hasLatest = Boolean(v.latestStable);
-      const isOutdated = hasLatest && v.installedVersion && compareTagsClient(v.installedVersion, v.latestStable) < 0;
-      const latestCell = hasLatest
-        ? `${escapeHtml(v.latestStable)}${isOutdated ? ` ${uiIcon("warning", 14)}` : ""}`
-        : `<span style="color:var(--muted);">nieznana</span>`;
       const stackUrl = `${dockgeBase}/compose/${encodeURIComponent(v.stack)}`;
+      const whatsNew = v.changelogUrl ? ` <a href="${escapeHtml(v.changelogUrl)}" target="_blank" rel="noreferrer" class="upd-link" title="Co nowego — lista zmian / strona obrazu">${uiIcon("external", 12)} Co nowego</a>` : "";
+      let latestCell;
+      let composeCell;
+      if (v.local) {
+        latestCell = `<span class="upd-local">obraz lokalny (tester)</span> ${infoTip("Obraz zbudowany na tym serwerze, np. wersja testowa. Nie ma go w żadnym rejestrze, więc nie ma czego sprawdzać.")}`;
+        composeCell = `<span style="color:var(--muted);font-size:12px;">—</span>`;
+      } else if (!v.latestStable) {
+        latestCell = `<span style="color:var(--muted);">nieznana</span>${v.checkError ? ` ${infoTip(`Nie udało się sprawdzić: ${v.checkError}`)}` : ""}`;
+        composeCell = `<span style="color:var(--muted);font-size:12px;">—</span>`;
+      } else {
+        const parts = [];
+        if (v.latestPatch) parts.push(`<div class="upd-patch">${escapeHtml(v.latestPatch)} <span class="upd-tag">poprawka</span></div>`);
+        if (v.latestMajor) parts.push(`<div class="upd-major">${escapeHtml(v.latestMajor)} ${uiIcon("warning", 14)} <span class="upd-tag upd-tag-warn">większa zmiana</span> ${infoTip("Nowa wersja w innej linii (np. 11.8 → 13.0). Przeczytaj „Co nowego”, a przy bazach danych i aplikacjach z danymi zrób najpierw kopię danych.")}</div>`);
+        if (!parts.length) {
+          // „Aktualna” tylko wtedy, gdy zainstalowana wersja naprawdę jest najnowsza.
+          const upToDate = v.installedVersion && compareTagsClient(v.installedVersion, v.latestStable) >= 0;
+          parts.push(upToDate
+            ? `<div>${escapeHtml(v.latestStable)} <span class="upd-tag upd-tag-ok">aktualna</span></div>`
+            : `<div class="upd-major">${escapeHtml(v.latestStable)} ${uiIcon("warning", 14)}</div>`);
+        }
+        latestCell = parts.join("") + whatsNew;
+        const buttons = [];
+        if (v.latestPatch) buttons.push(`<button type="button" class="button" style="font-size:12px;" data-update-compose data-container="${escapeHtml(v.container)}" data-tag="${escapeHtml(v.latestPatch)}">${uiIcon("save", 14)} Aktualizuj compose → ${escapeHtml(v.latestPatch)}</button>`);
+        if (v.latestMajor) buttons.push(`<button type="button" class="button" style="font-size:12px;" data-update-compose data-major="1" data-container="${escapeHtml(v.container)}" data-tag="${escapeHtml(v.latestMajor)}">${uiIcon("warning", 14)} Zmień na ${escapeHtml(v.latestMajor)}</button>`);
+        if (v.backups) buttons.push(`<button type="button" class="button" style="font-size:12px;" data-compose-restore data-container="${escapeHtml(v.container)}" title="Przywróć compose.yaml z ostatniej kopii (kopii: ${v.backups})">${uiIcon("repeat", 14)} Cofnij</button>`);
+        composeCell = buttons.length ? `<div class="upd-buttons">${buttons.join("")}</div>` : `<span style="color:var(--muted);font-size:12px;">—</span>`;
+      }
+      const note = v.note ? `<div class="upd-note">${escapeHtml(v.note)}</div>` : "";
 
       return `
         <tr style="border-bottom:1px solid var(--line);">
-          <td style="padding:8px 10px;font-weight:600;">${escapeHtml(v.container)}</td>
+          <td style="padding:8px 10px;font-weight:600;">${escapeHtml(v.container)}${note}</td>
           <td style="padding:8px 10px;">${installed}</td>
-          <td style="padding:8px 10px;${isOutdated ? "color:#f59e0b;font-weight:600;" : ""}">${latestCell}</td>
-          <td style="padding:8px 10px;">
-            ${hasLatest
-              ? `<button type="button" class="button" style="font-size:12px;" data-update-compose data-container="${escapeHtml(v.container)}" data-tag="${escapeHtml(v.latestStable)}">${uiIcon("save", 14)} Aktualizuj compose</button>`
-              : `<span style="color:var(--muted);font-size:12px;">—</span>`}
-          </td>
+          <td style="padding:8px 10px;">${latestCell}</td>
+          <td style="padding:8px 10px;">${composeCell}</td>
           <td style="padding:8px 10px;">
             <a href="${escapeHtml(stackUrl)}" target="_blank" class="button" style="font-size:12px;">${uiIcon("repeat", 14)} Restart / Aktualizuj ${uiIcon("external", 13)}</a>
           </td>
@@ -181,6 +219,9 @@ async function loadContainers() {
     result.querySelectorAll("[data-update-compose]").forEach((btnEl) => {
       btnEl.addEventListener("click", () => updateContainerCompose(btnEl));
     });
+    result.querySelectorAll("[data-compose-restore]").forEach((btnEl) => {
+      btnEl.addEventListener("click", () => restoreContainerCompose(btnEl));
+    });
   } catch (error) {
     result.innerHTML = `<div class="empty" style="color:var(--danger);font-size:13px;">Błąd: ${escapeHtml(error.message)}</div>`;
   } finally {
@@ -188,11 +229,30 @@ async function loadContainers() {
   }
 }
 
+async function restoreContainerCompose(btnEl) {
+  const container = btnEl.dataset.container;
+  if (!confirm(`Przywrócić compose.yaml dla „${container}” z ostatniej kopii?\n\nPotem zrób „Aktualizuj” w Dockge, żeby uruchomić przywróconą wersję.`)) return;
+  btnEl.disabled = true;
+  try {
+    const res = await request("/api/docker/compose-restore", { method: "POST", body: JSON.stringify({ container }) });
+    alert(res.message || "Przywrócono compose.yaml.");
+    loadContainers();
+  } catch (error) {
+    alert("Błąd: " + error.message);
+  } finally {
+    btnEl.disabled = false;
+  }
+}
+
 async function updateContainerCompose(btnEl) {
   const container = btnEl.dataset.container;
   const tag = btnEl.dataset.tag;
 
-  if (!confirm(`Zapisać tag "${tag}" w compose.yaml dla "${container}"?\n\nTo tylko zapisuje plik — restart / aktualizację stosu wciąż trzeba zrobić ręcznie w Dockge.`)) {
+  const major = btnEl.dataset.major === "1";
+  const question = major
+    ? `UWAGA — większa zmiana wersji dla „${container}” (na ${tag}).\n\nPrzeczytaj „Co nowego”. Jeśli aplikacja ma dane (np. baza danych), ZRÓB NAJPIERW KOPIĘ DANYCH.\n\nZapisać ${tag} w compose.yaml? Aktualizację uruchomisz potem w Dockge.`
+    : `Zapisać wersję „${tag}” w compose.yaml dla „${container}”?\n\nTo tylko zapisuje plik (z kopią) — aktualizację uruchamiasz w Dockge.`;
+  if (!confirm(question)) {
     return;
   }
 
@@ -206,6 +266,7 @@ async function updateContainerCompose(btnEl) {
       body: JSON.stringify({ container, tag })
     });
     alert(res.message || "Zapisano nowy tag w compose.yaml.");
+    loadContainers();
   } catch (error) {
     alert("Błąd: " + error.message);
   } finally {

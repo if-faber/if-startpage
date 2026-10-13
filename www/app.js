@@ -1590,14 +1590,16 @@ async function renderAlertsInto(selector) {
     }
     container.innerHTML = alerts.map((a) => {
       const isCritical = a.severity === "critical";
+      const isInfo = a.severity === "info";
+      const level = isCritical ? "critical" : isInfo ? "info" : "warning";
       return `
-        <div class="incident-bar ${isCritical ? "critical" : "warning"}">
-          <span class="incident-bar-icon">${uiIcon(isCritical ? "siren" : "warning", 24)}</span>
+        <div class="incident-bar ${level}">
+          <span class="incident-bar-icon">${uiIcon(isCritical ? "siren" : isInfo ? "package" : "warning", 24)}</span>
           <span class="incident-bar-text">
             <strong>${escapeHtml(a.title)}</strong>
             <span>${escapeHtml(a.message)}</span>
           </span>
-          <span class="incident-bar-tag">${isCritical ? "Awaria" : "Ostrzeżenie"}</span>
+          <span class="incident-bar-tag">${isCritical ? "Awaria" : isInfo ? "Informacja" : "Ostrzeżenie"}</span>
         </div>
       `;
     }).join("");

@@ -224,7 +224,7 @@
       const tableTabsHtml = `
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
           <div class="top-tabs-nav">
-            <button type="button" class="top-tab-btn ${currentTab === 'processes' ? 'active' : ''}" data-role="tab-processes">Procesy Host (${processes.length})</button>
+            <button type="button" class="top-tab-btn ${currentTab === 'processes' ? 'active' : ''}" data-role="tab-processes">Procesy kontenera (${processes.length})</button>
             <button type="button" class="top-tab-btn ${currentTab === 'containers' ? 'active' : ''}" data-role="tab-containers">Kontenery Docker (${containers.length})</button>
           </div>
         </div>

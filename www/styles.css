@@ -364,6 +364,7 @@ button, a { color: inherit; }
 }
 .incident-bar.critical { background: #b91c1c; border-color: #fca5a5; color: #ffffff; }
 .incident-bar.warning { background: #b45309; border-color: #fcd34d; color: #ffffff; }
+.incident-bar.info { background: #1d4ed8; border-color: #93c5fd; color: #ffffff; }
 .incident-bar-icon { flex-shrink: 0; font-size: 22px; }
 .incident-bar-text { flex: 1; min-width: 0; }
 .incident-bar-text strong { display: block; font-size: 15px; font-weight: 800; color: inherit; word-break: break-word; }

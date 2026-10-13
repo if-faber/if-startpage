@@ -4,6 +4,22 @@ Nowe wpisy dopisujemy na górze.
 
 ---
 
+## v0.1.6.11 — 2026-10-13
+
+Aktualizacje aplikacji i Debiana w Zapleczu.
+
+- **Aktualizacje aplikacji:** sprawdzanie nowych wersji raz dziennie (wynik zapamiętany) i przycisk **„Sprawdź teraz”**.
+- **„Poprawka” albo „Większa zmiana” ⚠** — nowa wersja w tej samej linii (np. 11.8.9 → 11.8.10) albo w innej (np. 11.8 → 13.0); przy większej zmianie ostrzeżenie i potwierdzenie „zrób kopię danych”.
+- **„Co nowego”** przy wersji — lista zmian (aplikacje Idea Forge) albo strona obrazu; notka przy WordPressie.
+- **Kopie `compose.yaml`** przed zmianą wersji w `docker/app/<aplikacja>/backup/` (ostatnie 5) i przycisk **„Cofnij”**.
+- **Obraz lokalny (tester)** — obraz zbudowany na serwerze oznaczony, bez szukania wersji i błędów w logach.
+- **Dzwonek:** „Dostępne aktualizacje: N” — informacja, nie alarm.
+- **Aktualizacje Debiana:** lista oczekujących pakietów (z oznaczeniem aktualizacji bezpieczeństwa) od serwera — zadanie `if-system-updates` (ustawia je [IF-home-server](https://github.com/if-faber/IF-home-server) albo polecenia z README); w dzwonku „Aktualizacje systemu: N”. Instalacja — w Cockpit.
+- **Wersja IF-startpage widoczna w Zapleczu.**
+- **Grzeczne wyłączanie** — aktualizacja w Dockge nie czeka już 10 s i nie kończy się „exited with code 137”.
+
+---
+
 ## v0.1.6.10 — 2026-10-13
 
 - **Menu Zaplecza w logicznym porządku**, w trzech grupach z podpisami: **Treść strony** (Strony i sekcje), **Serwer** (Centrum Alertów, Statystyki Live, Aktualizacje), **Ustawienia** (Moduły, Wygląd Zaplecza, Ustawienia ogólne) — od najczęściej używanych. Zaplecze otwiera się na „Stronach i sekcjach”.

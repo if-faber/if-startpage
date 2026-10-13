@@ -216,6 +216,63 @@ Ikony:    np. jellyseerr.png, immich.png
 Licencje ikon dołączonych do IF-startpage (dashboard-icons, Lucide) są w
 [THIRD-PARTY.md](THIRD-PARTY.md).
 
+## Aktualizacje aplikacji (Zaplecze → Aktualizacje)
+
+Tabela pokazuje dla każdej aplikacji (kontenera) zainstalowaną i najnowszą wersję.
+
+- **Sprawdzanie raz dziennie** — IF-startpage sam sprawdza nowe wersje raz na dobę i zapamiętuje
+  wynik. Przycisk **„Sprawdź teraz”** sprawdza od razu.
+- **„Poprawka”** — nowa wersja w tej samej linii (np. 11.8.9 → 11.8.10). Zwykle bezpieczna.
+- **„Większa zmiana” ⚠** — nowa wersja w innej linii (np. 11.8 → 13.0). Przeczytaj **„Co nowego”**,
+  a przy aplikacjach z danymi (bazy danych!) zrób najpierw kopię danych.
+- **„Obraz lokalny (tester)”** — obraz zbudowany na Twoim serwerze; nie ma czego sprawdzać.
+- Gdy są nowe wersje, w dzwonku pojawia się informacja **„Dostępne aktualizacje: N”**.
+
+Jak zaktualizować aplikację — dwa kroki, żeby widzieć, co się dzieje:
+
+1. **„Aktualizuj compose”** — zapisuje w `compose.yaml` aplikacji tylko nowy numer wersji.
+   Przed zmianą zapisuje kopię w folderze `backup` aplikacji
+   (`~/docker/app/<aplikacja>/backup/`, ostatnie 5 kopii).
+2. **„Restart / Aktualizuj”** — otwiera aplikację w Dockge. Kliknij tam **„Aktualizuj”**
+   i patrz, jak pobiera się nowa wersja i aplikacja startuje.
+
+Coś poszło nie tak? **„Cofnij”** przywraca `compose.yaml` z ostatniej kopii — potem znowu
+„Aktualizuj” w Dockge.
+
+**WordPress:** sam WordPress, wtyczki i motywy aktualizujesz w panelu WordPressa
+(Kokpit → Aktualizacje). Nowy obraz `wordpress` zmienia tylko PHP i serwer Apache.
+
+### Aktualizacje Debiana (pakiety systemowe)
+
+Kontener IF-startpage nie widzi pakietów serwera. Dlatego serwer raz dziennie zapisuje
+listę oczekujących aktualizacji do pliku, a IF-startpage ją pokazuje (Zaplecze → Aktualizacje
+i dzwonek: „Aktualizacje systemu: N”). **Instalujesz je w Cockpit** (Aktualizacje oprogramowania).
+
+Jeśli serwer stawiałeś programem [IF-home-server](https://github.com/if-faber/IF-home-server)
+(`sudo if-server`, od wersji 0.2.0), zadanie jest już ustawione — to składnik „Narzędzia dla
+IF-startpage”. Na serwerze z `if-server` bez tego składnika: `sudo if-server` → Upgrade.
+W przeciwnym razie wklej w terminalu serwera (bez zmian — polecenia same wstawią
+twoją nazwę użytkownika):
+
+```bash
+cd /tmp
+curl -fsSLO https://raw.githubusercontent.com/if-faber/if-startpage/main/extras/system-updates/if-system-updates
+curl -fsSLO https://raw.githubusercontent.com/if-faber/if-startpage/main/extras/system-updates/if-system-updates.service
+curl -fsSLO https://raw.githubusercontent.com/if-faber/if-startpage/main/extras/system-updates/if-system-updates.timer
+sudo install -m 755 if-system-updates /usr/local/bin/if-system-updates
+sudo install -m 644 if-system-updates.service if-system-updates.timer /etc/systemd/system/
+sudo sed -i "s/{user}/$USER/" /etc/systemd/system/if-system-updates.service
+sudo systemctl daemon-reload
+sudo systemctl enable --now if-system-updates.timer
+sudo systemctl start if-system-updates.service
+```
+
+Sprawdzenie — powinien pojawić się plik z listą:
+
+```bash
+ls -l ~/docker/app-data/if-startpage/config/system-updates.json
+```
+
 ## Progi alarmów
 
 W Zaplecze → Centrum alertów:
