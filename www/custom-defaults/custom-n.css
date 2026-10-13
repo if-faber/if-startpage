@@ -11,7 +11,7 @@ html[data-mode="n"] body {
   --accent-soft: color-mix(in srgb, #4fe3a6 14%, transparent); /* Akcent — tło przycisków (z akcentu) */
   --glow-start: color-mix(in srgb, #4fe3a6 10%, transparent); /* Poświata tła (z akcentu) */
   --accent-alt: #5b9dff; /* Akcent 2 */
-  --glow-end: color-mix(in srgb, #5b9dff 12%, transparent); /* Poświata tła (z akcentu 2) */
+  --glow-end: color-mix(in srgb, #4fe3a6 12%, transparent); /* Poświata tła (z akcentu) */
   --page-bg: #091216; /* Tło strony */
   --surface-base-rgb: 16 27 32; /* Kolor motywu */
   --panel-strong: rgb(16 27 32 / 0.94); /* Kolor przycisku menu i powiadomień (z koloru motywu) */
@@ -19,7 +19,7 @@ html[data-mode="n"] body {
   --subtitle-color: #8ea2ad; /* Kolor sloganu */
   --sidebar-panel-rgb: 255 255 255; /* Kolor tła menu */
   --sidebar-panel-alpha: 0.04; /* Krycie menu */
-  --sidebar-toggle-color: #4fe3a6; /* Kolor ikony menu */
+  --sidebar-toggle-color: #4fe3a6; /* Kolor ikon menu (przyciski menu i ☰) */
   --tile-panel-rgb: 255 255 255; /* Kolor kafelków */
   --tile-panel-alpha: 0.055; /* Krycie kafelków */
   --tile-height: 104px; /* Wysokość kafelków */

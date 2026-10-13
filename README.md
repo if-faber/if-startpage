@@ -171,6 +171,23 @@ W oknie linku w polu „Ikona” wpisujesz nazwę pliku, np. `immich.png`, `jell
 
 W polu „Ikona” można też wpisać jedną literę albo adres obrazka z internetu.
 
+### Ikony z Lucide — dla stron i linków (gdy nie ma logo aplikacji)
+
+Do menu stron i do kafelków bez logo możesz wpisać ikonę z zestawu **Lucide** —
+ponad 1800 prostych ikon (drukarka, serce, koszyk, kamera, router…). Ikony są w obrazie,
+działają bez internetu.
+
+1. Otwórz **https://lucide.dev/icons** i wpisz w wyszukiwarkę, czego szukasz — po angielsku,
+   np. `printer` (drukarka), `heart` (serce), `cart` (koszyk), `camera`, `router`.
+2. Kliknij ikonę — nazwa jest pod nią, np. `shopping-cart`. Skopiuj ją albo przepisz.
+3. Wpisz tę nazwę:
+   - **strona w menu:** Zaplecze → Strony i sekcje → pole „ikona” obok nazwy strony → **Zapisz**,
+   - **link (kafelek):** w oknie linku w polu „Ikona”.
+
+Nazwę wpisujesz **bez rozszerzenia** (`printer`, a nie `printer.png`). Z rozszerzeniem
+(`immich.png`) to plik z folderu `icons` — logo aplikacji. Zła nazwa? Strona napisze,
+że takiej ikony nie ma.
+
 ### Gdzie szukać ikon
 
 | Źródło | Licencja | Co zawiera |
@@ -183,6 +200,21 @@ W polu „Ikona” można też wpisać jedną literę albo adres obrazka z inter
 
 Logotypy są znakami towarowymi swoich właścicieli — używaj ich tylko do oznaczenia kafelków
 prowadzących do tych usług.
+
+**Pamiętaj o podziękowaniu i licencji.** Każdy zestaw ikon ma swoją licencję i niektóre
+wymagają podania autora (np. CC BY przy selfh.st/icons). Gdy dokładasz ikony z innego
+źródła, zapisz w folderze `icons` zwykły plik tekstowy, np. `ZRODLA.txt`, a w nim
+dla każdego źródła:
+
+```text
+Źródło:   selfh.st/icons — https://selfh.st/icons
+Autor:    selfh.st
+Licencja: CC BY 4.0 (wymaga podania autora)
+Ikony:    np. jellyseerr.png, immich.png
+```
+
+Licencje ikon dołączonych do IF-startpage (dashboard-icons, Lucide) są w
+[THIRD-PARTY.md](THIRD-PARTY.md).
 
 ## Progi alarmów
 

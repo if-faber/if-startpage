@@ -1199,10 +1199,10 @@ const CUSTOM_DEFAULTS_DIR = path.join(WWW_DIR, "custom-defaults");
 // Zmienne, które edytor może zapisać, z opisem do komentarza w pliku.
 const CUSTOM_CSS_VARS = {
   "--accent": "Akcent",
-  "--accent-alt": "Akcent 2",
+  "--accent-alt": "Kolor nagłówków (Akcent 2)",
   "--accent-soft": "Akcent — tło przycisków (z akcentu)",
   "--glow-start": "Poświata tła (z akcentu)",
-  "--glow-end": "Poświata tła (z akcentu 2)",
+  "--glow-end": "Poświata tła (z akcentu)",
   "--on-accent": "Tekst na przyciskach w kolorze akcentu",
   "--text": "Kolor tekstu",
   "--muted": "Kolor tekstu pomocniczego",
@@ -1228,8 +1228,15 @@ const CUSTOM_CSS_VARS = {
   "--sidebar-panel-rgb": "Kolor tła menu",
   "--sidebar-panel-alpha": "Krycie menu",
   "--sidebar-width": "Szerokość menu",
-  "--sidebar-toggle-color": "Kolor ikony menu",
-  "--sidebar-toggle-size": "Wielkość ikony menu",
+  "--sidebar-toggle-color": "Kolor ikon menu (przyciski menu i ☰)",
+  "--sidebar-toggle-size": "Wielkość ikon menu (przyciski menu i ☰)",
+  "--lolli-glass": "Menu: glass paska z nazwą",
+  "--lolli-blur": "Menu: blur paska z nazwą",
+  "--lolli-text": "Menu: kolor napisów",
+  "--lolli-hover": "Menu: po najechaniu",
+  "--lolli-active-bg": "Aktywna pozycja: tło",
+  "--lolli-active-icon": "Aktywna pozycja: ikona",
+  "--input-text": "Kolor tekstu w polach",
   "--font-menu": "Czcionka menu",
   "--font-card": "Czcionka kafelków",
   "--font-description": "Czcionka opisów",
@@ -1359,7 +1366,7 @@ app.put("/api/dashboard/custom-css", requirePin, (req, res) => {
 
 // Klucze motywu Zaplecza, które przyjmujemy (zgodne z tab-admin-theme.js).
 const ADMIN_THEME_KEYS = [
-  "accent", "accentAlt", "surfaceColor", "bg", "fontMenu", "fontCard", "fontDescription",
+  "accent", "accentAlt", "inputText", "surfaceColor", "bg", "fontMenu", "fontCard", "fontDescription",
   "cardRadius", "cardGap", "panelColor", "panelAlpha", "glassBlur",
   "sidebarColor", "sidebarAlpha", "menuTextColor", "sidebarWidth",
   "menuBtnBg", "menuBtnText", "menuBtnActiveBg", "menuBtnActiveText", "menuBtnHoverBg", "menuBtnHoverText",
@@ -1532,11 +1539,46 @@ app.put("/api/kiosk/settings", (req, res) => {
 
 // ─── Strony ──────────────────────────────────────────────────────────────────
 
+// ─── Ikony Lucide (www/lucide-sprite.svg, ISC) — strony i linki ───
+// Nazwa ikony jak na lucide.dev/icons (np. „printer”, „shopping-cart”).
+let lucideNames = null;
+function lucideIconNames() {
+  if (!lucideNames) {
+    try {
+      const sprite = fs.readFileSync(path.join(WWW_DIR, "lucide-sprite.svg"), "utf8");
+      lucideNames = new Set([...sprite.matchAll(/<symbol id="([a-z0-9-]+)"/g)].map((m) => m[1]));
+    } catch {
+      lucideNames = new Set();
+    }
+  }
+  return lucideNames;
+}
+
+// Wygląda jak nazwa ikony Lucide (bez kropki, ukośnika, co najmniej 2 znaki)?
+function looksLikeLucideName(value) {
+  return /^[a-z0-9]+(-[a-z0-9]+)*$/.test(value) && value.length > 1;
+}
+
+function lucideIconError(value) {
+  return `Nie ma ikony „${value}” w Lucide. Wyszukaj nazwę na lucide.dev/icons i wpisz ją dokładnie (np. printer, shopping-cart).`;
+}
+
+// Ikona strony: pusta (domyślna) albo nazwa z Lucide.
+function cleanPageIcon(raw) {
+  const value = normalizeText(raw).toLowerCase().slice(0, 60);
+  if (!value) return { icon: "" };
+  if (!lucideIconNames().has(value)) return { error: lucideIconError(value) };
+  return { icon: value };
+}
+
 app.post("/api/services/page", requirePin, (req, res) => {
   const data = loadServices();
   const name = normalizeText(req.body?.name).slice(0, 60);
   if (!name) return res.status(400).json({ error: "Podaj nazwę strony." });
+  const pageIcon = cleanPageIcon(req.body?.icon);
+  if (pageIcon.error) return res.status(400).json({ error: pageIcon.error });
   const page = { id: createId(), name };
+  if (pageIcon.icon) page.icon = pageIcon.icon;
   data.pages.push(page);
   saveServices(data);
   res.json({ success: true, page, pages: data.pages });
@@ -1548,6 +1590,12 @@ app.put("/api/services/page/:id", requirePin, (req, res) => {
   const name = normalizeText(req.body?.name).slice(0, 60);
   if (!page) return res.status(404).json({ error: "Strona nie istnieje." });
   if (!name) return res.status(400).json({ error: "Podaj nazwę strony." });
+  if (req.body && Object.prototype.hasOwnProperty.call(req.body, "icon")) {
+    const pageIcon = cleanPageIcon(req.body.icon);
+    if (pageIcon.error) return res.status(400).json({ error: pageIcon.error });
+    if (pageIcon.icon) page.icon = pageIcon.icon;
+    else delete page.icon;
+  }
   page.name = name;
   saveServices(data);
   res.json({ success: true, page, pages: data.pages });
@@ -1721,7 +1769,12 @@ app.post("/api/services/link", requirePin, (req, res) => {
   const sectionId = normalizeText(req.body.sectionId);
   const name = normalizeText(req.body.name);
   const url = normalizeText(req.body.url);
-  const icon = normalizeText(req.body.icon);
+  let icon = normalizeText(req.body.icon);
+  // Nazwa ikony Lucide (bez rozszerzenia) — małymi literami i tylko istniejąca.
+  if (looksLikeLucideName(icon.toLowerCase())) {
+    icon = icon.toLowerCase();
+    if (!lucideIconNames().has(icon)) return res.status(400).json({ error: lucideIconError(icon) });
+  }
   const description = normalizeText(req.body.description);
 
   if (!sectionId || !name || !url) {
@@ -1770,7 +1823,12 @@ app.put("/api/services/link/:id", requirePin, (req, res) => {
   const sectionId = normalizeText(req.body.sectionId);
   const name = normalizeText(req.body.name);
   const url = normalizeText(req.body.url);
-  const icon = normalizeText(req.body.icon);
+  let icon = normalizeText(req.body.icon);
+  // Nazwa ikony Lucide (bez rozszerzenia) — małymi literami i tylko istniejąca.
+  if (looksLikeLucideName(icon.toLowerCase())) {
+    icon = icon.toLowerCase();
+    if (!lucideIconNames().has(icon)) return res.status(400).json({ error: lucideIconError(icon) });
+  }
   const description = normalizeText(req.body.description);
 
   if (!sectionId || !name || !url) {

@@ -273,7 +273,7 @@ select:-webkit-autofill {
   text-transform: uppercase;
 }
 
-.admin-form-grid label span {
+.admin-form-grid label > span:not(.info-tip):not(.field-title) {
   position: absolute;
   right: 0;
   top: 0;
@@ -336,7 +336,8 @@ select:-webkit-autofill {
 .admin-section-card h2 {
   margin: 0 0 16px 0;
   font-size: 18px;
-  color: var(--text);
+  /* Akcent pomocniczy = kolor nagłówków (jak Akcent 2 na Stronie Głównej). */
+  color: var(--accent-alt);
 }
 
 .admin-section-card h4 {
@@ -422,10 +423,11 @@ input[type="text"], input[type="password"], input[type="url"], input[type="numbe
   border-radius: var(--card-radius, 10px);
   border: 1px solid var(--line);
   background: color-mix(in srgb, var(--text) 6%, transparent);
-  color: var(--text);
+  color: var(--input-text, var(--text));
   outline: none;
   transition: border-color 0.16s ease, box-shadow 0.16s ease;
 }
+input::placeholder, textarea::placeholder { color: color-mix(in srgb, var(--input-text, var(--text)) 55%, transparent); opacity: 1; }
 
 input[type="text"]:focus, input[type="password"]:focus, input[type="url"]:focus, input[type="number"]:focus, select:focus, textarea:focus {
   border-color: var(--accent);
@@ -471,7 +473,7 @@ dialog::backdrop {
 .modal-heading h2 {
   margin: 3px 0 0;
   font-size: 24px;
-  color: var(--text);
+  color: var(--accent-alt);
 }
 
 .modal-heading > button {
@@ -618,3 +620,10 @@ dialog menu {
 .icons-list-table img { display: block; width: 36px; height: 36px; object-fit: contain; }
 .icons-builtin-tag { margin-left: 6px; padding: 2px 8px; border-radius: 999px; background: color-mix(in srgb, var(--text) 8%, transparent); color: var(--muted); font-size: 11px; font-weight: 800; }
 .icons-own-tag { margin-left: 6px; padding: 2px 8px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); font-size: 11px; font-weight: 800; }
+
+/* Strony i sekcje — bloki i pola zależne od motywu (dzień / noc) */
+.hp-box { padding: 18px; border: 1px solid var(--line); border-radius: 14px; background: color-mix(in srgb, var(--text) 4%, transparent); }
+.hp-input { flex: 1; font-size: 14px; }
+.hp-home-tag { display: inline-flex; align-items: center; gap: 2px; padding: 4px 10px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); font-size: 12px; font-weight: 800; }
+.hp-icon-preview { display: grid; place-items: center; width: 38px; height: 38px; flex: 0 0 38px; border: 1px solid var(--line); border-radius: 10px; color: var(--accent); }
+.hp-icon-input { width: 170px; flex: 0 0 170px; font-size: 13px; }

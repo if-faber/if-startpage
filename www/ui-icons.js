@@ -98,11 +98,19 @@ const UI_ICON_PATHS = {
   target: `<circle cx="12" cy="12" r="10" /> <circle cx="12" cy="12" r="6" /> <circle cx="12" cy="12" r="2" />`,
   button: `<circle cx="12" cy="12" r="10" /> <circle cx="12" cy="12" r="1" />`,
   repeat: `<path d="m17 2 4 4-4 4" /> <path d="M3 11v-1a4 4 0 0 1 4-4h14" /> <path d="m7 22-4-4 4-4" /> <path d="M21 13v1a4 4 0 0 1-4 4H3" />`,
-  chart: `<path d="M3 3v16a2 2 0 0 0 2 2h16" /> <path d="M18 17V9" /> <path d="M13 17V5" /> <path d="M8 17v-3" />`
+  chart: `<path d="M3 3v16a2 2 0 0 0 2 2h16" /> <path d="M18 17V9" /> <path d="M13 17V5" /> <path d="M8 17v-3" />`,
+  info: `<circle cx="12" cy="12" r="10" /> <path d="M12 16v-4" /> <path d="M12 8h.01" />`
 };
 
+// Ikony spoza listy wyżej — z pełnego zestawu Lucide (www/lucide-sprite.svg, ISC, lokalnie, bez internetu).
+const LUCIDE_SPRITE = "/lucide-sprite.svg";
+
 function uiIcon(name, size = 20) {
-  const paths = UI_ICON_PATHS[name] || UI_ICON_PATHS.page;
+  const key = String(name || "");
+  if (!UI_ICON_PATHS[key] && /^[a-z0-9]+(-[a-z0-9]+)*$/.test(key) && key.length > 1) {
+    return `<svg class="ui-icon" xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="${LUCIDE_SPRITE}#${key}"></use></svg>`;
+  }
+  const paths = UI_ICON_PATHS[key] || UI_ICON_PATHS.page;
   return `<svg class="ui-icon" xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths}</svg>`;
 }
 
@@ -111,4 +119,11 @@ function uiIcon(name, size = 20) {
 function themeToggleIcon(isNight) {
   const toggled = isNight ? " theme-toggle--toggled" : "";
   return `<span class="theme-toggle${toggled}" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" width="1em" height="1em" fill="currentColor" stroke-linecap="round" class="theme-toggle__classic" viewBox="0 0 32 32"><clipPath id="theme-toggle__classic__cutout"><path d="M0-5h30a1 1 0 0 0 9 13v24H0Z" /></clipPath><g clip-path="url(#theme-toggle__classic__cutout)"><circle cx="16" cy="16" r="9.34" /><g stroke="currentColor" stroke-width="1.5"><path d="M16 5.5v-4" /><path d="M16 30.5v-4" /><path d="M1.5 16h4" /><path d="M26.5 16h4" /><path d="m23.4 8.6 2.8-2.8" /><path d="m5.7 26.3 2.9-2.9" /><path d="m5.8 5.8 2.8 2.8" /><path d="m23.4 23.4 2.9 2.9" /></g></g></svg></span>`;
+}
+
+// Ikonka ⓘ z dymkiem: opis po najechaniu myszą, a na telefonie po dotknięciu
+// (dotknięcie ustawia fokus). Tekst opisu jest zwykłym tekstem — bez HTML.
+function infoTip(text) {
+  const safe = String(text).replace(/[&<>"']/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch]));
+  return `<span class="info-tip" tabindex="0" role="note" aria-label="${safe}">${uiIcon("info", 15)}<span class="info-tip-bubble" aria-hidden="true">${safe}</span></span>`;
 }

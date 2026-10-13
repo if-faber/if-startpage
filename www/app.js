@@ -140,7 +140,8 @@ async function reloadData() {
     subtitle: dashboardConfig.subtitle,
     pages: (response.pages && response.pages.length ? response.pages : [{ id: "home", name: "Home" }]).map((page) => ({
       id: page.id,
-      name: page.name
+      name: page.name,
+      icon: page.icon || ""
     })),
     sections: (response.sections || []).map((section) => ({
       id: section.id,
@@ -220,7 +221,7 @@ function appShell() {
           <label>Nazwa<input id="linkName" required></label>
           <label style="grid-column: 1 / -1;">URL<input id="linkUrl" type="url" required placeholder="https://..."></label>
           <label style="grid-column: 1 / -1;">Opis<input id="linkDescription"></label>
-          <label>Ikona<input id="linkIcon" placeholder="Nazwa pliku z folderu icons (np. immich.png), litera albo URL obrazu"></label>
+          <label>Ikona<input id="linkIcon" placeholder="Plik z folderu icons (immich.png), ikona Lucide (printer), litera albo URL"></label>
           <label>Otwieranie<select id="linkOpenMode"><option value="new-tab">Nowa karta</option><option value="iframe">W dashboardzie</option></select></label>
         </div>
         <menu><button type="button" data-close>Anuluj</button><button class="primary">Zapisz link</button></menu>
@@ -275,12 +276,13 @@ function appShell() {
             <div class="appearance-section-title">${uiIcon("appearance", 16)} Ogólne i Tło</div>
             <div class="appearance-section-grid">
               <label>Akcent<input id="themeAccent" type="color"></label>
-              <label>Akcent 2<input id="themeAccentAlt" type="color"></label>
+              <label><span class="field-title">Kolor nagłówków (Akcent 2) ${infoTip("Wszystkie nagłówki: tytuły okien, tytuły kart na stronie Status i tytuły sekcji z kafelkami (np. ADMINISTRACJA SERWERA). Jedną kontrolką poprawisz nagłówki na całej stronie.")}</span><input id="themeAccentAlt" type="color"></label>
               <label>Tło strony<input id="themeBg" type="color"></label>
               <label>Kolor motywu<input id="themeSurfaceColor" type="color"></label>
               <label>Kolor tekstu<input id="themeTextColor" type="color"></label>
               <label>Kolor tekstu pomocniczego<input id="themeMutedColor" type="color"></label>
               <label>Tekst na przyciskach w kolorze akcentu<input id="themeOnAccentColor" type="color"></label>
+              <label><span class="field-title">Kolor tekstu w polach ${infoTip("Tekst wpisywany w polach formularzy i listach wyboru (np. nazwa linku, adres, wyszukiwarka). Podpowiedź w pustym polu ma jaśniejszą wersję tego koloru.")}</span><input id="themeInputTextColor" type="color"></label>
               <label>Obraz tła<select id="themeBackgroundImage"><option value="">Wyłączony</option><option value="default">./images/background.jpg</option><option value="custom">Własny obraz</option></select></label>
               <label>Upload tła<input id="themeBackgroundUpload" type="file" accept="image/png,image/jpeg,image/webp"></label>
               <label>Przyciemnienie tła<input id="themeBackgroundDim" type="range" min="0" max="85" step="1"><span></span></label>
@@ -312,9 +314,15 @@ function appShell() {
               <label>Kolor tła menu<input id="themeSidebarPanelColor" type="color"></label>
               <label>Glass / Krycie menu<input id="themeSidebarPanelAlpha" type="range" min="0" max="95" step="1"><span></span></label>
               <label>Szerokość menu<input id="themeSidebarWidth" type="range" min="240" max="360" step="5"><span></span></label>
-              <label>Kolor ikony menu<input id="themeSidebarToggleColor" type="color"></label>
-              <label>Wielkość ikony menu<input id="themeSidebarToggleSize" type="range" min="16" max="44" step="1"><span></span></label>
+              <label><span class="field-title">Kolor ikon menu ${infoTip("Ikony pozycji w menu, przycisk ☰ i ikony w stopce menu (☀️/🌙, ⚙️). Aktywna pozycja i najechanie mają własne kolory.")}</span><input id="themeSidebarToggleColor" type="color"></label>
+              <label><span class="field-title">Wielkość ikon menu ${infoTip("Wielkość ikon pozycji w menu.")}</span><input id="themeSidebarToggleSize" type="range" min="16" max="44" step="1"><span></span></label>
               <label>Czcionka menu<select id="themeFontMenu">${renderFontOptions()}</select></label>
+              <label><span class="field-title">Glass paska z nazwą ${infoTip("Przezroczyste tło pod każdą pozycją menu. 0% = bez tła. Najechanie i aktywna pozycja mają to samo szkło, tylko w swoim kolorze.")}</span><input id="themeLolliGlass" type="range" min="0" max="95" step="1"><span></span></label>
+              <label><span class="field-title">Blur paska z nazwą ${infoTip("Rozmycie tego, co jest pod pozycją menu (efekt szkła). Działa razem z „Glass paska z nazwą”.")}</span><input id="themeLolliBlur" type="range" min="0" max="30" step="1"><span></span></label>
+              <label><span class="field-title">Menu: kolor napisów ${infoTip("Nazwy pozycji w menu (Home, strony, Status…).")}</span><input id="themeLolliTextColor" type="color"></label>
+              <label><span class="field-title">Menu: ikona po najechaniu ${infoTip("Kolor ikony pozycji menu, gdy najedziesz na nią myszą. Pozycja dostaje też delikatne tło w tym kolorze.")}</span><input id="themeLolliHoverColor" type="color"></label>
+              <label><span class="field-title">Aktywna pozycja: tło ${infoTip("Zaokrąglone, półprzezroczyste tło pozycji strony, na której jesteś.")}</span><input id="themeLolliActiveBg" type="color"></label>
+              <label><span class="field-title">Aktywna pozycja: ikona ${infoTip("Kolor ikony pozycji strony, na której jesteś.")}</span><input id="themeLolliActiveIcon" type="color"></label>
             </div>
           </section>
 
@@ -575,7 +583,7 @@ function renderNavigation() {
   state.data.pages.forEach((page) => {
     const count = sectionsOfPage(page.id).reduce((sum, section) => sum + section.links.length, 0);
     const button = lollipopButton({
-      icon: page.id === "home" ? "house" : "page",
+      icon: page.icon || (page.id === "home" ? "house" : "page"),
       label: page.name,
       active: state.view === "links" && page.id === state.activePageId,
       badge: count ? String(count) : ""
@@ -695,6 +703,8 @@ function renderLinks() {
 function linkIconHtml(link) {
   if (/^https?:\/\//i.test(link.icon)) return `<img src="${escapeHtml(link.icon)}" alt="">`;
   if (/\.(svg|png|jpe?g|webp|gif|ico)$/i.test(link.icon)) return `<img src="./icons/${escapeHtml(link.icon.replace(/^[/\\]+/, ""))}" alt="">`;
+  // Nazwa ikony z Lucide (lucide.dev/icons), np. „printer” — w kolorze kafelka.
+  if (/^[a-z0-9]+(-[a-z0-9]+)*$/i.test(link.icon || "") && link.icon.length > 1) return uiIcon(link.icon.toLowerCase(), 26);
   return escapeHtml(link.icon || link.name.slice(0, 1).toUpperCase());
 }
 
@@ -945,6 +955,13 @@ function openAppearancePanel() {
     themeOnAccentColor: rgbToHex(cssValue("--on-accent") || "#052016"),
     themeAccent: rgbToHex(cssValue("--accent")),
     themeAccentAlt: rgbToHex(cssValue("--accent-alt")),
+    themeInputTextColor: rgbToHex(cssValue("--input-text") || cssValue("--text")),
+    themeLolliGlass: Math.round(Number(cssValue("--lolli-glass") || "0") * 100),
+    themeLolliBlur: parseInt(cssValue("--lolli-blur") || "0", 10) || 0,
+    themeLolliTextColor: rgbToHex(cssValue("--lolli-text") || cssValue("--text")),
+    themeLolliHoverColor: rgbToHex(cssValue("--lolli-hover") || cssValue("--accent")),
+    themeLolliActiveBg: rgbToHex(cssValue("--lolli-active-bg") || cssValue("--accent")),
+    themeLolliActiveIcon: rgbToHex(cssValue("--lolli-active-icon") || cssValue("--on-accent") || "#052016"),
     themeSurfaceColor: rgbToHex(`rgb(${cssValue("--surface-base-rgb").replaceAll(" ", ", ")})`),
     themeSidebarPanelColor: rgbToHex(`rgb(${cssValue("--sidebar-panel-rgb").replaceAll(" ", ", ") || cssValue("--surface-base-rgb").replaceAll(" ", ", ")})`),
     themeSidebarPanelAlpha: Math.round(Number(cssValue("--sidebar-panel-alpha") || "0.16") * 100),
@@ -997,10 +1014,11 @@ function openAppearancePanel() {
 }
 
 function updateRangeValue(input) {
-  const label = input.closest("label");
-  const target = label?.querySelector("span");
+  // Wartość tylko dla suwaków, w polu <span> zaraz za suwakiem — nie w ikonce ⓘ.
+  if (input.type !== "range") return;
+  const target = input.nextElementSibling?.matches?.("span:not(.info-tip)") ? input.nextElementSibling : null;
   if (!target) return;
-  const percentFields = new Set(["themeBackgroundOpacity", "themeBackgroundDim", "themeSidebarPanelAlpha", "themePanelAlpha", "themeGlassSaturation", "themeBorderAlpha", "themeAdminPanelAlpha", "themeModalAlpha", "themeModalBackdropAlpha"]);
+  const percentFields = new Set(["themeLolliGlass", "themeBackgroundOpacity", "themeBackgroundDim", "themeSidebarPanelAlpha", "themePanelAlpha", "themeGlassSaturation", "themeBorderAlpha", "themeAdminPanelAlpha", "themeModalAlpha", "themeModalBackdropAlpha"]);
   target.textContent = percentFields.has(input.id) ? `${input.value}%` : `${input.value}px`;
 }
 
@@ -1011,6 +1029,13 @@ function collectTheme() {
     onAccent: document.querySelector("#themeOnAccentColor").value,
     accent: document.querySelector("#themeAccent").value,
     accentAlt: document.querySelector("#themeAccentAlt").value,
+    inputText: document.querySelector("#themeInputTextColor").value,
+    lolliGlass: String(Number(document.querySelector("#themeLolliGlass").value) / 100),
+    lolliBlur: `${document.querySelector("#themeLolliBlur").value}px`,
+    lolliText: document.querySelector("#themeLolliTextColor").value,
+    lolliHover: document.querySelector("#themeLolliHoverColor").value,
+    lolliActiveBg: document.querySelector("#themeLolliActiveBg").value,
+    lolliActiveIcon: document.querySelector("#themeLolliActiveIcon").value,
     surfaceColor: document.querySelector("#themeSurfaceColor").value,
     sidebarPanelColor: document.querySelector("#themeSidebarPanelColor").value,
     sidebarPanelAlpha: String(Number(document.querySelector("#themeSidebarPanelAlpha").value) / 100),
@@ -1093,7 +1118,8 @@ const THEME_VARS = [
   "--sidebar-toggle-size", "--font-menu", "--font-card", "--font-description", "--tile-panel-rgb", "--tile-panel-alpha",
   "--tile-height", "--admin-panel-rgb", "--admin-panel-alpha", "--border-alpha", "--line", "--card-radius", "--card-gap",
   "--glass-blur", "--glass-saturation", "--modal-bg-rgb", "--modal-alpha", "--modal-glass-blur", "--modal-radius",
-  "--modal-backdrop-alpha", "--modal-backdrop-blur"
+  "--modal-backdrop-alpha", "--modal-backdrop-blur",
+  "--input-text", "--lolli-glass", "--lolli-blur", "--lolli-text", "--lolli-hover", "--lolli-active-bg", "--lolli-active-icon"
 ];
 
 const cssPx = (value) => (String(value).endsWith("px") ? String(value) : `${parseInt(value, 10) || 0}px`);
@@ -1110,11 +1136,17 @@ function themeToVars(theme) {
     set("--accent", theme.accent);
     set("--accent-soft", `color-mix(in srgb, ${theme.accent} 16%, transparent)`);
     set("--glow-start", `color-mix(in srgb, ${theme.accent} 12%, transparent)`);
+    set("--glow-end", `color-mix(in srgb, ${theme.accent} 10%, transparent)`);
   }
-  if (theme.accentAlt) {
-    set("--accent-alt", theme.accentAlt);
-    set("--glow-end", `color-mix(in srgb, ${theme.accentAlt} 10%, transparent)`);
-  }
+  // Akcent 2 = kolor nagłówków.
+  set("--accent-alt", theme.accentAlt);
+  set("--input-text", theme.inputText);
+  set("--lolli-glass", theme.lolliGlass);
+  if (theme.lolliBlur) set("--lolli-blur", cssPx(theme.lolliBlur));
+  set("--lolli-text", theme.lolliText);
+  set("--lolli-hover", theme.lolliHover);
+  set("--lolli-active-bg", theme.lolliActiveBg);
+  set("--lolli-active-icon", theme.lolliActiveIcon);
   set("--page-bg", theme.bg);
   if (theme.surfaceColor) {
     set("--surface-base-rgb", hexToRgb(theme.surfaceColor));

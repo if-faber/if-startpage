@@ -4,6 +4,27 @@ Nowe wpisy dopisujemy na górze.
 
 ---
 
+## v0.1.6.9 — 2026-10-13
+
+Nowe menu, ikony Lucide dla stron i linków, porządki w edytorach wyglądu.
+
+- **Menu stron — prosta lista:** ikona i nazwa w jednej linii, aktywna pozycja w zaokrąglonym, półprzezroczystym tle (zamiast przycisków „lizak”). Nic się nie rozjeżdża przy żadnej szerokości ani wielkości ikon.
+- **Ikony stron z Lucide:** Zaplecze → Strony i sekcje — pole „ikona” przy każdej stronie i przy dodawaniu, z podglądem na żywo. Nazwę wyszukujesz na lucide.dev/icons (np. `printer`, `heart`). Pełny zestaw Lucide (`lucide-static` 1.56.0, 1879 ikon) jest w obrazie — działa bez internetu.
+- **Ikony linków z Lucide:** w polu „Ikona” linku można wpisać nazwę z Lucide (bez rozszerzenia); logo aplikacji (`immich.png`), litera i adres obrazka działają jak dotąd. Zła nazwa — serwer nie zapisze i powie, gdzie szukać.
+- **Dymki ⓘ** przy kontrolkach edytorów wyglądu — co dana kontrolka zmienia (działa myszą i dotykiem).
+- **Wygląd (na żywo):**
+  - „Kolor nagłówków (Akcent 2)” — wszystkie nagłówki (h2, tytuły okien, kart Status i sekcji z kafelkami) jedną kontrolką; drobiazgi, które wcześniej brały Akcent 2, biorą Akcent albo stały kolor (wykresy Top).
+  - „Kolor tekstu w polach” — tekst w polach formularzy i podpowiedzi.
+  - Pasek boczny: „Glass” i „Blur paska z nazwą” (najechanie i aktywna pozycja dziedziczą szkło), „Menu: kolor napisów”, „Menu: ikona po najechaniu”, „Aktywna pozycja: tło / ikona”; „Kolor / Wielkość ikon menu” steruje ikonami menu, ☰ i stopki.
+  - Przycisk ☰ wygląda jak ⚙️ w stopce menu; ikony stopki (☀️/🌙, ⚙️) w kolorach menu.
+- **Wygląd Zaplecza:** „Kolor nagłówków (Akcent pomocniczy)” i „Kolor tekstu w polach”.
+- **Zaplecze → Strony i sekcje (tryb dzień):** pola i bloki w kolorach motywu (wcześniej ciemne plamy), plakietka „Strona główna ⓘ”, „+ Dodaj sekcję”.
+- **README:** instrukcja „Ikony z Lucide — dla stron i linków” oraz przypomnienie o podziękowaniach i licencjach przy dokładaniu cudzych ikon (wzór pliku `ZRODLA.txt`).
+- Naprawione: wartość suwaka nachodziła na ⓘ; dymki ściskane do wąskiego paska w Zapleczu; poziomy pasek przewijania w menu.
+- Porządki: usunięte nieużywane style po starym oknie „Strony i sekcje” i przycisku „Dodaj stronę” w menu.
+
+---
+
 ## v0.1.6.8 — 2026-10-12
 
 - **Po zmianie PIN-u wylogowanie.** Zmiana PIN-u w Zapleczu → Ustawienia ogólne wylogowuje z Zaplecza; na Stronie Głównej przeglądarka zapomina zapisany PIN i przy następnej edycji pyta o nowy. Wcześniej przeglądarka wysyłała dalej stary PIN — kolejne zapisy (np. wygląd dnia) były odrzucane, a każda próba liczyła się do blokady PIN-u.

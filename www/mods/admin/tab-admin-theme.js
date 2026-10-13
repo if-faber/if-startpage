@@ -14,6 +14,7 @@ const ADMIN_THEME_FIELDS = [
   // 1. Ogólne
   { key: "accent", id: "adminThemeAccent", cssVar: "--accent", kind: "color" },
   { key: "accentAlt", id: "adminThemeAccentAlt", cssVar: "--accent-alt", kind: "color" },
+  { key: "inputText", id: "adminThemeInputText", cssVar: "--input-text", kind: "color" },
   { key: "surfaceColor", id: "adminThemeSurfaceColor", cssVar: "--surface-base-rgb", kind: "rgb" },
   { key: "bg", id: "adminThemeBg", cssVar: "--page-bg", kind: "color" },
   { key: "fontMenu", id: "adminThemeFontMenu", cssVar: "--font-menu", kind: "font" },
@@ -247,8 +248,9 @@ function renderAdminThemeTab() {
             <h4 style="margin-top: 0; margin-bottom: 6px; color: var(--accent);">${uiIcon("appearance", 16)} 1. Kolory, czcionki i panele</h4>
             <div class="admin-form-grid three-cols">
               <label>Akcent główny<input id="adminThemeAccent" type="color"></label>
-              <label>Akcent pomocniczy<input id="adminThemeAccentAlt" type="color"></label>
-              <label>Kolor okien (modali)<input id="adminThemeSurfaceColor" type="color"></label>
+              <label><span class="field-title">Kolor nagłówków (Akcent pomocniczy) ${infoTip("Nagłówki kafelków w zakładkach Zaplecza (np. „Progi temperatur”) i tytuły okien. Jedną kontrolką poprawisz nagłówki w całym Zapleczu.")}</span><input id="adminThemeAccentAlt" type="color"></label>
+              <label><span class="field-title">Kolor okien (modali) ${infoTip("Kolor zapasowy okien. Okna w Zapleczu biorą wygląd ze Strony Głównej → Wygląd → Okna Modalne (osobno dzień i noc) — tam zmieniasz ich kolor.")}</span><input id="adminThemeSurfaceColor" type="color"></label>
+              <label><span class="field-title">Kolor tekstu w polach ${infoTip("Tekst wpisywany w polach formularzy i listach wyboru w Zapleczu. Podpowiedź w pustym polu ma jaśniejszą wersję tego koloru.")}</span><input id="adminThemeInputText" type="color"></label>
 
               <label>Czcionka menu<select id="adminThemeFontMenu">${renderFontOptions()}</select></label>
               <label>Czcionka kart<select id="adminThemeFontCard">${renderFontOptions()}</select></label>
@@ -538,8 +540,6 @@ function applyAdminThemeField(field, value) {
   if (field.key === "accent") {
     root.style.setProperty("--accent-soft", `color-mix(in srgb, ${value} 16%, transparent)`);
     root.style.setProperty("--glow-start", `color-mix(in srgb, ${value} 12%, transparent)`);
-  }
-  if (field.key === "accentAlt") {
     root.style.setProperty("--glow-end", `color-mix(in srgb, ${value} 10%, transparent)`);
   }
 }

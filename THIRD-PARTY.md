@@ -16,8 +16,10 @@ Ikona przełącznika trybu (wariant „classic”) pochodzi z projektu
 
 ## Ikony interfejsu
 
-Ikony menu i przycisków (`www/ui-icons.js`) pochodzą z projektu
-[Lucide](https://lucide.dev), licencja ISC (pełna treść licencji w nagłówku pliku).
+Ikony menu i przycisków (`www/ui-icons.js`) oraz pełny zestaw ikon Lucide dla stron
+i linków (`www/lucide-sprite.svg`, z paczki `lucide-static` 1.56.0) pochodzą z projektu
+[Lucide](https://lucide.dev), licencja ISC (treść: `www/lucide-LICENSE.txt` i nagłówek
+`www/ui-icons.js`).
 
 ## Biblioteki
 

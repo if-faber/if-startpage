@@ -131,7 +131,7 @@
 .top-core-fill {
   height: 100%;
   border-radius: 4px;
-  background: linear-gradient(90deg, var(--accent), var(--accent-alt));
+  background: linear-gradient(90deg, var(--accent), #3b82f6);
   transition: width 0.35s ease;
 }
 
@@ -169,7 +169,7 @@
 }
 
 .top-ram-seg-cache {
-  background: var(--accent-alt);
+  background: #3b82f6;
   height: 100%;
   transition: width 0.35s ease;
 }
@@ -203,7 +203,7 @@
 }
 
 .top-legend-dot.used { background: var(--accent); }
-.top-legend-dot.cache { background: var(--accent-alt); }
+.top-legend-dot.cache { background: #3b82f6; }
 .top-legend-dot.free { background: color-mix(in srgb, var(--text) 35%, transparent); }
 .top-legend-dot.swap { background: #fb923c; }
 
@@ -342,7 +342,7 @@
 }
 
 .top-badge-mem {
-  color: var(--accent-alt);
+  color: #3b82f6;
   font-weight: 700;
 }
 

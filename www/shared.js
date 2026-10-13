@@ -109,8 +109,9 @@ function renderFontOptions() {
 }
 
 function updateRangeValue(input) {
+  // Pole wartości to <span> zaraz za suwakiem — nie ikonka ⓘ (infoTip) w etykiecie.
   const label = input.closest("label");
-  const span = label?.querySelector("span");
+  const span = [...(label?.querySelectorAll(":scope > span") || [])].find((el) => !el.classList.contains("info-tip") && !el.classList.contains("field-title"));
   if (span) {
     if (input.id.includes("Alpha") || input.id.includes("Opacity") || input.id.includes("Dim")) {
       span.textContent = `${input.value}%`;
