@@ -63,20 +63,27 @@
           </div>
 
           <nav class="admin-nav" style="margin-top: 20px;">
-            <button class="nav-button active" id="tab-helper" type="button" data-icon="settings">Ustawienia ogólne</button>
+            <!-- Kolejność: treść strony → stan serwera → ustawienia (od najczęściej używanych). -->
+            <div class="admin-nav-group">Treść strony</div>
+            <button class="nav-button active" id="tab-homepage" type="button" data-icon="page">Strony i sekcje</button>
+            <div class="admin-nav-group">Serwer</div>
             <button class="nav-button" id="tab-alerts" type="button" data-icon="alerts">Centrum Alertów</button>
             <button class="nav-button" id="tab-live" type="button" data-icon="status">Statystyki Live</button>
-            <button class="nav-button" id="tab-homepage" type="button" data-icon="page">Strony i sekcje</button>
-            <button class="nav-button" id="tab-modules" type="button" data-icon="modules">Moduły</button>
-            <!-- tab-kiosk: od v0.4.2 dostępny przez hub "Moduły" (tab-modules.js), bez własnego przycisku w sidebarze -->
             <button class="nav-button" id="tab-updates" type="button" data-icon="package">Aktualizacje</button>
+            <div class="admin-nav-group">Ustawienia</div>
+            <!-- tab-kiosk: od v0.4.2 dostępny przez hub "Moduły" (tab-modules.js), bez własnego przycisku w sidebarze -->
+            <button class="nav-button" id="tab-modules" type="button" data-icon="modules">Moduły</button>
             <button class="nav-button" id="tab-admin-theme" type="button" data-icon="appearance">Wygląd Zaplecza</button>
+            <button class="nav-button" id="tab-helper" type="button" data-icon="settings">Ustawienia ogólne</button>
           </nav>
 
-          <div class="sidebar-actions" style="display: flex; flex-direction: column; gap: 8px; margin-top: auto;">
-            <button type="button" class="nav-button admin-mode-toggle" id="adminModeToggle" title="Tryb dzień / noc" aria-label="Przełącz tryb dzień / noc"></button>
-            <a href="../../" class="nav-button" style="font-weight: bold;" data-icon="back">Powrót do serwisu</a>
-            <button type="button" class="nav-button danger" onclick="logoutAdmin()" style="font-weight: bold;" data-icon="logout">Wyloguj z Zaplecza</button>
+          <!-- Stopka menu jak na Stronie Głównej: trzy ikonki (tryb dzień/noc, powrót, wylogowanie). -->
+          <div class="sidebar-actions admin-sidebar-footer">
+            <div class="sidebar-tools">
+              <button type="button" class="sidebar-icon-btn" id="adminModeToggle" title="Tryb dzień / noc" aria-label="Przełącz tryb dzień / noc"></button>
+              <a href="../../" class="sidebar-icon-btn" title="Powrót do serwisu" aria-label="Powrót do serwisu" data-icon="back"></a>
+              <button type="button" class="sidebar-icon-btn admin-logout-btn" onclick="logoutAdmin()" title="Wyloguj z Zaplecza" aria-label="Wyloguj z Zaplecza" data-icon="logout"></button>
+            </div>
           </div>
         </aside>
 
@@ -84,7 +91,7 @@
         <main class="admin-main">
           <header class="toolbar" style="margin-bottom: 20px;">
             <div class="page-title">
-              <h1 id="tabTitle" style="font-size: 24px; margin: 0;">Ustawienia ogólne</h1>
+              <h1 id="tabTitle" style="font-size: 24px; margin: 0;">Strony i sekcje</h1>
             </div>
           </header>
           <section id="tabContent" class="admin-content"></section>

@@ -2,7 +2,7 @@
 
 const state = {
   adminPin: null,
-  activeTab: "helper", // helper, alerts, homepage, modules, kiosk, updates, admin-theme
+  activeTab: "homepage", // helper, alerts, homepage, modules, kiosk, updates, admin-theme
   theme: {},
   settings: {},
 

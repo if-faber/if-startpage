@@ -190,7 +190,8 @@ function renderAdminModeToggle() {
   const button = document.querySelector("#adminModeToggle");
   if (!button || typeof themeToggleIcon !== "function") return;
   const isNight = currentAdminMode() === "n";
-  button.innerHTML = `${themeToggleIcon(isNight)}<span>${isNight ? "Tryb nocny" : "Tryb dzienny"}</span>`;
+  button.innerHTML = themeToggleIcon(isNight);
+  button.title = isNight ? "Tryb nocny — kliknij, żeby przełączyć na dzienny" : "Tryb dzienny — kliknij, żeby przełączyć na nocny";
 }
 
 function setAdminMode(mode) {

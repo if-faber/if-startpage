@@ -30,7 +30,7 @@ async function unlockAdmin(e) {
     document.querySelector("#pinScreen").style.display = "none";
     document.querySelector("#adminDashboard").style.display = "grid";
 
-    const savedTab = sessionStorage.getItem("homedash.admin.activeTab") || state.activeTab || "helper";
+    const savedTab = sessionStorage.getItem("homedash.admin.activeTab") || state.activeTab || "homepage";
     if (typeof switchTab === "function") {
       switchTab(savedTab);
     }
@@ -70,7 +70,7 @@ async function autoUnlockIfStored() {
     document.querySelector("#pinScreen").style.display = "none";
     document.querySelector("#adminDashboard").style.display = "grid";
 
-    const savedTab = sessionStorage.getItem("homedash.admin.activeTab") || state.activeTab || "helper";
+    const savedTab = sessionStorage.getItem("homedash.admin.activeTab") || state.activeTab || "homepage";
     if (typeof switchTab === "function") {
       switchTab(savedTab);
     }

@@ -88,8 +88,8 @@ html[data-mode="d"] body.admin-body {
 }
 
 /* Przełącznik dzień / noc w menu Zaplecza (ikona jak na Stronie Głównej). */
-.admin-mode-toggle { font-size: 18px; }
-.admin-mode-toggle .theme-toggle { display: inline-flex; }
+#adminModeToggle { font-size: 18px; }
+#adminModeToggle .theme-toggle { display: inline-flex; }
 
 /* Pasek tytułu Zaplecza nie potrzebuje wysokości paska strony głównej */
 .admin-main .toolbar { min-height: 0; }
@@ -627,3 +627,23 @@ dialog menu {
 .hp-home-tag { display: inline-flex; align-items: center; gap: 2px; padding: 4px 10px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); font-size: 12px; font-weight: 800; }
 .hp-icon-preview { display: grid; place-items: center; width: 38px; height: 38px; flex: 0 0 38px; border: 1px solid var(--line); border-radius: 10px; color: var(--accent); }
 .hp-icon-input { width: 170px; flex: 0 0 170px; font-size: 13px; }
+
+/* Menu Zaplecza — podpisy grup (Treść strony / Serwer / Ustawienia) z kreską nad grupą. */
+.admin-nav-group { margin: 14px 4px 4px; padding-top: 10px; border-top: 1px solid var(--line); color: var(--muted); font-size: 10px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
+.admin-nav .admin-nav-group:first-child { margin-top: 0; padding-top: 0; border-top: 0; }
+
+/* Stopka menu Zaplecza: trzy ikonki w rzędzie, kolory z menu Zaplecza. */
+.admin-sidebar-footer { margin-top: auto; padding-top: 12px; border-top: 1px solid var(--line); }
+.admin-sidebar .sidebar-tools { display: flex; justify-content: center; gap: 10px; }
+.admin-sidebar .sidebar-tools .sidebar-icon-btn {
+  width: 44px; max-width: 44px; height: 44px; font-size: 18px; text-decoration: none;
+  background: color-mix(in srgb, var(--admin-menu-btn-bg) 55%, transparent);
+  color: var(--admin-menu-btn-text, var(--text));
+  border: 1px solid var(--line);
+}
+.admin-sidebar .sidebar-tools .sidebar-icon-btn:hover {
+  background: var(--admin-menu-btn-hover-bg, color-mix(in srgb, var(--accent) 20%, transparent));
+  color: var(--admin-menu-btn-hover-text, var(--accent));
+}
+.admin-sidebar .sidebar-tools .admin-logout-btn { color: var(--danger, #ef7777); }
+.admin-sidebar .sidebar-tools .admin-logout-btn:hover { background: color-mix(in srgb, var(--danger, #ef7777) 18%, transparent); color: var(--danger, #ef7777); }

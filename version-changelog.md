@@ -4,6 +4,13 @@ Nowe wpisy dopisujemy na górze.
 
 ---
 
+## v0.1.6.10 — 2026-10-13
+
+- **Menu Zaplecza w logicznym porządku**, w trzech grupach z podpisami: **Treść strony** (Strony i sekcje), **Serwer** (Centrum Alertów, Statystyki Live, Aktualizacje), **Ustawienia** (Moduły, Wygląd Zaplecza, Ustawienia ogólne) — od najczęściej używanych. Zaplecze otwiera się na „Stronach i sekcjach”.
+- **Stopka menu Zaplecza jak na Stronie Głównej:** trzy ikonki w rzędzie — tryb dzień/noc, powrót do serwisu, wylogowanie (pełne nazwy w podpowiedziach). Menu mieści się bez paska przewijania.
+
+---
+
 ## v0.1.6.9 — 2026-10-13
 
 Nowe menu, ikony Lucide dla stron i linków, porządki w edytorach wyglądu.
