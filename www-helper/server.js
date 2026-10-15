@@ -581,11 +581,15 @@ function saveVersionsCache(cache) {
 }
 
 // Lista stabilnych wersji obrazu (z pamięci, jeśli świeża — chyba że force).
+// Nieudane sprawdzenie (np. chwilowy brak internetu po restarcie) ponawiamy po 10 minutach,
+// a nie po dniu — i nie gubimy wtedy ostatniej znanej listy wersji.
+const VERSIONS_RETRY_MS = 10 * 60 * 1000;
+
 async function getStableTags(image, { force = false } = {}) {
   const key = imageWithoutTag(image);
-  const cache = loadVersionsCache();
-  const entry = cache.images[key];
-  if (!force && entry && Date.now() - entry.checkedAt < VERSIONS_CACHE_MS) return entry;
+  const entry = loadVersionsCache().images[key];
+  const maxAge = entry?.error ? VERSIONS_RETRY_MS : VERSIONS_CACHE_MS;
+  if (!force && entry && Date.now() - entry.checkedAt < maxAge) return entry;
   const { host, repository } = parseImageRef(image);
   let tags = null;
   let error = null;
@@ -595,7 +599,11 @@ async function getStableTags(image, { force = false } = {}) {
     error = err.message;
     console.error(`Sprawdzanie wersji nie powiodło się dla ${image}:`, err.message);
   }
-  const fresh = { tags, error, checkedAt: Date.now() };
+  const fresh = { tags: tags ?? entry?.tags ?? null, error, checkedAt: Date.now() };
+  // Plik czytamy na nowo tuż przed zapisem (bez await pomiędzy): sprawdzenia wszystkich
+  // kontenerów biegną naraz i każde dopisuje tylko swój wynik — inaczej ostatnie
+  // nadpisywało wyniki pozostałych starą zawartością pliku.
+  const cache = loadVersionsCache();
   cache.images[key] = fresh;
   saveVersionsCache(cache);
   return fresh;

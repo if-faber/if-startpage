@@ -4,6 +4,12 @@ Nowe wpisy dopisujemy na górze.
 
 ---
 
+## v0.1.7.2 — 2026-10-15
+
+- **Aktualizacje: koniec z „nieznaną” wersją kontenerów po chwilowym braku internetu.** Sprawdzenia wszystkich kontenerów zapisywały wyniki jednocześnie i nadpisywały się nawzajem — w pamięci zostawały stare błędy. Teraz każde dopisuje swój wynik, a nieudane sprawdzenie (np. zaraz po restarcie serwera) jest ponawiane po 10 minutach, nie po dniu, bez gubienia ostatniej znanej listy wersji.
+
+---
+
 ## v0.1.7.1 — 2026-10-15
 
 - **Ikona sekcji wyświetla się na stronie głównej** (w v0.1.7 była widoczna tylko w Zapleczu).
