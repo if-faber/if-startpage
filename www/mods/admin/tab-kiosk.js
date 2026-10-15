@@ -550,7 +550,7 @@ function resetKioskMenuItemForm() {
 }
 
 async function deleteKioskMenuItem(id) {
-  if (!confirm("Czy na pewno chcesz usunąć ten przycisk z menu Kiosku?")) return;
+  if (!(await ifConfirm("Czy na pewno chcesz usunąć ten przycisk z menu Kiosku?", { okLabel: "Usuń", danger: true }))) return;
   const items = (kioskState.menuItems || []).filter(it => it.id !== id);
   try {
     await saveKioskConfig({ menuItems: items });

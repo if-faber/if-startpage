@@ -127,3 +127,45 @@ function infoTip(text) {
   const safe = String(text).replace(/[&<>"']/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch]));
   return `<span class="info-tip" tabindex="0" role="note" aria-label="${safe}">${uiIcon("info", 15)}<span class="info-tip-bubble" aria-hidden="true">${safe}</span></span>`;
 }
+
+// Nasze okienko pytania / komunikatu zamiast confirm() i alert() przeglądarki — wygląda jak
+// reszta okien (ustawienia „Okna modalne”). Zasada: w IF-startpage nie używamy okienek przeglądarki.
+//   if (!(await ifConfirm("Usunąć link?", { okLabel: "Usuń", danger: true }))) return;
+//   await ifAlert("Zapisano.");
+function ifDialog(message, { title = "Potwierdź", okLabel = "OK", cancelLabel = "Anuluj", danger = false, cancel = true } = {}) {
+  return new Promise((resolve) => {
+    const dialog = document.createElement("dialog");
+    dialog.className = "if-confirm";
+    dialog.innerHTML = `
+      <div class="modal-panel">
+        <header class="modal-heading"><div><h2></h2></div></header>
+        <p class="if-confirm-message"></p>
+        <menu>
+          ${cancel ? '<button type="button" class="button" data-cancel></button>' : ""}
+          <button type="button" class="button ${danger ? "danger" : "primary"}" data-ok></button>
+        </menu>
+      </div>`;
+    dialog.querySelector("h2").textContent = title;
+    dialog.querySelector(".if-confirm-message").textContent = String(message ?? "");
+    dialog.querySelector("[data-ok]").textContent = okLabel;
+    const cancelButton = dialog.querySelector("[data-cancel]");
+    if (cancelButton) cancelButton.textContent = cancelLabel;
+    let result = false;
+    dialog.querySelector("[data-ok]").addEventListener("click", () => { result = true; dialog.close(); });
+    cancelButton?.addEventListener("click", () => dialog.close());
+    // Zamknięcie klawiszem Esc albo kliknięcie obok = „Anuluj”.
+    dialog.addEventListener("click", (event) => { if (event.target === dialog) dialog.close(); });
+    dialog.addEventListener("close", () => { dialog.remove(); resolve(result); }, { once: true });
+    document.body.appendChild(dialog);
+    dialog.showModal();
+    (cancelButton || dialog.querySelector("[data-ok]")).focus();
+  });
+}
+
+function ifConfirm(message, options = {}) {
+  return ifDialog(message, options);
+}
+
+function ifAlert(message, options = {}) {
+  return ifDialog(message, { title: "Informacja", cancel: false, ...options });
+}

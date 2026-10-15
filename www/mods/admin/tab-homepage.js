@@ -227,9 +227,9 @@ function movePageAdmin(pageId, direction) {
   pageRequestAdmin("PUT", `/api/services/page/${pageId}/move`, { direction });
 }
 
-function deletePageAdmin(pageId) {
+async function deletePageAdmin(pageId) {
   const page = cachedAdminPages.find((item) => item.id === pageId);
-  if (!page || !confirm(`Usunąć stronę „${page.name}”? Jej sekcje i linki przejdą na Home.`)) return;
+  if (!page || !(await ifConfirm(`Usunąć stronę „${page.name}”? Jej sekcje i linki przejdą na Home.`, { okLabel: "Usuń", danger: true }))) return;
   if (adminPageId === pageId) adminPageId = "home";
   pageRequestAdmin("DELETE", `/api/services/page/${pageId}`, null, "Strona usunięta, sekcje przeniesione na Home.");
 }
@@ -350,7 +350,7 @@ async function moveLinkAdmin(id, direction) {
 }
 
 async function deleteSectionAdmin(id, name) {
-  if (!confirm(`Czy na pewno chcesz usunąć sekcję „${name}” i wszystkie jej linki?`)) return;
+  if (!(await ifConfirm(`Czy na pewno chcesz usunąć sekcję „${name}” i wszystkie jej linki?`, { okLabel: "Usuń", danger: true }))) return;
   try {
     await request(`/api/services/section/${id}`, { method: "DELETE" });
     showToast("Sekcja usunięta.");
@@ -444,7 +444,7 @@ async function saveAdminLink(e) {
 }
 
 async function deleteLinkAdmin(id, name) {
-  if (!confirm(`Usunąć link „${name}”?`)) return;
+  if (!(await ifConfirm(`Usunąć link „${name}”?`, { okLabel: "Usuń", danger: true }))) return;
   try {
     await request(`/api/services/link/${id}`, { method: "DELETE" });
     showToast("Link usunięty.");
@@ -484,7 +484,7 @@ async function uploadIcons() {
         done.push(res.name);
       } catch (error) {
         // Taka ikona już jest — pytamy, czy zastąpić.
-        if (/już jest/.test(error.message) && confirm(`${error.message} Zastąpić?`)) {
+        if (/już jest/.test(error.message) && await ifConfirm(`${error.message} Zastąpić?`, { okLabel: "Zastąp", danger: true })) {
           const res = await request("/api/icons", { method: "POST", body: JSON.stringify({ name: file.name, data, overwrite: true }) });
           done.push(res.name);
         } else {

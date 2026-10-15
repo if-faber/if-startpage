@@ -444,9 +444,9 @@ function bindShell() {
       showToast("Nie udało się odczytać pliku tła.");
     }
   });
-  document.querySelector("#themeEditMode")?.addEventListener("change", (event) => {
+  document.querySelector("#themeEditMode")?.addEventListener("change", async (event) => {
     const mode = event.target.value;
-    if (state.appearanceDirty && !confirm("Masz niezapisane zmiany. Przełączyć tryb i je odrzucić?")) {
+    if (state.appearanceDirty && !(await ifConfirm("Masz niezapisane zmiany. Przełączyć tryb i je odrzucić?", { okLabel: "Przełącz", danger: true }))) {
       event.target.value = currentMode();
       return;
     }
@@ -827,7 +827,7 @@ async function saveLink(event) {
 }
 
 async function deleteLink(link) {
-  if (!confirm(`Usunąć link „${link.name}”?`)) return;
+  if (!(await ifConfirm(`Usunąć link „${link.name}”?`, { okLabel: "Usuń", danger: true }))) return;
   try {
     await request(`${dashboardConfig.apiUrl}/api/services/link/${link.id}`, { method: "DELETE" });
     await reloadData();
@@ -1310,7 +1310,7 @@ async function saveThemeSettings(event) {
 async function resetThemeSettings() {
   const mode = document.querySelector("#themeEditMode")?.value === "d" ? "d" : "n";
   const label = mode === "d" ? "dnia" : "nocy";
-  if (!confirm(`Przywrócić wygląd startowy ${label}? Twoje zmiany dla tego trybu zostaną usunięte.`)) return;
+  if (!(await ifConfirm(`Przywrócić wygląd startowy ${label}? Twoje zmiany dla tego trybu zostaną usunięte.`, { okLabel: "Przywróć", danger: true }))) return;
   try {
     await request(`${dashboardConfig.apiUrl}/api/dashboard/custom-css`, {
       method: "PUT",

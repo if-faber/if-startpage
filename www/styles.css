@@ -970,3 +970,7 @@ dialog menu { display: flex; justify-content: flex-end; gap: 8px; margin: 4px 0 
 }
 /* Nazwa kontrolki z ikonką ⓘ w jednej linii (jeden wiersz siatki etykiety). */
 .field-title { display: inline-flex; align-items: center; gap: 2px; flex-wrap: wrap; }
+
+/* Okienko pytania / komunikatu (ifConfirm, ifAlert w ui-icons.js) — zamiast okienek przeglądarki. */
+dialog.if-confirm { width: min(440px, calc(100vw - 28px)); }
+.if-confirm .if-confirm-message { margin: 0; color: var(--text); font-size: 14px; line-height: 1.55; white-space: pre-line; }

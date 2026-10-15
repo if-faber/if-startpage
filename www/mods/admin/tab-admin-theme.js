@@ -404,9 +404,9 @@ function bindAdminThemeEvents() {
   const modeSelect = document.querySelector("#adminThemeMode");
   if (modeSelect) {
     modeSelect.value = currentAdminMode();
-    modeSelect.addEventListener("change", (event) => {
+    modeSelect.addEventListener("change", async (event) => {
       event.stopPropagation();
-      if (adminThemeDirty.size && !confirm("Niezapisane zmiany wyglądu przepadną. Przełączyć tryb?")) {
+      if (adminThemeDirty.size && !(await ifConfirm("Niezapisane zmiany wyglądu przepadną. Przełączyć tryb?", { okLabel: "Przełącz", danger: true }))) {
         modeSelect.value = currentAdminMode();
         return;
       }
@@ -513,7 +513,7 @@ function revertAdminAppearance() {
 
 async function resetAdminAppearance() {
   const modeName = currentAdminMode() === "d" ? "dzień" : "noc";
-  if (!confirm(`Przywrócić wygląd startowy Zaplecza (${modeName})? Zapisane ustawienia wyglądu tego trybu zostaną usunięte.`)) return;
+  if (!(await ifConfirm(`Przywrócić wygląd startowy Zaplecza (${modeName})? Zapisane ustawienia wyglądu tego trybu zostaną usunięte.`, { okLabel: "Przywróć", danger: true }))) return;
   try {
     const data = await request("/api/admin/theme", {
       method: "PUT",

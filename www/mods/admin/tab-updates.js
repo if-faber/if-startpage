@@ -231,14 +231,14 @@ async function loadContainers({ force = false } = {}) {
 
 async function restoreContainerCompose(btnEl) {
   const container = btnEl.dataset.container;
-  if (!confirm(`Przywrócić compose.yaml dla „${container}” z ostatniej kopii?\n\nPotem zrób „Aktualizuj” w Dockge, żeby uruchomić przywróconą wersję.`)) return;
+  if (!(await ifConfirm(`Przywrócić compose.yaml dla „${container}” z ostatniej kopii?\n\nPotem zrób „Aktualizuj” w Dockge, żeby uruchomić przywróconą wersję.`, { okLabel: "Przywróć" }))) return;
   btnEl.disabled = true;
   try {
     const res = await request("/api/docker/compose-restore", { method: "POST", body: JSON.stringify({ container }) });
-    alert(res.message || "Przywrócono compose.yaml.");
     loadContainers();
+    await ifAlert(res.message || "Przywrócono compose.yaml.", { title: "Gotowe" });
   } catch (error) {
-    alert("Błąd: " + error.message);
+    await ifAlert(error.message, { title: "Błąd" });
   } finally {
     btnEl.disabled = false;
   }
@@ -252,7 +252,7 @@ async function updateContainerCompose(btnEl) {
   const question = major
     ? `UWAGA — większa zmiana wersji dla „${container}” (na ${tag}).\n\nPrzeczytaj „Co nowego”. Jeśli aplikacja ma dane (np. baza danych), ZRÓB NAJPIERW KOPIĘ DANYCH.\n\nZapisać ${tag} w compose.yaml? Aktualizację uruchomisz potem w Dockge.`
     : `Zapisać wersję „${tag}” w compose.yaml dla „${container}”?\n\nTo tylko zapisuje plik (z kopią) — aktualizację uruchamiasz w Dockge.`;
-  if (!confirm(question)) {
+  if (!(await ifConfirm(question, { title: major ? "Większa zmiana wersji" : "Potwierdź", okLabel: "Zapisz wersję", danger: major }))) {
     return;
   }
 
@@ -265,10 +265,10 @@ async function updateContainerCompose(btnEl) {
       method: "POST",
       body: JSON.stringify({ container, tag })
     });
-    alert(res.message || "Zapisano nowy tag w compose.yaml.");
     loadContainers();
+    await ifAlert(res.message || "Zapisano nowy tag w compose.yaml.", { title: "Gotowe" });
   } catch (error) {
-    alert("Błąd: " + error.message);
+    await ifAlert(error.message, { title: "Błąd" });
   } finally {
     btnEl.disabled = false;
     btnEl.textContent = originalLabel;
