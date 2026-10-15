@@ -276,7 +276,7 @@ function appShell() {
             <div class="appearance-section-title">${uiIcon("appearance", 16)} Ogólne i Tło</div>
             <div class="appearance-section-grid">
               <label>Akcent<input id="themeAccent" type="color"></label>
-              <label><span class="field-title">Kolor nagłówków (Akcent 2) ${infoTip("Wszystkie nagłówki: tytuły okien, tytuły kart na stronie Status i tytuły sekcji z kafelkami (np. ADMINISTRACJA SERWERA). Jedną kontrolką poprawisz nagłówki na całej stronie.")}</span><input id="themeAccentAlt" type="color"></label>
+              <label><span class="field-title">Kolor nagłówków (Akcent 2) ${infoTip("Nagłówki na kafelkach i w okienkach: tytuły okien, tytuły kart (np. na stronach Status i Narzędzia). Napisy leżące wprost na tle strony mają własne kontrolki w części „Nagłówek i napisy na tle”.")}</span><input id="themeAccentAlt" type="color"></label>
               <label>Tło strony<input id="themeBg" type="color"></label>
               <label>Kolor motywu<input id="themeSurfaceColor" type="color"></label>
               <label>Kolor tekstu<input id="themeTextColor" type="color"></label>
@@ -293,7 +293,7 @@ function appShell() {
 
           <!-- 2. Header / Nagłówek -->
           <section class="appearance-section">
-            <div class="appearance-section-title">${uiIcon("tag", 16)} Nagłówek (Header)</div>
+            <div class="appearance-section-title">${uiIcon("tag", 16)} Nagłówek i napisy na tle ${infoTip("Napisy, które leżą wprost na tle strony (obraz lub kolor tła), a nie na kafelku. Każdy ma własny kolor, bo tło i kafelki mogą być bardzo różne.")}</div>
             <div class="appearance-section-grid">
               <label>Kolor nazwy serwisu<input id="themeTitleColor" type="color"></label>
               <label>Wielkość nazwy serwisu<input id="themeTitleSize" type="range" min="16" max="52" step="1"><span></span></label>
@@ -302,8 +302,12 @@ function appShell() {
               <label>Wielkość sloganu<input id="themeSubtitleSize" type="range" min="11" max="28" step="1"><span></span></label>
               <label>Cień sloganu<input id="themeSubtitleShadowBlur" type="range" min="0" max="30" step="1"><span></span></label>
               <label>Rozmiar logo (do 260px)<input id="themeLogoSize" type="range" min="32" max="260" step="2"><span></span></label>
+              <label><span class="field-title">Kolor tytułu strony ${infoTip("Duży napis nad treścią, np. „Narzędzia”, „Top (procesy)”.")}</span><input id="themePageTitleColor" type="color"></label>
               <label>Wielkość tytułu strony<input id="themePageTitleSize" type="range" min="16" max="52" step="1"><span></span></label>
               <label>Cień tytułu strony<input id="themePageTitleShadowBlur" type="range" min="0" max="30" step="1"><span></span></label>
+              <label><span class="field-title">Kolor tytułów sekcji ${infoTip("Napisy nad grupami kafelków na stronach, np. ADMINISTRACJA SERWERA.")}</span><input id="themeSectionTitleColor" type="color"></label>
+              <label>Wielkość tytułów sekcji<input id="themeSectionTitleSize" type="range" min="10" max="28" step="1"><span></span></label>
+              <label>Cień tytułów sekcji<input id="themeSectionTitleShadowBlur" type="range" min="0" max="30" step="1"><span></span></label>
             </div>
           </section>
 
@@ -985,6 +989,10 @@ function openAppearancePanel() {
     themeSubtitleShadowBlur: parseInt(cssValue("--subtitle-shadow-blur") || "0", 10),
     themePageTitleSize: parseInt(cssValue("--page-title-size") || "32", 10),
     themePageTitleShadowBlur: parseInt(cssValue("--page-title-shadow-blur") || "0", 10),
+    themePageTitleColor: rgbToHex(cssValue("--page-title-color") || cssValue("--text")),
+    themeSectionTitleColor: rgbToHex(cssValue("--section-title-color") || cssValue("--accent-alt")),
+    themeSectionTitleSize: parseInt(cssValue("--section-title-size") || "12", 10),
+    themeSectionTitleShadowBlur: parseInt(cssValue("--section-title-shadow-blur") || "0", 10),
     themeCardRadius: parseInt(cssValue("--card-radius") || "22", 10),
     themeCardGap: parseInt(cssValue("--card-gap") || "14", 10),
     themeTileHeight: parseInt(cssValue("--tile-height") || "132", 10),
@@ -1059,6 +1067,10 @@ function collectTheme() {
     subtitleShadowBlur: document.querySelector("#themeSubtitleShadowBlur").value,
     pageTitleSize: `${document.querySelector("#themePageTitleSize").value}px`,
     pageTitleShadowBlur: document.querySelector("#themePageTitleShadowBlur").value,
+    pageTitleColor: document.querySelector("#themePageTitleColor").value,
+    sectionTitleColor: document.querySelector("#themeSectionTitleColor").value,
+    sectionTitleSize: `${document.querySelector("#themeSectionTitleSize").value}px`,
+    sectionTitleShadowBlur: document.querySelector("#themeSectionTitleShadowBlur").value,
     cardRadius: `${document.querySelector("#themeCardRadius").value}px`,
     cardGap: `${document.querySelector("#themeCardGap").value}px`,
     tileHeight: `${document.querySelector("#themeTileHeight").value}px`,
@@ -1114,7 +1126,8 @@ const THEME_VARS = [
   "--page-bg", "--surface-base-rgb", "--panel-strong", "--background-image", "--background-image-opacity", "--background-image-blur",
   "--background-image-dim", "--title-color", "--title-size", "--title-shadow", "--title-shadow-blur", "--subtitle-color",
   "--subtitle-size", "--subtitle-shadow", "--subtitle-shadow-blur", "--logo-size", "--page-title-size", "--page-title-shadow",
-  "--page-title-shadow-blur", "--sidebar-panel-rgb", "--sidebar-panel-alpha", "--sidebar-width", "--sidebar-toggle-color",
+  "--page-title-shadow-blur", "--page-title-color", "--section-title-color", "--section-title-size", "--section-title-shadow",
+  "--section-title-shadow-blur", "--sidebar-panel-rgb", "--sidebar-panel-alpha", "--sidebar-width", "--sidebar-toggle-color",
   "--sidebar-toggle-size", "--font-menu", "--font-card", "--font-description", "--tile-panel-rgb", "--tile-panel-alpha",
   "--tile-height", "--admin-panel-rgb", "--admin-panel-alpha", "--border-alpha", "--line", "--card-radius", "--card-gap",
   "--glass-blur", "--glass-saturation", "--modal-bg-rgb", "--modal-alpha", "--modal-glass-blur", "--modal-radius",
@@ -1138,7 +1151,7 @@ function themeToVars(theme) {
     set("--glow-start", `color-mix(in srgb, ${theme.accent} 12%, transparent)`);
     set("--glow-end", `color-mix(in srgb, ${theme.accent} 10%, transparent)`);
   }
-  // Akcent 2 = kolor nagłówków.
+  // Akcent 2 = kolor nagłówków na kafelkach i w okienkach.
   set("--accent-alt", theme.accentAlt);
   set("--input-text", theme.inputText);
   set("--lolli-glass", theme.lolliGlass);
@@ -1189,6 +1202,14 @@ function themeToVars(theme) {
     const blur = parseInt(theme.pageTitleShadowBlur, 10) || 0;
     set("--page-title-shadow", blur > 0 ? `0 2px ${blur}px rgba(0,0,0,0.85)` : "none");
     set("--page-title-shadow-blur", `${blur}px`);
+  }
+  set("--page-title-color", theme.pageTitleColor);
+  set("--section-title-color", theme.sectionTitleColor);
+  if (theme.sectionTitleSize) set("--section-title-size", cssPx(theme.sectionTitleSize));
+  if (theme.sectionTitleShadowBlur != null && theme.sectionTitleShadowBlur !== "") {
+    const blur = parseInt(theme.sectionTitleShadowBlur, 10) || 0;
+    set("--section-title-shadow", blur > 0 ? `0 1px ${blur}px rgba(0,0,0,0.75)` : "none");
+    set("--section-title-shadow-blur", `${blur}px`);
   }
 
   if (theme.sidebarPanelColor) set("--sidebar-panel-rgb", hexToRgb(theme.sidebarPanelColor));
@@ -1389,11 +1410,18 @@ function renderToolsPage() {
   stopStatusTopDiagnostics();
   document.querySelector("#viewTitle").textContent = "Narzędzia";
   document.querySelector("#toolbarActions").innerHTML = "";
+  // Tester portów (bez PIN-u) + po prawej „Narzędzia Pomocnicze” — miejsce na menu kolejnych
+  // narzędzi (kopia zapasowa, przygotowanie instalacji); na razie puste.
   document.querySelector("#content").innerHTML = `
-    <section class="admin-card ports-card">
-      <div class="panel-heading"><div><span class="eyebrow">Sieć</span><h2>Wyszukiwanie i test portów</h2></div></div>
-      <div id="portTool"></div>
-    </section>
+    <div class="tools-layout">
+      <section class="admin-card ports-card">
+        <div class="panel-heading"><div><span class="eyebrow">Sieć</span><h2>Wyszukiwanie i test portów</h2></div></div>
+        <div id="portTool"></div>
+      </section>
+      <section class="admin-card helper-tools-card">
+        <div class="panel-heading"><div><h2>Narzędzia Pomocnicze</h2></div></div>
+      </section>
+    </div>
   `;
   renderPortTool();
 }

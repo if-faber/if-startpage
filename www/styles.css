@@ -252,6 +252,7 @@ nav { display: grid; align-content: start; gap: 7px; overflow-x: hidden; overflo
   line-height: 1.05;
   letter-spacing: -0.03em;
   text-shadow: var(--page-title-shadow, none);
+  color: var(--page-title-color, var(--text));
 }
 .page-title { display: grid; gap: 8px; }
 .system-title { display: flex; align-items: center; gap: 12px; }
@@ -309,8 +310,9 @@ nav { display: grid; align-content: start; gap: 7px; overflow-x: hidden; overflo
 .header-stat.is-warn strong { color: #ea580c; }
 .header-stat.is-alarm { border: 2px solid #dc2626; background: color-mix(in srgb, #dc2626 16%, transparent); }
 .header-stat.is-alarm strong { color: #dc2626; }
-/* Akcent 2 = kolor nagłówków (h2 i tytuły sekcji) — jedną kontrolką dla całej strony. */
-h2, .page-section-title { color: var(--accent-alt); }
+/* Akcent 2 = kolor nagłówków na kafelkach i w okienkach. Napisy wprost na tle strony
+   (tytuł strony, tytuły sekcji) mają własne kontrolki — bez nich biorą dawny kolor. */
+h2 { color: var(--accent-alt); }
 .eyebrow { color: var(--accent); font-size: 11px; font-weight: 900; letter-spacing: .12em; text-transform: uppercase; }
 .toolbar-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
 input, select, textarea {
@@ -477,6 +479,8 @@ a.incident-bar:hover { transform: translateY(-1px); }
 .admin-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: minmax(280px, auto) minmax(300px, auto); gap: var(--card-gap); }
 .system-stats-card { grid-column: 1 / -1; }
 .admin-card { padding: 20px; }
+/* Strona Narzędzia: tester portów 70% + Narzędzia Pomocnicze 30% (na wąskim ekranie jedno pod drugim). */
+.tools-layout { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 3fr); gap: var(--card-gap); align-items: start; }
 .panel-heading { display: flex; align-items: start; justify-content: space-between; gap: 12px; margin-bottom: 18px; }
 .panel-heading h2 { font-size: 22px; }
 .panel-heading > span { color: var(--muted); font-size: 12px; }
@@ -624,6 +628,7 @@ dialog menu { display: flex; justify-content: flex-end; gap: 8px; margin: 4px 0 
   .nav-separator { display: none; }
   .metrics { grid-template-columns: repeat(3, minmax(110px, 1fr)); }
   .cockpit-stats { grid-template-columns: 1fr; }
+  .tools-layout { grid-template-columns: 1fr; }
 }
 @media (max-width: 700px) {
   .main { padding: 16px; }
@@ -923,8 +928,10 @@ dialog menu { display: flex; justify-content: flex-end; gap: 8px; margin: 4px 0 
 .page-sections { display: grid; gap: 26px; }
 .page-section-title {
   margin: 0 0 12px;
+  color: var(--section-title-color, var(--accent-alt));
   font-family: var(--font-description);
-  font-size: 12px;
+  font-size: var(--section-title-size, 12px);
+  text-shadow: var(--section-title-shadow, none);
   font-weight: 800;
   letter-spacing: 0.08em;
   text-transform: uppercase;

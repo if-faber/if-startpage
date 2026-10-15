@@ -218,7 +218,7 @@ function saveDashboardSettings(settings) {
 }
 
 function sanitizeThemeSettings(input) {
-  const allowed = ["accent", "accentAlt", "surfaceColor", "fontMenu", "fontCard", "fontDescription", "bg", "backgroundImage", "backgroundUrl", "backgroundBlur", "backgroundOpacity", "backgroundDim", "sidebarWidth", "sidebarPanelColor", "sidebarPanelAlpha", "sidebarToggleColor", "sidebarToggleSize", "titleSize", "titleColor", "titleShadowBlur", "subtitleSize", "subtitleColor", "subtitleShadowBlur", "pageTitleSize", "pageTitleShadowBlur", "cardRadius", "cardGap", "tileHeight", "logoSize", "panelColor", "panelAlpha", "glassBlur", "glassSaturation", "borderAlpha", "adminPanelColor", "adminPanelAlpha", "modalBg", "modalAlpha", "modalGlassBlur", "modalBackdropBlur", "modalBackdropAlpha", "modalRadius"];
+  const allowed = ["accent", "accentAlt", "surfaceColor", "fontMenu", "fontCard", "fontDescription", "bg", "backgroundImage", "backgroundUrl", "backgroundBlur", "backgroundOpacity", "backgroundDim", "sidebarWidth", "sidebarPanelColor", "sidebarPanelAlpha", "sidebarToggleColor", "sidebarToggleSize", "titleSize", "titleColor", "titleShadowBlur", "subtitleSize", "subtitleColor", "subtitleShadowBlur", "pageTitleSize", "pageTitleShadowBlur", "pageTitleColor", "sectionTitleColor", "sectionTitleSize", "sectionTitleShadowBlur", "cardRadius", "cardGap", "tileHeight", "logoSize", "panelColor", "panelAlpha", "glassBlur", "glassSaturation", "borderAlpha", "adminPanelColor", "adminPanelAlpha", "modalBg", "modalAlpha", "modalGlassBlur", "modalBackdropBlur", "modalBackdropAlpha", "modalRadius"];
   const output = {};
 
   for (const key of allowed) {
@@ -1293,7 +1293,7 @@ const CUSTOM_DEFAULTS_DIR = path.join(WWW_DIR, "custom-defaults");
 // Zmienne, które edytor może zapisać, z opisem do komentarza w pliku.
 const CUSTOM_CSS_VARS = {
   "--accent": "Akcent",
-  "--accent-alt": "Kolor nagłówków (Akcent 2)",
+  "--accent-alt": "Kolor nagłówków na kafelkach (Akcent 2)",
   "--accent-soft": "Akcent — tło przycisków (z akcentu)",
   "--glow-start": "Poświata tła (z akcentu)",
   "--glow-end": "Poświata tła (z akcentu)",
@@ -1319,6 +1319,11 @@ const CUSTOM_CSS_VARS = {
   "--page-title-size": "Wielkość tytułu strony",
   "--page-title-shadow": "Cień tytułu strony",
   "--page-title-shadow-blur": "Cień tytułu strony (rozmycie)",
+  "--page-title-color": "Kolor tytułu strony",
+  "--section-title-color": "Kolor tytułów sekcji",
+  "--section-title-size": "Wielkość tytułów sekcji",
+  "--section-title-shadow": "Cień tytułów sekcji",
+  "--section-title-shadow-blur": "Cień tytułów sekcji (rozmycie)",
   "--sidebar-panel-rgb": "Kolor tła menu",
   "--sidebar-panel-alpha": "Krycie menu",
   "--sidebar-width": "Szerokość menu",
