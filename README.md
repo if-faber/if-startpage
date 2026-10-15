@@ -247,6 +247,8 @@ Coś poszło nie tak? **„Cofnij”** przywraca `compose.yaml` z ostatniej kopi
 Kontener IF-startpage nie widzi pakietów serwera. Dlatego serwer raz dziennie zapisuje
 listę oczekujących aktualizacji do pliku, a IF-startpage ją pokazuje (Zaplecze → Aktualizacje
 i dzwonek: „Aktualizacje systemu: N”). **Instalujesz je w Cockpit** (Aktualizacje oprogramowania).
+Po każdej instalacji lub aktualizacji pakietów lista odświeża się sama w ciągu minuty (plik
+`99if-system-updates` w ustawieniach apt) — nie trzeba czekać do następnego dnia.
 
 Jeśli serwer stawiałeś programem [IF-home-server](https://github.com/if-faber/IF-home-server)
 (`sudo if-server`, od wersji 0.2.0), zadanie jest już ustawione — to składnik „Narzędzia dla
@@ -259,8 +261,10 @@ cd /tmp
 curl -fsSLO https://raw.githubusercontent.com/if-faber/if-startpage/main/extras/system-updates/if-system-updates
 curl -fsSLO https://raw.githubusercontent.com/if-faber/if-startpage/main/extras/system-updates/if-system-updates.service
 curl -fsSLO https://raw.githubusercontent.com/if-faber/if-startpage/main/extras/system-updates/if-system-updates.timer
+curl -fsSLO https://raw.githubusercontent.com/if-faber/if-startpage/main/extras/system-updates/99if-system-updates
 sudo install -m 755 if-system-updates /usr/local/bin/if-system-updates
 sudo install -m 644 if-system-updates.service if-system-updates.timer /etc/systemd/system/
+sudo install -m 644 99if-system-updates /etc/apt/apt.conf.d/99if-system-updates
 sudo sed -i "s/{user}/$USER/" /etc/systemd/system/if-system-updates.service
 sudo systemctl daemon-reload
 sudo systemctl enable --now if-system-updates.timer

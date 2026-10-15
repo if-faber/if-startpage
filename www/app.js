@@ -146,6 +146,7 @@ async function reloadData() {
     sections: (response.sections || []).map((section) => ({
       id: section.id,
       name: section.name,
+      icon: section.icon || "",
       pageId: section.pageId || "home",
       links: (section.groups || []).flatMap((group) => group.items || []).map((item) => ({
         sectionId: section.id,
