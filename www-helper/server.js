@@ -2619,6 +2619,7 @@ app.get("/api/alerts/summary", async (req, res) => {
 
     const criticalCount = alerts.filter((a) => a.severity === "critical").length;
     const warningCount = alerts.filter((a) => a.severity === "warning").length;
+    const infoCount = alerts.filter((a) => a.severity === "info").length;
 
     res.set("cache-control", "no-store");
     return res.json({
@@ -2627,7 +2628,9 @@ app.get("/api/alerts/summary", async (req, res) => {
         total: alerts.length,
         critical: criticalCount,
         warning: warningCount,
-        healthy: alerts.length === 0,
+        info: infoCount,
+        // Same informacje (np. dostępne aktualizacje) nie są awarią.
+        healthy: criticalCount === 0 && warningCount === 0,
         containersTotal: containers.length,
         containersRunning: containers.filter((c) => c.state === "running").length,
         timestamp: new Date().toISOString()

@@ -4,6 +4,20 @@ Nowe wpisy dopisujemy na górze.
 
 ---
 
+## v0.1.7 — 2026-10-15
+
+Koniec prac nad wyglądem (wersje 0.1.6.x).
+
+- **Napisy na tle strony mają własne kolory.** W edytorze wyglądu część „Nagłówek i napisy na tle”: doszedł **kolor tytułu strony** oraz **kolor, wielkość i cień tytułów sekcji**. „Kolor nagłówków (Akcent 2)” działa już tylko na kafelkach i w okienkach — jasne tło i jasne kafelki nie gryzą się ze sobą. Bez nowych ustawień wygląd się nie zmienia.
+- **Ikony sekcji (Lucide).** W Zapleczu → Strony i sekcje: „Wybierz ikonę” → lista ikon Lucide → **„Zastosuj”**. Ikona stoi przed nazwą sekcji na stronie. Szybkie „Dodaj sekcję” na stronie głównej bez zmian.
+- **Lista ikon z ikonami Lucide.** Pod obrazkami aplikacji wszystkie ikony Lucide z serwera (ok. 1900), jedna wyszukiwarka dla obu, odnośnik „Pełna lista ikonek Lucide”. Przycisk „Lista ikon” także w kafelku „Strony, sekcje i linki”.
+- **Strona Narzędzia:** obok testera portów kafelek **„Narzędzia Pomocnicze”** — miejsce na kolejne narzędzia (na razie pusty).
+- **Centrum Alertów:** stan ogólny **Stabilny / Wymaga uwagi / Awaria** — informacja o aktualizacjach nie włącza już „Awarii”; w kafelku „Aktywne alerty” także liczba informacji. Nazwy kontenerów oraz „Cockpit Linux” i „Dockge Stacks” widoczne w trybie dziennym (były białe na białym).
+- **Nasze okienka zamiast okienek przeglądarki** — pytania („Usunąć…?”) i komunikaty wyglądają jak reszta okien (ustawienia „Okna modalne”), przycisk mówi, co robi („Usuń”, „Przywróć”), a na starcie zaznaczone jest „Anuluj”.
+- **Budowanie obrazu na GitHubie:** Ubuntu 24.04 zamiast „latest” i akcje na Node.js 24.
+
+---
+
 ## v0.1.6.11 — 2026-10-13
 
 Aktualizacje aplikacji i Debiana w Zapleczu.

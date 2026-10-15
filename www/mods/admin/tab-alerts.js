@@ -387,6 +387,14 @@ async function loadAlertsData() {
   } catch {}
 }
 
+// Polska odmiana: 1 informacja, 2–4 informacje, 5+ informacji (12–14 też „informacji”).
+function pluralPl(n, one, few, many) {
+  if (n === 1) return one;
+  const last = n % 10;
+  const lastTwo = n % 100;
+  return last >= 2 && last <= 4 && (lastTwo < 12 || lastTwo > 14) ? few : many;
+}
+
 function updateKPI(data) {
   const summary = data.summary || {};
   const statusEl = document.querySelector("#valAlertsStatus");
@@ -394,26 +402,34 @@ function updateKPI(data) {
   const dot = document.querySelector("#alertsLiveDot");
   const liveText = document.querySelector("#alertsLiveText");
 
-  if (summary.healthy) {
-    if (statusEl) { statusEl.textContent = "Stabilny"; statusEl.style.color = "#34d399"; }
-    if (subStatusEl) subStatusEl.textContent = "Brak aktywnych awarii";
-    if (dot) dot.style.background = "#10b981";
-    if (liveText) liveText.textContent = "Wszystko działa";
+  // Stan ogólny: coś krytycznego = Awaria; ostrzeżenia = Wymaga uwagi; same informacje albo nic = Stabilny.
+  const crit = summary.critical || 0;
+  const warn = summary.warning || 0;
+  const info = summary.info || 0;
+  const infoText = info ? `${info} ${pluralPl(info, "informacja", "informacje", "informacji")}` : "";
+  let state;
+  if (crit > 0) {
+    state = { label: "Awaria", color: "#f87171", dot: "#ef4444", live: "Wykryto usterki",
+      sub: `${crit} ${pluralPl(crit, "błąd krytyczny", "błędy krytyczne", "błędów krytycznych")}` };
+  } else if (warn > 0) {
+    state = { label: "Wymaga uwagi", color: "#fb923c", dot: "#f97316", live: "Są ostrzeżenia",
+      sub: `${warn} ${pluralPl(warn, "ostrzeżenie", "ostrzeżenia", "ostrzeżeń")}` };
   } else {
-    const crit = summary.critical || 0;
-    if (statusEl) { statusEl.textContent = "Awaria"; statusEl.style.color = "#f87171"; }
-    if (subStatusEl) subStatusEl.textContent = `Wykryto ${crit} ${crit === 1 ? "krytyczny błąd" : "krytycznych błędów"}`;
-    if (dot) dot.style.background = "#ef4444";
-    if (liveText) liveText.textContent = "Wykryto usterki";
+    state = { label: "Stabilny", color: "#34d399", dot: "#10b981", live: "Wszystko działa",
+      sub: info ? `Brak awarii · ${infoText}` : "Brak aktywnych awarii" };
   }
+  if (statusEl) { statusEl.textContent = state.label; statusEl.style.color = state.color; }
+  if (subStatusEl) subStatusEl.textContent = state.sub;
+  if (dot) dot.style.background = state.dot;
+  if (liveText) liveText.textContent = state.live;
 
   const totalEl = document.querySelector("#valAlertsTotal");
   const subTotalEl = document.querySelector("#subAlertsTotal");
   if (totalEl) {
     totalEl.textContent = String(summary.total || 0);
-    totalEl.style.color = (summary.critical || 0) > 0 ? "#f87171" : (summary.total || 0) > 0 ? "#fbbf24" : "inherit";
+    totalEl.style.color = crit > 0 ? "#f87171" : warn > 0 ? "#fbbf24" : "inherit";
   }
-  if (subTotalEl) subTotalEl.textContent = `${summary.critical || 0} krytycznych, ${summary.warning || 0} ostrzeżeń`;
+  if (subTotalEl) subTotalEl.textContent = `${crit} krytycznych, ${warn} ostrzeżeń, ${info} ${pluralPl(info, "informacja", "informacje", "informacji")}`;
 
   const runEl = document.querySelector("#valAlertsRunning");
   const totalContEl = document.querySelector("#subAlertsTotalCont");
