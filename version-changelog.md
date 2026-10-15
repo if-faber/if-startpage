@@ -4,6 +4,14 @@ Nowe wpisy dopisujemy na górze.
 
 ---
 
+## v0.1.7.1 — 2026-10-15
+
+- **Ikona sekcji wyświetla się na stronie głównej** (w v0.1.7 była widoczna tylko w Zapleczu).
+- **Lista aktualizacji Debiana odświeża się od razu po każdej instalacji pakietów** (Cockpit, apt) — nowy plik `extras/system-updates/99if-system-updates` dla apt; instrukcja w README. Na serwerze z [IF-home-server](https://github.com/if-faber/IF-home-server) ustawia go składnik „Narzędzia dla IF-startpage”.
+- Opisy w Aktualizacjach mówią, kiedy lista się odświeża.
+
+---
+
 ## v0.1.7 — 2026-10-15
 
 Koniec prac nad wyglądem (wersje 0.1.6.x).

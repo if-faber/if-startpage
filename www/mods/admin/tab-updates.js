@@ -13,7 +13,7 @@ function renderUpdatesTab() {
         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 12px;">
           <div>
             <h2>${uiIcon("terminal", 22)} Pakiety systemowe (Debian apt)</h2>
-            <p class="settings-note">Oczekujące aktualizacje Debiana. Listę zapisuje serwer raz dziennie (zadanie „if-system-updates”), instalujesz je w Cockpit.</p>
+            <p class="settings-note">Oczekujące aktualizacje Debiana. Listę zapisuje serwer raz dziennie i od razu po każdej instalacji pakietów (zadanie „if-system-updates”), instalujesz je w Cockpit.</p>
           </div>
           <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
             <button type="button" class="button primary" id="btnCheckOsUpdates">${uiIcon("search", 16)} Pokaż listę</button>
@@ -71,7 +71,7 @@ async function checkOsUpdates() {
   try {
     const data = await request("/api/system/updates");
     const pkgs = data.packages || [];
-    const checked = data.checkedAt ? `Lista z serwera: ${new Date(data.checkedAt).toLocaleString("pl-PL")} (serwer sprawdza raz dziennie).` : "";
+    const checked = data.checkedAt ? `Lista z serwera: ${new Date(data.checkedAt).toLocaleString("pl-PL")} (odświeża się raz dziennie i po każdej aktualizacji).` : "";
     const stale = data.stale ? `<div class="sys-upd-stale">${uiIcon("warning", 14)} Lista ma ponad 2 dni — zadanie „if-system-updates” na serwerze chyba nie działa.</div>` : "";
 
     if (!data.available) {
