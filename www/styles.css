@@ -932,10 +932,15 @@ dialog menu { display: flex; justify-content: flex-end; gap: 8px; margin: 4px 0 
   font-family: var(--font-description);
   font-size: var(--section-title-size, 12px);
   text-shadow: var(--section-title-shadow, none);
+  display: flex;
+  align-items: center;
+  gap: 8px;
   font-weight: 800;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
+/* Ikona sekcji rośnie razem z napisem (Wielkość tytułów sekcji). */
+.page-section-title .ui-icon { flex: 0 0 auto; width: 1.4em; height: 1.4em; }
 .empty-small { min-height: 60px; padding: 12px; font-size: 13px; }
 
 /* Ikony w menu ⚙️ i na przyciskach */

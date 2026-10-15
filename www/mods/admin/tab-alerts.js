@@ -115,7 +115,7 @@ function renderAlertsTab() {
           <a id="tabLinkCockpit" href="#" target="_blank" rel="noreferrer" class="tool-card" style="display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-radius: 12px; background: rgba(255,255,255,0.03); border: 1px solid var(--line); text-decoration: none; color: inherit; transition: transform 0.15s ease, background 0.15s ease;">
             <span style="display: inline-flex; color: var(--accent);">${uiIcon("terminal", 26)}</span>
             <div>
-              <strong style="display: block; font-size: 13px; color: #fff;">Cockpit Linux</strong>
+              <strong style="display: block; font-size: 13px; color: var(--text);">Cockpit Linux</strong>
               <span style="font-size: 11px; color: var(--muted);">Panel OS i logi (:9090)</span>
             </div>
             <span style="margin-left: auto; display: inline-flex; color: var(--muted);">${uiIcon("external", 14)}</span>
@@ -123,7 +123,7 @@ function renderAlertsTab() {
           <a id="tabLinkDockge" href="#" target="_blank" rel="noreferrer" class="tool-card" style="display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-radius: 12px; background: rgba(255,255,255,0.03); border: 1px solid var(--line); text-decoration: none; color: inherit; transition: transform 0.15s ease, background 0.15s ease;">
             <span style="display: inline-flex; color: var(--accent);">${uiIcon("container", 26)}</span>
             <div>
-              <strong style="display: block; font-size: 13px; color: #fff;">Dockge Stacks</strong>
+              <strong style="display: block; font-size: 13px; color: var(--text);">Dockge Stacks</strong>
               <span style="font-size: 11px; color: var(--muted);">Zarządzanie kontenerami (:5001)</span>
             </div>
             <span style="margin-left: auto; display: inline-flex; color: var(--muted);">${uiIcon("external", 14)}</span>
@@ -490,7 +490,7 @@ function renderContainersGrid(containers) {
       <div style="display: flex; flex-direction: column; justify-content: space-between; gap: 10px; padding: 14px; border-radius: 12px; background: ${isRunning ? "rgba(255,255,255,0.03)" : "rgba(239,68,68,0.08)"}; border: 1px solid ${isRunning ? "var(--line)" : "rgba(239,68,68,0.4)"}; min-width: 0;">
         <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px;">
           <div style="min-width: 0; flex: 1;">
-            <strong style="display: block; font-size: 13px; color: #fff; word-break: break-all;">${escapeHtml(containerName)}</strong>
+            <strong style="display: block; font-size: 13px; color: var(--text); word-break: break-all;">${escapeHtml(containerName)}</strong>
             <div style="font-size: 11px; color: var(--muted); margin-top: 2px; word-break: break-word;">${escapeHtml(c.status || c.state)}</div>
           </div>
           <span style="font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 6px; background: ${isRunning ? "rgba(16,185,129,0.15)" : "rgba(239,68,68,0.2)"}; color: ${isRunning ? "#34d399" : "#f87171"}; text-transform: uppercase; flex-shrink: 0;">

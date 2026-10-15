@@ -748,7 +748,7 @@ function renderLinkCards() {
     if (query && !links.length) return;
     const block = document.createElement("section");
     block.className = "page-section";
-    block.innerHTML = `<h2 class="page-section-title">${escapeHtml(section.name)}</h2><div class="link-grid"></div>`;
+    block.innerHTML = `<h2 class="page-section-title">${section.icon ? uiIcon(section.icon, 16) : ""}${escapeHtml(section.name)}</h2><div class="link-grid"></div>`;
     const grid = block.querySelector(".link-grid");
     links.forEach((link) => grid.appendChild(buildLinkCard(link)));
     if (!links.length) grid.innerHTML = '<div class="empty empty-small">Pusta sekcja — dodaj link przyciskiem na dole.</div>';

@@ -1743,12 +1743,17 @@ app.post("/api/services/section", requirePin, (req, res) => {
     return res.status(400).json({ error: "Brak nazwy sekcji" });
   }
 
+  // Ikona sekcji (Lucide, opcjonalna) — ta sama kontrola co ikona strony.
+  const sectionIcon = cleanPageIcon(req.body.icon);
+  if (sectionIcon.error) return res.status(400).json({ error: sectionIcon.error });
+
   const requestedPage = normalizeText(req.body.pageId);
   const pageId = data.pages.some((page) => page.id === requestedPage) ? requestedPage : HOME_PAGE_ID;
 
   const section = {
     id: createId(),
     name,
+    ...(sectionIcon.icon ? { icon: sectionIcon.icon } : {}),
     pageId,
     groups: [
       {
@@ -1775,6 +1780,14 @@ app.put("/api/services/section/:id", requirePin, (req, res) => {
 
   if (!name) {
     return res.status(400).json({ error: "Brak nazwy sekcji" });
+  }
+
+  // Ikona zmienia się tylko, gdy przyszła w zapytaniu (przeniesienie na inną stronę jej nie wysyła).
+  if (Object.prototype.hasOwnProperty.call(req.body, "icon")) {
+    const sectionIcon = cleanPageIcon(req.body.icon);
+    if (sectionIcon.error) return res.status(400).json({ error: sectionIcon.error });
+    if (sectionIcon.icon) section.icon = sectionIcon.icon;
+    else delete section.icon;
   }
 
   section.name = name;

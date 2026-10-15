@@ -12,7 +12,11 @@ function renderHomepageTab() {
       <section class="admin-section-card">
         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 8px;">
           <h2 style="margin: 0;">${uiIcon("page", 22)} Strony, sekcje i linki</h2>
+          <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+          <!-- Ten sam przycisk co w kafelku „Ikony aplikacji” — ikony stron i sekcji wybiera się tutaj. -->
+          <button type="button" class="button" id="btnIconsListPages" style="padding: 6px 16px; font-size: 13px;">${uiIcon("search", 14)} Lista ikon</button>
           <a href="../../" class="button primary" target="_blank" style="padding: 6px 16px; font-size: 13px; font-weight: bold; text-decoration: none;">Otwórz Stronę Główną ${uiIcon("external", 14)}</a>
+          </div>
         </div>
         <p class="settings-note">Wybierz stronę, a potem twórz sekcje, ustawiaj ich kolejność, dodawaj i sortuj linki strzałkami. Sekcję można przenieść na inną stronę.</p>
 
@@ -41,6 +45,7 @@ function bindHomepageEvents() {
   loadAdminSections();
   document.querySelector("#btnIconsUpload")?.addEventListener("click", uploadIcons);
   document.querySelector("#btnIconsList")?.addEventListener("click", openIconsList);
+  document.querySelector("#btnIconsListPages")?.addEventListener("click", openIconsList);
   const iconsSearch = document.querySelector("#iconsListSearch");
   if (iconsSearch) iconsSearch.oninput = renderIconsList;
   document.querySelector("#linkFormAdmin")?.addEventListener("submit", saveAdminLink);
@@ -94,8 +99,10 @@ async function loadAdminSections() {
       </label>
     `;
     html += `
-      <form id="adminAddSectionForm" onsubmit="addSectionAdmin(event)" style="display: flex; gap: 12px; margin-bottom: 20px; align-items: center;">
+      <form id="adminAddSectionForm" onsubmit="addSectionAdmin(event)" style="display: flex; gap: 12px; margin-bottom: 20px; align-items: center; flex-wrap: wrap;">
+        <span class="hp-icon-preview" id="adminPageIconPreview_newSection">${uiIcon(newSectionIcon || "folder", 20)}</span>
         <input type="text" id="newSectionNameInput" placeholder="Nazwa nowej sekcji (np. Usługi serwera)" class="hp-input">
+        <button type="button" class="button" onclick="pickIconForNewSection()" style="padding: 10px 14px;">${uiIcon("search", 14)} Wybierz ikonę</button>
         <button type="submit" class="button primary" style="padding: 10px 18px; font-weight: bold;">+ Dodaj sekcję</button>
       </form>
     `;
@@ -110,15 +117,23 @@ async function loadAdminSections() {
         return `
           <div class="admin-section-card hp-box" style="margin-bottom: 16px;">
             <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: ${isCollapsed ? '0' : '12px'};">
-              <strong style="font-size: 16px; display: flex; align-items: center; gap: 8px;">
-                ${uiIcon("folder", 18)} ${escapeHtml(sec.name)}
-                <small style="color: var(--muted); font-weight normal; font-size: 12px;">(${items.length} wpisów)</small>
-              </strong>
+              <!-- Edycja sekcji: górna linijka — nazwa i Zapisz; dolna — wybór ikony z listy Lucide („Zastosuj”). -->
+              <div style="display: grid; gap: 8px;">
+                <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                  <span class="hp-icon-preview">${uiIcon(sec.icon || "folder", 20)}</span>
+                  <input type="text" id="adminSectionName_${escapeHtml(sec.id)}" value="${escapeHtml(sec.name)}" maxlength="60" class="hp-input" style="min-width: 160px;">
+                  <button type="button" class="button" onclick="renameSectionAdmin('${sec.id}')" style="font-size: 12px; padding: 6px 12px;">${uiIcon("save", 14)} Zapisz</button>
+                  <small style="color: var(--muted); font-size: 12px;">(${items.length} wpisów)</small>
+                </div>
+                <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap; padding-left: 46px;">
+                  <button type="button" class="button" onclick="pickIconForSection('${sec.id}')" style="font-size: 12px; padding: 6px 12px;">${uiIcon("search", 14)} Wybierz ikonę</button>
+                  <small style="color: var(--muted); font-size: 12px;">${sec.icon ? `Ikona: <code>${escapeHtml(sec.icon)}</code>` : "Bez ikony"}</small>
+                </div>
+              </div>
               <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
                 <button type="button" class="button" onclick="toggleCollapseAdminSection('${sec.id}')" style="font-size: 12px; padding: 6px 12px;" title="${isCollapsed ? 'Rozwiń sekcję' : 'Zwiń sekcję'}">
                   ${isCollapsed ? `${uiIcon("chevronDown", 14)} Rozwiń wpisy` : `${uiIcon("chevronUp", 14)} Zwiń wpisy`}
                 </button>
-                <button type="button" class="button" onclick="renameSectionAdmin('${sec.id}', '${escapeHtml(sec.name)}')" style="font-size: 12px; padding: 6px 12px;">${uiIcon("edit", 14)} Zmień nazwę</button>
                 ${cachedAdminPages.length > 1 ? `<select onchange="moveSectionToPageAdmin('${sec.id}', this.value)" title="Przenieś sekcję na inną stronę" style="font-size: 12px; min-height: 32px; padding: 4px 8px;"><option value="">Przenieś na stronę…</option>${cachedAdminPages.filter((page) => page.id !== adminPageId).map((page) => `<option value="${escapeHtml(page.id)}">${escapeHtml(page.name)}</option>`).join("")}</select>` : ""}
                 ${idx > 0 ? `<button type="button" class="button" onclick="moveSectionAdmin('${sec.id}', 'up')" style="font-size: 12px; padding: 6px 10px;" title="Przesuń sekcję w górę">▲</button>` : ""}
                 ${idx < cachedAdminSections.length - 1 ? `<button type="button" class="button" onclick="moveSectionAdmin('${sec.id}', 'down')" style="font-size: 12px; padding: 6px 10px;" title="Przesuń sekcję w dół">▼</button>` : ""}
@@ -261,9 +276,10 @@ async function addSectionAdmin(e) {
   const name = input?.value.trim();
   if (!name) return showToast("Wpisz nazwę nowej sekcji.");
   try {
-    await request("/api/services/section", { method: "POST", body: JSON.stringify({ name, pageId: adminPageId }) });
+    await request("/api/services/section", { method: "POST", body: JSON.stringify({ name, icon: newSectionIcon, pageId: adminPageId }) });
     showToast("Sekcja dodana.");
     if (input) input.value = "";
+    newSectionIcon = "";
     notifyServicesUpdated();
     loadAdminSections();
   } catch (error) {
@@ -271,12 +287,39 @@ async function addSectionAdmin(e) {
   }
 }
 
-async function renameSectionAdmin(id, oldName) {
-  const newName = prompt("Wpisz nową nazwę sekcji:", oldName);
-  if (!newName || !newName.trim() || newName.trim() === oldName) return;
+// Ikona nowej sekcji wybrana z listy przed kliknięciem „+ Dodaj sekcję”.
+let newSectionIcon = "";
+
+function pickIconForNewSection() {
+  openIconPicker("Ikona nowej sekcji", (icon) => {
+    newSectionIcon = icon;
+    const preview = document.querySelector("#adminPageIconPreview_newSection");
+    if (preview) preview.innerHTML = uiIcon(icon || "folder", 20);
+  });
+}
+
+// „Zastosuj” na liście od razu przypisuje ikonę sekcji (nazwa bez zmian).
+function pickIconForSection(id) {
+  const section = cachedAdminSections.find((sec) => sec.id === id);
+  if (!section) return;
+  openIconPicker(`Ikona sekcji „${section.name}”`, async (icon) => {
+    try {
+      await request(`/api/services/section/${id}`, { method: "PUT", body: JSON.stringify({ name: section.name, icon }) });
+      showToast(icon ? `Ikona „${icon}” przypisana.` : "Ikona usunięta.");
+      notifyServicesUpdated();
+      loadAdminSections();
+    } catch (error) {
+      showToast(error.message);
+    }
+  });
+}
+
+async function renameSectionAdmin(id) {
+  const name = document.querySelector(`#adminSectionName_${id}`)?.value.trim();
+  if (!name) return showToast("Podaj nazwę sekcji.");
   try {
-    await request(`/api/services/section/${id}`, { method: "PUT", body: JSON.stringify({ name: newName.trim() }) });
-    showToast("Nazwa sekcji zmieniona.");
+    await request(`/api/services/section/${id}`, { method: "PUT", body: JSON.stringify({ name }) });
+    showToast("Sekcja zapisana.");
     notifyServicesUpdated();
     loadAdminSections();
   } catch (error) {
@@ -463,8 +506,53 @@ async function uploadIcons() {
 }
 
 let cachedIconList = [];
+// Nazwy ikon Lucide z pliku na serwerze (www/lucide-sprite.svg) — wczytywane raz, przy pierwszym otwarciu listy.
+let cachedLucideNames = null;
+
+async function loadLucideNames() {
+  if (cachedLucideNames) return cachedLucideNames;
+  try {
+    const response = await fetch("/lucide-sprite.svg");
+    const text = await response.text();
+    cachedLucideNames = [...text.matchAll(/<symbol id="([a-z0-9-]+)"/g)].map((match) => match[1]);
+  } catch {
+    cachedLucideNames = [];
+  }
+  return cachedLucideNames;
+}
+
+// Tryb wyboru: to samo okno, ale tylko ikony Lucide i przycisk „Zastosuj” zamiast „Kopiuj nazwę”.
+let iconPickerCallback = null;
+
+function setIconsDialogTitle(eyebrow, title) {
+  const heading = document.querySelector("#iconsListDialog .modal-heading");
+  if (!heading) return;
+  heading.querySelector(".eyebrow").textContent = eyebrow;
+  heading.querySelector("h2").textContent = title;
+}
+
+async function openIconPicker(title, onPick) {
+  iconPickerCallback = onPick;
+  setIconsDialogTitle("Wybierz ikonę Lucide", title);
+  const dialog = document.querySelector("#iconsListDialog");
+  const box = document.querySelector("#iconsListBox");
+  if (!dialog || !box) return;
+  dialog.addEventListener("close", () => {
+    iconPickerCallback = null;
+    setIconsDialogTitle("Ikony aplikacji", "Lista ikon");
+  }, { once: true });
+  box.innerHTML = '<div class="empty">Wczytywanie ikon...</div>';
+  const search = document.querySelector("#iconsListSearch");
+  if (search) search.value = "";
+  dialog.showModal();
+  const lucideNames = await loadLucideNames();
+  const summary = document.querySelector("#iconsListSummary");
+  if (summary) summary.textContent = `Ikony Lucide: ${lucideNames.length} — kliknij „Zastosuj” przy wybranej.`;
+  renderIconsList();
+}
 
 async function openIconsList() {
+  iconPickerCallback = null;
   const dialog = document.querySelector("#iconsListDialog");
   const box = document.querySelector("#iconsListBox");
   if (!dialog || !box) return;
@@ -473,10 +561,10 @@ async function openIconsList() {
   if (search) search.value = "";
   dialog.showModal();
   try {
-    const data = await request("/api/icons");
+    const [data, lucideNames] = await Promise.all([request("/api/icons"), loadLucideNames()]);
     cachedIconList = data.icons || [];
     const summary = document.querySelector("#iconsListSummary");
-    if (summary) summary.textContent = `Wszystkich: ${cachedIconList.length} (Twoich: ${data.ownCount}, wbudowanych: ${data.builtInCount})`;
+    if (summary) summary.textContent = `Obrazki: ${cachedIconList.length} (Twoich: ${data.ownCount}, wbudowanych: ${data.builtInCount}) · Ikony Lucide: ${lucideNames.length} (pod obrazkami)`;
     renderIconsList();
   } catch (error) {
     box.innerHTML = `<div class="empty">${escapeHtml(error.message)}</div>`;
@@ -487,8 +575,11 @@ function renderIconsList() {
   const box = document.querySelector("#iconsListBox");
   if (!box) return;
   const query = (document.querySelector("#iconsListSearch")?.value || "").trim().toLowerCase();
-  const icons = cachedIconList.filter((icon) => !query || icon.name.includes(query));
-  if (!icons.length) {
+  const picking = typeof iconPickerCallback === "function";
+  const icons = picking ? [] : cachedIconList.filter((icon) => !query || icon.name.includes(query));
+  // Ikony Lucide zawsze pod obrazkami (bez wpisywania) — wyszukiwarka zawęża obie części.
+  const lucide = (cachedLucideNames || []).filter((name) => !query || name.includes(query));
+  if (!icons.length && !lucide.length) {
     box.innerHTML = '<div class="empty">Brak ikon pasujących do wyszukiwania.</div>';
     return;
   }
@@ -496,6 +587,12 @@ function renderIconsList() {
     <table class="icons-list-table">
       <thead><tr><th>Ikona</th><th>Nazwa</th><th></th></tr></thead>
       <tbody>
+        ${picking ? `
+          <tr>
+            <td><span class="icons-lucide-preview">${uiIcon("folder", 30)}</span></td>
+            <td>Bez ikony</td>
+            <td><button type="button" class="button" data-apply-icon="">Zastosuj</button></td>
+          </tr>` : ""}
         ${icons.map((icon) => `
           <tr>
             <td><img src="../../icons/${encodeURIComponent(icon.name)}" alt="" loading="lazy"></td>
@@ -503,9 +600,25 @@ function renderIconsList() {
             <td><button type="button" class="button" data-copy-icon="${escapeHtml(icon.name)}">${uiIcon("logs", 14)} Kopiuj nazwę</button></td>
           </tr>
         `).join("")}
+        ${lucide.map((name) => `
+          <tr>
+            <td><span class="icons-lucide-preview">${uiIcon(name, 30)}</span></td>
+            <td><code>${escapeHtml(name)}</code> <span class="icons-lucide-tag">Lucide</span></td>
+            <td>${picking
+              ? `<button type="button" class="button primary" data-apply-icon="${escapeHtml(name)}">Zastosuj</button>`
+              : `<button type="button" class="button" data-copy-icon="${escapeHtml(name)}">${uiIcon("logs", 14)} Kopiuj nazwę</button>`}</td>
+          </tr>
+        `).join("")}
       </tbody>
     </table>
   `;
+  box.querySelectorAll("[data-apply-icon]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const pick = iconPickerCallback;
+      document.querySelector("#iconsListDialog")?.close();
+      if (pick) pick(button.dataset.applyIcon);
+    });
+  });
   box.querySelectorAll("[data-copy-icon]").forEach((button) => {
     button.addEventListener("click", () => copyIconName(button.dataset.copyIcon));
   });

@@ -12,7 +12,7 @@
       catch (e) { document.documentElement.dataset.mode = "n"; }
     </script>
     <link rel="stylesheet" href="../../styles.css?v=0.4.2">
-    <link rel="stylesheet" href="./admin.css?v=0.4.2">
+    <link rel="stylesheet" href="./admin.css?v=0.4.2c">
     <link rel="stylesheet" href="../top/top.css?v=0.4.2d">
     <!-- Modułowa architektura Zaplecza IF-startpage (mods/admin) -->
     <script src="../../ui-icons.js" defer></script>
@@ -20,9 +20,9 @@
     <script src="../top/top.js?v=0.4.2d" defer></script>
     <script src="./secure.js?v=0.4.2" defer></script>
     <script src="./tab-helper.js?v=0.4.2b" defer></script>
-    <script src="./tab-alerts.js?v=0.4.2b" defer></script>
+    <script src="./tab-alerts.js?v=0.4.2c" defer></script>
     <script src="./tab-live.js?v=0.4.2" defer></script>
-    <script src="./tab-homepage.js?v=0.4.2" defer></script>
+    <script src="./tab-homepage.js?v=0.4.2h" defer></script>
     <script src="./tab-modules.js?v=0.4.2" defer></script>
     <script src="./tab-kiosk.js?v=0.4.2" defer></script>
     <script src="./tab-updates.js?v=0.4.2c" defer></script>
@@ -127,6 +127,8 @@
         <input type="search" id="iconsListSearch" placeholder="Szukaj ikony, np. immich">
         <p class="settings-note" id="iconsListSummary" style="margin: 6px 0 0;"></p>
         <div id="iconsListBox" class="icons-list-box"></div>
+        <!-- Ikony Lucide (rysunkowe) uzupełniają brakujące obrazki — pełna lista na stronie Lucide. -->
+        <p class="settings-note" style="margin: 10px 0 0;"><a href="https://lucide.dev/icons/" target="_blank" rel="noreferrer" style="color: var(--accent); font-weight: 700;">Pełna lista ikonek Lucide ↗</a> — gdy brakuje obrazka. Nazwę spod ikony (np. printer) wpisz w pole „Ikona”.</p>
         <menu><button type="button" data-close class="button">Zamknij</button></menu>
       </div>
     </dialog>

@@ -619,6 +619,8 @@ dialog menu {
 .icons-list-table td:last-child { width: 1%; white-space: nowrap; }
 .icons-list-table img { display: block; width: 36px; height: 36px; object-fit: contain; }
 .icons-builtin-tag { margin-left: 6px; padding: 2px 8px; border-radius: 999px; background: color-mix(in srgb, var(--text) 8%, transparent); color: var(--muted); font-size: 11px; font-weight: 800; }
+.icons-lucide-tag { margin-left: 6px; padding: 2px 8px; border-radius: 999px; background: color-mix(in srgb, var(--accent-alt) 14%, transparent); color: var(--accent-alt); font-size: 11px; font-weight: 800; }
+.icons-lucide-preview { display: grid; place-items: center; width: 36px; height: 36px; color: var(--text); }
 .icons-own-tag { margin-left: 6px; padding: 2px 8px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); font-size: 11px; font-weight: 800; }
 
 /* Strony i sekcje — bloki i pola zależne od motywu (dzień / noc) */
